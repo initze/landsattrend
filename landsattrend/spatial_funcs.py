@@ -11,7 +11,7 @@ based on gdal and ogr
 
 from .config_study_sites import study_sites
 from .lstools import align_px_to_ls
-from .data_stack import DataStack
+from .data_stack import *
 from osgeo import ogr, gdal, osr
 import numpy as np
 import os, glob, pyproj
