@@ -6,11 +6,13 @@ import joblib
 import pandas as pd
 import geopandas as gpd
 from osgeo import gdal_array as ga, gdal
-from classify import Classify, ClassifyDEM
+from .classify import Classify, ClassifyDEM
 import glob
-from helper_funcs import array_to_file
-from config_study_sites import study_sites
+from .helper_funcs import array_to_file
+from .config_study_sites import study_sites
 from sklearn import cluster
+
+# remove from landsattrend !!!
 
 def get_stats(labelid, L_1, L_all, pr_array, factor=1., selem=np.ones((3,3))):
     """calculate statistics of objects

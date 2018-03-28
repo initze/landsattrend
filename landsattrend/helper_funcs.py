@@ -17,6 +17,7 @@ from osgeo import gdal_array as ga
 from . import lstools
 from .trend_funcs import *
 from .config_study_sites import study_sites
+from .spatial_funcs import geom_sr_from_bbox
 
 
 def sortlist(inlist):
@@ -24,6 +25,7 @@ def sortlist(inlist):
     tmplist = [fn[9:16] for fn in inlist]
     d_ord = [datetime.datetime.strptime(f, "%Y%j").toordinal() for f in tmplist]
     return inlist[np.argsort(d_ord)]
+
 
 def sensorlist(flist):
     """
@@ -35,15 +37,15 @@ def sensorlist(flist):
     sl_v1 = {'LT4': 'TM', 'LT5': 'TM', 'LE7': 'ETM', 'LC8': 'OLI'}
     sl_v2 = {'LT04': 'TM', 'LT05': 'TM', 'LE07': 'ETM', 'LC08': 'OLI'}
     #TODO ADD distinction between naming types
-    sensorlist = []
+    sensor_list = []
     for f in flist:
         if len(f.split('_masked')[0]) == 16:
-            sensorlist.append(sl_v1[f[:3]])
+            sensor_list.append(sl_v1[f[:3]])
         elif len(f.split('_masked')[0]) == 22:
-            sensorlist.append(sl_v2[f[:4]])
+            sensor_list.append(sl_v2[f[:4]])
         else:
             pass
-    return sensorlist
+    return sensor_list
 
 
 def get_foldernames(path, global_path=False):
@@ -54,13 +56,12 @@ def get_foldernames(path, global_path=False):
     """
     dirs = [name for name in os.listdir(path) if os.path.isdir(os.path.join(path, name))]
     if global_path:
-        return [os.path.join(path, dir) for dir in dirs]
+        return [os.path.join(path, directory) for directory in dirs]
     else:
         return dirs
 
 
 def array_to_file(inarray, outfile, samplefile,
-                  locality=None,
                   metadata=None,
                   dtype=gdal.GDT_Float32,
                   compress=True,
@@ -73,7 +74,8 @@ def array_to_file(inarray, outfile, samplefile,
     Input:
         array: numpy array to export
         outfile: filepath of output dataset
-        samplefile: file with same properties (datatype, size) as outputfile. Projection information will be read from this file.
+        samplefile: file with same properties (datatype, size) as outputfile. Projection information will be read from
+                    this file.
         dtype: output dtype ('float', 'int', 'uint')
     """
     if not quiet:
@@ -89,7 +91,6 @@ def array_to_file(inarray, outfile, samplefile,
         gt[5] = -outresolution[1]
         gt = tuple(gt)
 
-    # projref = sdataset.GetProjectionRef()
     #############################################
     ncols = inarray.shape[-1]
     nrows = inarray.shape[-2]
@@ -97,7 +98,6 @@ def array_to_file(inarray, outfile, samplefile,
         print(ncols)
         print(nrows)
     #############################################
-    #driver = sdataset.GetDriver()
     driver = gdal.GetDriverByName("GTiff")
     if inarray.ndim == 3:
         if compress:
@@ -170,7 +170,8 @@ def get_esd(doy, filepath='P:\\initze\\888_scripts\\esd.csv'):
     return float(esd)
 
 
-def load_data(path, indices = ['tc', 'ndvi', 'ndwi', 'ndmi'], xoff=0, yoff=0, xsize=None, ysize=None, factor = 1., filter=True, filetype='tif', outdict=False, **kwargs):
+def load_data(path, indices = ['tc', 'ndvi', 'ndwi', 'ndmi'], xoff=0, yoff=0, xsize=None, ysize=None, factor = 1.,
+              filter=True, filetype='tif', outdict=False, **kwargs):
     """
     :param path:
     :param indices:
@@ -273,8 +274,8 @@ def load_data(path, indices = ['tc', 'ndvi', 'ndwi', 'ndmi'], xoff=0, yoff=0, xs
                        imdates=imdates,
                        imdates_doy=imdates_doy,
                        flist=flist,
-                       sensor=s_l
-        )
+                       sensor=s_l)
+
         return outdata
     else:
         return ds, imdates, imdates_doy, ind
@@ -283,6 +284,7 @@ def load_data(path, indices = ['tc', 'ndvi', 'ndwi', 'ndmi'], xoff=0, yoff=0, xs
 def filter_year(imdates, startyr=0, endyr=datetime.datetime.now().year, **kwargs):
     dt = np.array([datetime.datetime.fromordinal(dt).year for dt in imdates])
     return np.where((dt >= startyr) & (dt <= endyr))[0]
+
 
 def filter_month(imdates, startmth=6, endmth=9, **kwargs):
     if 'startmth' in list(kwargs.keys()):
@@ -325,12 +327,8 @@ def tiling(xsize, ysize, xstepsize, ystepsize):
     x, y = np.mgrid[0:xsize:xstepsize, 0:ysize:ystepsize]
     x = x.ravel()
     y = y.ravel()
-
-    x_sz = np.array([xstepsize]*len(x))
     dist_x = xsize-x
     dist_x[dist_x > xstepsize] = xstepsize
-
-    y_sz = np.array([xstepsize]*len(y))
     dist_y = ysize-y
     dist_y[dist_y > ystepsize] = ystepsize
 
@@ -354,6 +352,7 @@ def compress_geotiff(infolder, delete=True, direct=False):
     """
     :param infolder: path to directory with subfolder structure for masked WRS-tiles
     :param delete: switch to delete inputfiles
+    :param direct:
     :return: None
     """
     if direct:
