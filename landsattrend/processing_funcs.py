@@ -7,10 +7,10 @@ import pandas as pd
 from joblib import Parallel, delayed
 from osgeo import osr, gdal
 
-from config_study_sites import wrs2_path, study_sites
-from data_stack import DataStack
-from helper_funcs import get_foldernames, tiling, array_to_file
-from trend_funcs import trend_image2
+from .config_study_sites import wrs2_path, study_sites
+from .data_stack import DataStack
+from .helper_funcs import get_foldernames, tiling, array_to_file
+from .trend_funcs import trend_image2
 
 __author__ = 'initze'
 

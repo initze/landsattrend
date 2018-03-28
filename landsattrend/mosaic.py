@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import datetime
 import rasterio
-from helper_funcs import array_to_file
+from .helper_funcs import array_to_file
 from osgeo import gdal
 import numpy as np
 

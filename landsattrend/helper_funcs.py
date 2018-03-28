@@ -14,10 +14,9 @@ import netCDF4
 from osgeo import gdal
 from osgeo import gdal_array as ga
 
-import lstools
-from trend_funcs import *
-from config_study_sites import study_sites
-#from spatial_funcs import geom_sr_from_point, geom_sr_from_bbox
+from . import lstools
+from .trend_funcs import *
+from .config_study_sites import study_sites
 
 
 def sortlist(inlist):

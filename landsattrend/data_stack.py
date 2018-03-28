@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from osgeo import gdal_array as ga
 
-import lstools
-from helper_funcs import sensorlist
+from . import lstools
+from .helper_funcs import sensorlist
 
 
 class DataStack(object):
