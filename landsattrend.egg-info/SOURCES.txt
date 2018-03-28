@@ -1,0 +1,4 @@
+landsattrend.egg-info/PKG-INFO
+landsattrend.egg-info/SOURCES.txt
+landsattrend.egg-info/dependency_links.txt
+landsattrend.egg-info/top_level.txt

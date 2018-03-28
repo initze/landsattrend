@@ -1,0 +1,873 @@
+import datetime
+import os
+import time
+import fiona
+import numpy as np
+import pandas as pd
+from joblib import Parallel, delayed
+from osgeo import osr, gdal
+
+from config_study_sites import wrs2_path, study_sites
+from data_stack import DataStack
+from helper_funcs import get_foldernames, tiling, array_to_file
+from trend_funcs import trend_image2
+
+__author__ = 'initze'
+
+# TODO: make explicit function calls
+# TODO: better print out. overwrite vs new processing
+# TODO: check for not existant tiles (e.g. not preprocesed)
+# TODO: reporting if completely new of new data arrived
+class Processor(object):
+    def __init__(self, study_site, outfolder, indices=['tcb', 'tcg','tcw', 'ndvi', 'ndwi', 'ndmi', 'nobs'],
+                 startyear=1985, endyear=2014, startmonth=7, endmonth=8,
+                 naming_convention='old', prefix='trendimage',
+                 path=None, row=None, pr_string=None,
+                 rescale_intercept=datetime.datetime(2014, 7, 1),
+                 nobs=False, tc_sensor='auto', ts_mode='full',
+                 parallel=True,
+                 n_jobs=12):
+
+        self.study_site = study_site
+        self.outfolder = outfolder
+        self.indices = np.array(indices)
+        self.startyear = startyear
+        self.endyear = endyear
+        self.startmonth = startmonth
+        self.endmonth = endmonth
+        self.naming_convention = naming_convention
+        self.prefix = prefix
+        self.row = row
+        self.path = path
+        self.pr_string = pr_string
+        self.rescale_intercept = rescale_intercept
+        self.nobs = nobs
+        self.tc_sensor = tc_sensor
+        self.ts_mode = ts_mode
+        self.parallel = parallel
+        self.n_jobs = n_jobs
+        self.ss_name = study_sites[study_site]['name']
+        self.ss_indir = study_sites[study_site]['processing_dir']
+        self.infiles_check = False
+        self.outfiles_check = False
+        self.start_time = time.time()
+        self.startup_funcs1()
+
+        if self.infiles_check:
+            self.startup_funcs2()
+
+
+        if self.outfiles_check:
+            self.startup_funcs3()
+            self.run_calculation_full()
+            self.finalize()
+
+
+
+    def startup_funcs1(self):
+        self.check_pr()
+        self.setup_infolder()
+        self.make_infile_list()
+        self.print_info()
+
+    def startup_funcs2(self):
+        self.make_outfile_list()
+        self.setup_outfolder()
+        self.set_processing_bool()
+        self.final_precheck()
+
+    def startup_funcs3(self):
+        self.get_raster_size(self.infiles.filepath.iloc[0])
+        self.subsample()
+        self.setup_result_layers()
+
+    def run_calculation_mode_full(self, i=0):
+        print("\nProcessing tile {0}/{1}".format(i+1, self.ntiles))
+        self.load_data(i)
+        self.rescaling_intercept()
+        if self.parallel:
+            self.calc_trend_parallel(i)
+        else:
+            self.calc_trend(i)
+        if self.nobs_process:
+            self.calc_nobs(i)
+
+    def run_calculation_mode_median(self, i=0):
+        print("\nProcessing tile {0}/{1}".format(i+1, self.ntiles))
+        self.load_data(i)
+        self.rescaling_intercept()
+        if self.parallel:
+            self.calc_trend_parallel_median(i)
+        else:
+            self.calc_trend_median()
+        if self.nobs_process:
+            self.calc_nobs(i)
+
+    def run_calculation_full(self):
+        print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
+        # TODO: insert here if new files arrived after last processing
+        if self.outfiles_check:
+            for i in range(self.ntiles):
+                if self.ts_mode == 'full':
+                    self.run_calculation_mode_full(i)
+                elif self.ts_mode == 'median_year':
+                    self.run_calculation_mode_median(i)
+                else:
+                    raise ValueError("Please choose correct ts_mode. 'full' or 'median_year'")
+
+    def finalize(self):
+        if self.outfiles_check:
+            self.create_metadata()
+            self.export_files()
+            #self.make_report()
+            print("Full Processing took {0} seconds".format(round(time.time()-self.start_time)))
+
+    def check_pr(self):
+        """
+        check and transform Path/Row string
+        :return:
+        """
+        if (self.row is None) and (self.path is None) and (type(self.pr_string) == str):
+            self.pr_string_to_pr()
+        elif (self.row is None) and (self.path is None) and (type(self.pr_string) != str):
+            raise ValueError ("Please indicate either row and path or pr_string")
+
+    def pr_string_to_pr(self):
+        """
+        make row/path integers from string
+        :return:
+        """
+        self.row, self.path = np.array(self.pr_string.split('_'), dtype=np.int)
+
+    def setup_infolder(self):
+        """
+        Create path for outfolder
+        :return:
+        """
+        self.infolder = os.path.join(self.ss_indir, '{0}_{1}_{2}'.format(self.ss_name, self.row, self.path))
+
+    def make_infile_list(self):
+        """
+        Get infile properties using DataStack without loading data explicitly
+        :return:
+        """
+        print('loading Data') # fix for skip
+        self.infiles = DataStack(self.infolder,
+                                 startmonth=self.startmonth, endmonth=self.endmonth,
+                                 startyear=self.startyear, endyear=self.endyear).df_indata
+        self.infiles_check = len(self.infiles) > 0
+
+    def make_outfile_list(self):
+        """
+        Create Dataframe with outfile properties, e.g. if already existing, timestamp and if it will be processed
+        :return:
+        """
+        def make_timestamp(x):
+            return datetime.datetime.fromtimestamp(os.path.getmtime(x))
+        self.df_outdata = pd.DataFrame(index = self.indices, columns=['filepath', 'exists', 'timestamp', 'process'])
+        self.df_outdata.filepath = np.array(['{0}_{1}_{2}_{3}_{4}.tif'.format(self.prefix, self.ss_name, self.row, self.path, idx) for idx in self.indices])
+        self.df_outdata.filepath = [os.path.join(self.outfolder, f) for f in self.df_outdata.filepath]
+        self.df_outdata['exists'] = self.df_outdata['filepath'].apply(os.path.exists)
+        self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2)
+        self.df_outdata['timestamp'] = self.df_outdata['filepath'][self.df_outdata['exists']].apply(make_timestamp)
+        self.df_outdata['process'] = self.df_outdata['timestamp'][self.df_outdata['exists']] < self.infiles.timestamp.max()
+        self.df_outdata['process'][~self.df_outdata['exists']] = True #Throws warning
+
+    def print_info(self):
+        """
+        Small printing wrapper
+        :return:
+        """
+        print("\n\n")
+        print("Study Site: {0}".format(self.study_site))
+        print("Processing Dataset: {0}".format(self.pr_string))
+        if not self.infiles_check:
+            print("Skip processing, No Data available for this subset!\n")
+
+
+    def set_processing_bool(self):
+        """
+        Create boolean variables to check for later processing
+        :return:
+        """
+        self.outfiles_check = any(self.df_outdata.process)
+        x = self.indices[self.indices != 'nobs']
+        self.indices_process = np.array(self.df_outdata.loc[x][self.df_outdata.loc[x]['process']].index)
+        self.nobs_process = False
+        if 'nobs' in self.df_outdata.index:
+            self.nobs_process = self.df_outdata.loc['nobs', 'process']
+
+
+    def final_precheck(self):
+        if not self.outfiles_check:
+            print("Skip processing, data already exist!")
+
+    def setup_outfolder(self):
+        """
+        Check if outfolder exists, create otherwise
+        :return:
+        """
+        if not os.path.isdir(self.outfolder):
+            os.makedirs(self.outfolder)
+
+    def get_raster_size(self, path):
+        """
+        Get Rastersize of Raster
+        :param path:
+        :return:
+        """
+        ds = gdal.Open(path)
+        self.nrows = ds.RasterYSize
+        self.ncols = ds.RasterXSize
+
+    def subsample(self):
+        """
+        setup subsampling coordinates for tiled-processing
+        :return:
+        """
+        self.roff, self.coff, self.rsize, self.csize = tiling(self.nrows, self.ncols, 250, 250)
+        self.ntiles = len(self.roff)
+
+    def setup_result_layers(self):
+        """
+        Create result layers as np.arrays wrapped in a dict
+        :return:
+        """
+        self.results = {}
+        for i in self.indices_process:
+            self.results[i] = np.zeros((4, self.nrows, self.ncols), dtype=np.float)
+        if 'nobs' in self.indices:
+            self.results['nobs'] = np.zeros((self.nrows, self.ncols), dtype=np.uint16)
+
+    def load_data(self, i=0):
+        """
+        Load input data and indices using DataStack
+        :param i:
+        :return:
+        """
+        #print 'loading Data'
+        self.data = DataStack(self.infolder, indices=self.indices_process,
+                              xoff=int(self.coff[i]), xsize=int(self.csize[i]),
+                              yoff=int(self.roff[i]), ysize=int(self.rsize[i]),
+                              startmonth=self.startmonth, endmonth=self.endmonth,
+                              startyear=self.startyear, endyear=self.endyear, tc_sensor=self.tc_sensor)
+        self.data.load_data()
+
+    def rescaling_intercept(self):
+        """
+        Rescale intercept value to defined date
+        :return:
+        """
+        if self.rescale_intercept:
+            self.data.df_indata.ordinal_day -= self.rescale_intercept.toordinal()
+            self.data.df_indata.year -= 2014
+
+
+    def calc_trend(self, i=0):
+        """
+        Calculate Trend
+        :param i:
+        :return:
+        """
+        out = [trend_image2(self.data.index_data[idx], self.data.df_indata.ordinal_day) for idx in self.indices_process]
+        ctr = 0
+        for idx in self.indices_process:
+            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
+            ctr += 1
+
+    def calc_trend_parallel(self, i=0):
+        """
+        Calculate Trend with parallel processing
+        :param n_jobs:
+        :param i:
+        :return:
+        """
+        print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
+        out = Parallel(n_jobs=self.n_jobs) (delayed(trend_image2)(self.data.index_data[idx], self.data.df_indata.ordinal_day) for idx in self.indices_process)
+        ctr = 0
+        for idx in self.indices_process:
+            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
+            ctr += 1
+
+    def calc_trend_median(self, i=0):
+        """
+        Calculate Trend with parallel processing
+        :param n_jobs:
+        :param i:
+        :return:
+        """
+        print("Processing of trends")
+        # arange data
+        self.index_data_filt = {}
+        [self._group_by_year(idx) for idx in self.indices_process]
+        out = [trend_image2(self.index_data_filt[idx], self.years, factor=10.) for idx in self.indices_process]
+        ctr = 0
+        for idx in self.indices_process:
+            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
+            ctr += 1
+
+
+    def calc_trend_parallel_median(self, i=0):
+        """
+        Calculate Trend with parallel processing
+        :param n_jobs:
+        :param i:
+        :return:
+        """
+        print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
+        # arange data
+        self.index_data_filt = {}
+        [self._group_by_year(idx) for idx in self.indices_process]
+        out = Parallel(n_jobs=self.n_jobs) (delayed(trend_image2)(self.index_data_filt[idx], self.years, factor=10.) for idx in self.indices_process)
+        ctr = 0
+        for idx in self.indices_process:
+            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
+            ctr += 1
+
+    def _group_by_year(self, index):
+        """
+        :param index:
+        :return:
+        """
+        df_tcb = pd.DataFrame(data=self.data.index_data[index].reshape(len(self.data.df_indata), -1), index=self.data.df_indata.index)
+        shp = self.data.index_data[index].shape
+        joined = self.data.df_indata[['year']].join(df_tcb)
+        grouped = joined.groupby(by='year', axis=0).median().sort_index()
+        m = grouped.as_matrix().T
+        self.years = grouped.index.values
+        self.index_data_filt[index] = np.ma.MaskedArray(data=m, mask=np.isnan(m)).T.reshape(len(self.years), shp[1], shp[2])
+
+
+    def calc_nobs(self, i=0):
+        """
+        create layer with number of obervations
+        :param i:
+        :return:
+        """
+        if self.nobs_process:
+            nobs_out = (~self.data.data_stack.mask[:,0]).sum(axis=0)
+            self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = nobs_out
+
+
+    def create_metadata(self):
+        """
+        Function to setup Metadata
+        :return:
+        """
+        self.metadata = {}
+        for key in list(self.results.keys()):
+            self.metadata[key] = {'DESCRIPTION':'Trend Map of Index: {0}'.format(key),
+                                  'CREATION TIMESTAMP':datetime.datetime.fromtimestamp(time.time()).isoformat(),
+                                  'PROCESSING_VERSION':'',
+                                  'REGRESSION_ALGORITHM':'Theil-Sen'}
+
+    def export_files(self):
+        """
+        Write calculated output data to Raster files
+        :return:
+        """
+        for idx in self.indices_process:
+            print(self.df_outdata.loc[idx]['filepath'])
+            array_to_file(self.results[idx],
+                          self.df_outdata.loc[idx]['filepath'],
+                          self.infiles.filepath.iloc[0], dtype=gdal.GDT_Float32, compress=False, metadata=self.metadata[idx])
+
+        if 'nobs' in list(self.results.keys()):
+            array_to_file(self.results['nobs'],
+                          self.df_outdata.loc['nobs', 'filepath'],
+                          self.infiles.filepath.iloc[0], dtype=gdal.GDT_UInt16, compress=False, metadata=self.metadata['nobs'])
+
+    def make_report(self):
+        """
+        Make processing report
+        :return:
+        """
+        tstamp = datetime.datetime.fromtimestamp(self.start_time).strftime('%Y%m%d-%H%M%S')
+        self.report_file = os.path.join(os.path.abspath(os.path.curdir), 'report_{0}.txt'.format(tstamp))
+        text = ''.join(['Processing Report \n',
+                       "Index: {0}\n".format(' '.join(self.df_outdata[self.df_outdata['process']].index))])
+        with open(self.report_file, 'a') as src:
+            src.write(text)
+        pass
+
+class MedianMosaic(Processor):
+    def __init__(self, study_site, outfolder, startyear=1985, endyear=2014, startmonth=7, endmonth=8,
+                 naming_convention='old', prefix='MedianMos',
+                 path=None, row=None, pr_string=None):
+
+        self.study_site = study_site
+        self.outfolder = outfolder
+        self.startyear = startyear
+        self.endyear = endyear
+        self.startmonth = startmonth
+        self.endmonth = endmonth
+        self.naming_convention = naming_convention
+        self.prefix = prefix
+        self.row = row
+        self.path = path
+        self.pr_string = pr_string
+        self.ss_name = study_sites[study_site]['name']
+        self.ss_indir = study_sites[study_site]['processing_dir']
+        self.infiles_check = False
+        self.outfiles_check = False
+        self.start_time = time.time()
+        self.startup_funcs1()
+
+
+        if self.infiles_check:
+            self.startup_funcs2()
+
+
+        if self.outfiles_check:
+            self.startup_funcs3()
+            self.run_calculation_full()
+            self.finalize()
+
+
+    def run_calculation(self, i=0):
+        print("\nProcessing tile {0}/{1}".format(i+1, self.ntiles))
+        self.load_data(i)
+        self.calculate_medians(i)
+
+    def run_calculation_full(self):
+        #print "Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index))
+        # TODO: insert here if new files arrived after last processing
+        if self.outfiles_check:
+            for i in range(self.ntiles):
+                self.run_calculation(i)
+
+    def set_processing_bool(self):
+        """
+        Create boolean variables to check for later processing
+        :return:
+        """
+        self.outfiles_check = any(self.df_outdata.process)
+
+    def make_outfile_list(self):
+        """
+        Create Dataframe with outfile properties, e.g. if already existing, timestamp and if it will be processed
+        :return:
+        """
+        def make_timestamp(x):
+            return datetime.datetime.fromtimestamp(os.path.getmtime(x))
+        self.df_outdata = pd.DataFrame(columns=['filepath', 'exists', 'timestamp', 'process'])
+        self.df_outdata.filepath = ['{0}_{1}_{2}_{3}.tif'.format(self.prefix, self.ss_name, self.row, self.path)]
+        self.df_outdata.filepath = [os.path.join(self.outfolder, f) for f in self.df_outdata.filepath]
+        self.df_outdata['exists'] = self.df_outdata['filepath'].apply(os.path.exists)
+        self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2)
+        self.df_outdata['timestamp'] = self.df_outdata['filepath'][self.df_outdata['exists']].apply(make_timestamp)
+        self.df_outdata['process'] = self.df_outdata['timestamp'][self.df_outdata['exists']] < self.infiles.timestamp.max()
+        self.df_outdata['process'][~self.df_outdata['exists']] = True
+
+    def setup_result_layers(self):
+        """
+        Create result layers as np.arrays wrapped in a dict
+        :return:
+        """
+        self.results = {}
+        for i in ['reflectance']:
+            self.results[i] = np.zeros((6, self.nrows, self.ncols), dtype=np.float)
+
+    def load_data(self, i=0):
+        """
+        Load input data and indices using DataStack
+        :param i:
+        :return:
+        """
+        #print 'loading Data'
+        self.data = DataStack(self.infolder,
+                              xoff=self.coff[i], xsize=self.csize[i], yoff=self.roff[i], ysize=self.rsize[i],
+                              startmonth=self.startmonth, endmonth=self.endmonth,
+                              startyear=self.startyear, endyear=self.endyear, factor=1.)
+        self.data.load_data()
+
+    def calculate_medians(self, i=0):
+        """
+        Function to calculate non-masked medians
+        :param i:
+        :return:
+        """
+        for idx in ['reflectance']:
+            out = np.ma.median(self.data.data_stack, axis=0)
+            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out
+
+    def export_files(self):
+        """
+        Write calculated output data to Raster files
+        :return:
+        """
+        array_to_file(self.results['reflectance'],
+                      self.df_outdata.iloc[0]['filepath'],
+                      self.infiles.filepath.iloc[0], dtype=gdal.GDT_UInt16, compress=False)
+
+
+class LocPreProcessor(object):
+    """
+    Class to process final data to trend images
+    """
+
+
+
+    def __init__(self, study_site, row=None, path=None, pr_string=None, parallel=False, bufsize=4000, *args, **kwargs):
+        """
+        Class to clip pre-processed Landsat image to local subsets
+        :param study_site: str
+        :param row: int
+        :param path: int
+        :param pr_string: str
+        :param parallel: bool
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        self.study_site = study_site
+        self.row = row
+        self.path = path
+        self.pr_string = pr_string
+        self.parallel = parallel
+        self.bufsize = bufsize
+        self.pr_exists = False
+        self.continue_process = True
+        self.n_files_in = 0
+        self.n_files_out = 0
+        self.infolders = []
+        self.infiles = np.array([])
+        self.outfiles = np.array([])
+        self.empty_fld = np.array([])
+        self.process_ok = np.array([], dtype=np.bool)
+        self.output_string = np.array([], dtype=np.str)
+        self._initial_check()
+        try:
+            self.startup_funcs()
+            self.startup_funcs2()
+            if (self.pr_exists and self.continue_process):
+                self.startup_funcs3()
+        except:
+            pass
+
+    def _initial_check(self):
+        """
+        check for input values, must either be int for row and path or string for pr_string
+        :return:
+        """
+        if (self.row is None) and (self.path is None) and (type(self.pr_string) == str):
+            self.pr_string_to_pr()
+        elif (self.row is None) and (self.path is None) and (type(self.pr_string) != str):
+            raise ValueError ("Please indicate either row and path or pr_string")
+        # TODO: Check for GDAL_DATA environment variable
+        if not os.path.exists(wrs2_path):
+            raise IOError("Path to WRS-2 vector file is not correctly defined")
+
+
+    def startup_funcs(self):
+        """
+        startup wrapper 1 - running each time
+        :return:
+        """
+        self.get_study_site_features()
+        self.check_pr_existing()
+
+    def startup_funcs2(self):
+        """
+        startup wrapper - running if local row/path exists
+        :return:
+        """
+        self.get_wrs2tiles()
+        self.get_existing_wrs2()
+
+    def startup_funcs3(self):
+        """
+        startup wrapper - running if local row/path exists
+        :return:
+        """
+        self.get_infolders()
+        self.get_infiles()
+        self.make_outnames()
+        self.check_outnames()
+        self.check_outfolder_structure()
+        self.make_output_string()
+
+    def get_study_site_features(self):
+        """
+        fetch study site properties
+        :return:
+        """
+        self.fishnet_file = study_sites[self.study_site]['fishnet_file']
+        self.data_dir = study_sites[self.study_site]['data_dir']
+        self.out_dir = study_sites[self.study_site]['processing_dir']
+        self.ss_name = study_sites[self.study_site]['name']
+        self.epsg = study_sites[self.study_site]['epsg']
+
+    def pr_string_to_pr(self):
+        """
+        make row/path integers from string
+        :return:
+        """
+        self.row, self.path = np.array(self.pr_string.split('_'), dtype=np.int)
+
+    def check_pr_existing(self):
+        """
+        Check if indicated fishnet row/path combination exists
+        :return:
+        """
+        ds2 = fiona.open(self.fishnet_file)
+        filtered = len([f for f in ds2 if (f['properties']['path']==self.path) and (f['properties']['row']==self.row)])
+        if filtered == 1:
+            self.pr_exists = True
+        else:
+            raise ValueError("This path/row combination does not exists")
+
+    def get_wrs2tiles(self):
+        """
+        Function to get intersecting WRS-tiles
+        :return:
+        """
+        ds1 = fiona.open(wrs2_path)
+        ds2 = fiona.open(self.fishnet_file)
+        filtered = [f for f in ds2 if (f['properties']['path']==self.path) and (f['properties']['row']==self.row)]
+        sr2 = osr.SpatialReference()
+        sr2.ImportFromWkt(ds2.crs_wkt)
+        sr1 = osr.SpatialReference()
+        sr1.ImportFromWkt(ds1.crs_wkt)
+
+        ds2.close()
+        ds2 = filtered
+
+        # check for upper and lower case
+        try:
+            self.coords = np.array([ds2[0]['properties'][feat] for feat in ['XMIN','YMIN', 'XMAX', 'YMAX']])
+        except:
+            self.coords = np.array([ds2[0]['properties'][feat] for feat in ['xmin', 'ymin', 'xmax', 'ymax']])
+        bbox = self.coords + np.array([-self.bufsize, -self.bufsize, self.bufsize, self.bufsize])
+        bnds = np.array(bbox).reshape((2,2))
+
+        tr = osr.CoordinateTransformation(sr2, sr1)
+        bbx = np.array(tr.TransformPoints(bnds))
+
+        ds1_f = ds1.filter(bbox=tuple(bbx.ravel()[[0,1,3,4]]))
+        pr = np.array([(d['properties']['PATH'], d['properties']['ROW']) for d in ds1_f])
+        self.wrs2path, self.wrs2row = pr.T
+
+    def get_existing_wrs2(self):
+        """
+        Find existing data
+        :return:
+        """
+        self.wrs_folderlist = []
+        for p, r in zip(self.wrs2path, self.wrs2row):
+            fld = os.path.join(self.data_dir, 'p{0:03d}_r{1:02d}'.format(p, r))
+            if os.path.exists(fld):
+                self.wrs_folderlist.append(fld)
+        if len(self.wrs_folderlist) == 0:
+            print("No Data available for selected region")
+            self.continue_process = False
+
+
+    def get_infolders(self):
+        """
+        Find all subfolders within the defined folder structure
+        :return:
+        """
+        for f in self.wrs_folderlist:
+            self.infolders.extend(get_foldernames(f, global_path=True))
+
+    # TODO: make Filter for months and years
+    def get_infiles(self):
+        """
+        Find all preprocessed tif_files within defined folder structure
+        :return:
+        """
+        for fld in self.infolders:
+            basename = os.path.basename(fld).split('-')[0]
+            infile = os.path.join(fld, 'tmp', basename + '_masked.tif')
+            if os.path.exists(infile):
+                self.infiles = np.append(self.infiles, infile)  # all valid files
+            else:
+                self.empty_fld = np.append(self.empty_fld, infile)  # non existant files (empty folder)
+        self.n_files_in = len(self.infiles)
+
+
+    def make_outnames(self):
+        """
+        Make list of output filenames
+        :return:
+        """
+        self.out_dir_tile = os.path.join(self.out_dir, '{0}_{1}_{2}'.format(self.ss_name, self.row, self.path))
+        for f in self.infiles:
+            outname = os.path.basename(f).split('.tif')[0] + '_{0}_{1}_{2}.tif'.format(self.ss_name, self.row, self.path)
+            self.outfiles = np.append(self.outfiles, os.path.join(self.out_dir_tile, outname))
+
+    def check_outnames(self):
+        """
+        Check which outfiles already exist and filter accordingly
+        :return:
+        """
+        self.outfile_exists = np.array([os.path.exists(f) for f in self.outfiles])
+
+    def check_outfolder_structure(self):
+        """
+        make output dir if not existant
+        :return:
+        """
+        if not os.path.exists(self.out_dir_tile):
+            os.makedirs(self.out_dir_tile)
+
+    def make_output_string(self):
+        """
+        Create processing command for gdalwarp and system processing
+        :return:
+        """
+        self.n_files_out = len(self.outfiles[~self.outfile_exists])
+        xmin, ymin, xmax, ymax = self.coords
+        coords = '{0} {1} {2} {3}'.format(xmin, ymin, xmax, ymax)
+        outstr = []
+        for infile, outfile in zip(self.infiles[~self.outfile_exists], self.outfiles[~self.outfile_exists]):
+            outstr.append(r'gdalwarp -tr 30 30 -te {0} -srcnodata 0 -dstnodata 0 -t_srs EPSG:{3} -r cubic -co COMPRESS=LZW {1} {2}'.format(coords, infile, outfile, self.epsg))
+        self.output_string = np.array(outstr)
+
+    def report_pre_processing(self):
+        """
+        printed report of data availability
+        :return:
+        """
+        if not self.pr_exists:
+            return
+        elif not self.continue_process:
+            return
+        print("\n\nProcessing Dataset: {0} : {1}_{2}".format(self.study_site, self.row, self.path))
+        print("Total Datasets Available: {0}".format(len(self.infolders)))
+        print("Missing Images: {0}".format(len(self.empty_fld)))
+        print("Already Existing: {0}".format(np.sum(self.outfile_exists)))
+        if self.n_files_in > 0:
+            print("Processing {0}/{1} Images!".format(np.sum(~self.outfile_exists), len(self.infolders)))
+
+    def process(self):
+        """
+        run processing
+        :return:
+        """
+        if not self.pr_exists:
+            print("Tile {0}_{1} does not exist".format(self.row, self.path))
+            return
+        elif (self.n_files_in == 0) or (self.n_files_out == 0):
+            self.process_ok = np.array([False])
+            return
+
+        if self.parallel:
+            Parallel(n_jobs=10)(delayed(os.system)(o) for o in self.output_string)
+        else:
+            [os.system(o) for o in self.output_string]
+        self.process_ok = np.array([os.path.exists(o) for o in self.outfiles[~self.outfile_exists]])
+
+    def report_post_processing(self):
+        """
+        printed report of processing success
+        :return:
+        """
+        # TODO: make reporting for no coverage
+        if (self.n_files_in > 0) and self.pr_exists and (self.n_files_out > 0):
+            print("Finished files: {0}/{1}".format(self.process_ok.sum(), np.sum(~self.outfile_exists)))
+        elif self.n_files_out == 0 and self.pr_exists:
+            print("All output files already exist!")
+        else:
+            print("No Data available, skip processing!")
+
+# TODO: cleanup structure, e.g. make generic class and each processing as subclass
+class LocPreProcessorDEM(LocPreProcessor):
+    def __init__(self, study_site, master_dem = r'F:\18_Paper02_LakeAnalysis\02_AuxData\04_DEM\DEM.vrt',
+                 row=None, path=None, pr_string=None, parallel=False, bufsize=4000, *args, **kwargs):
+        """
+        Class to clip pre-processed Landsat image to local subsets
+        :param study_site: str
+        :param row: int
+        :param path: int
+        :param pr_string: str
+        :param parallel: bool
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        self.study_site = study_site
+        self.master_dem = master_dem
+        self.row = row
+        self.path = path
+        self.pr_string = pr_string
+        self.parallel = parallel
+        self.bufsize = bufsize
+        self.pr_exists = False
+        self.infolders = []
+        self.infiles = np.array([])
+        self.outfiles = np.array([])
+        self.empty_fld = np.array([])
+        self.process_ok = np.array([], dtype=np.bool)
+        self.output_string = np.array([], dtype=np.str)
+        self._initial_check()
+        try:
+            self.startup_funcs()
+            #self._check_master_dem()
+            self._get_coords()
+            self._setup_outpaths()
+        except:
+            pass
+
+    def _check_master_dem(self):
+        """
+        Function to check if DEM master file exists
+        :return:
+        """
+        if not os.path.exists(self.master_dem):
+            raise ValueError("DEM Master File does not exist!")
+
+    def _get_coords(self):
+        """
+        Function to get intersecting WRS-tiles
+        :return:
+        """
+        ds2 = fiona.open(self.fishnet_file)
+        filtered = [f for f in ds2 if (f['properties']['path']==self.path) and (f['properties']['row']==self.row)]
+        sr2 = osr.SpatialReference()
+        sr2.ImportFromWkt(ds2.crs_wkt)
+        ds2.close()
+        ds2 = filtered
+
+        self.coords = np.array([ds2[0]['properties'][feat] for feat in ['XMIN','YMIN', 'XMAX', 'YMAX']])
+
+    def _setup_outpaths(self):
+        """
+        setup file paths for output files
+        :return:
+        """
+        path = study_sites[self.study_site]['dem_dir']
+        self.dem_path_ = os.path.join(path, '{ss}_{pr}_dem.tif'.format(ss=self.study_site, pr=self.pr_string))
+        self.slope_path_ = os.path.join(path, '{ss}_{pr}_slope.tif'.format(ss=self.study_site, pr=self.pr_string))
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+    def make_subset(self):
+        """
+        run process using gdalwarp
+        :return:
+        """
+        s_dem = r'gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(epsg=self.epsg,
+                                                                                                                        xmin=self.coords[0],
+                                                                                                                        ymin=self.coords[1],
+                                                                                                                        xmax=self.coords[2],
+                                                                                                                        ymax=self.coords[3],
+                                                                                                                        infile=self.master_dem,
+                                                                                                                        outfile=self.dem_path_)
+
+        s_slope = r'gdaldem slope -compute_edges -alg ZevenbergenThorne {infile} {slopefile}'.format(infile=self.dem_path_, slopefile=self.slope_path_)
+
+        if not os.path.exists(self.dem_path_):
+            os.system(s_dem)
+
+        if not os.path.exists(self.slope_path_):
+            os.system(s_slope)
+
+def auto_prlist(prlist, study_site):
+    if prlist[0] in ['full', 'auto']:
+        fld = get_foldernames(study_sites[study_site]['processing_dir'])
+        fld = [f.split(study_sites[study_site]['name'])[-1][1:] for f in fld]
+    else:
+        fld = prlist
+    return fld
