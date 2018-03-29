@@ -361,6 +361,26 @@ study_sites = {
         'epsg': 32654,
         'bbox': [319995, 709995, 7060000, 7900000]},
 
+    'Z055': {
+        'name': 'Z055',
+        'fishnet_file': os.path.join(VECTOR_DIR, '055_Z055.shp'),
+        'data_dir': os.path.join(DATA_DIR, '11_PokhKeper'),
+        'processing_dir': os.path.join(PROCESSING_DIR_02, '055_Z055_tiles'),
+        'dem_dir': os.path.join(DEM_DIR, 'Z055'),
+        'result_dir': os.path.join(RESULT_DIR, 'Z055'),
+        'epsg': 32655,
+        'bbox': [319995, 709995, 7060000, 7900000]},
+
+    'Z056': {
+        'name': 'Z056',
+        'fishnet_file': os.path.join(VECTOR_DIR, '056_Z056.shp'),
+        'data_dir': os.path.join(DATA_DIR, '11_PokhKeper'),
+        'processing_dir': os.path.join(PROCESSING_DIR_02, '056_Z056_tiles'),
+        'dem_dir': os.path.join(DEM_DIR, 'Z056'),
+        'result_dir': os.path.join(RESULT_DIR, 'Z056'),
+        'epsg': 32656,
+        'bbox': [319995, 709995, 7060000, 7900000]},
+
     'Z057':{
         'name' : 'Z057',
         'fishnet_file' : os.path.join(VECTOR_DIR,'057_Z057.shp'),
