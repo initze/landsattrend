@@ -46,7 +46,8 @@ class Mosaic(object):
                        'ndmi': '006_ndmi_mos',
                        'nobs': '007_nobs_mos',
                        'tcrgb': '011_tcrgb_mos',
-                       'ndrgb': '012_ndrgb_mos'}
+                       'ndrgb': '012_ndrgb_mos',
+                       'mask': '021_mask'}
 
     # TODO: check real functionality
     def _get_visual_timestamp(self):
@@ -65,7 +66,7 @@ class Mosaic(object):
         self.rgb_tif_file = self.mosaic_dir + r'\{name}.tif'.format(name=self.FNAMES['tcrgb'])
         self.rgb_tif_file_tmp = self.mosaic_dir + r'\{name}2.tif'.format(name=self.FNAMES['tcrgb'])
         self.rgb_png_file = self.mosaic_dir + r'\{name}.png'.format(name=self.FNAMES['tcrgb'])
-        self.mask_file = self.mosaic_dir + r'\{name}.tif'.format(name='mask')
+        self.mask_file = self.mosaic_dir + r'\{name}.tif'.format(name=self.FNAMES['mask'])
 
     def make_filelist(self):
         """Function to create file list"""
@@ -147,7 +148,8 @@ class MosaicNewOnly(Mosaic):
                        'ndmi': '106_ndmi_mos',
                        'nobs': '107_nobs_mos',
                        'tcrgb': '111_tcrgb_mos',
-                       'ndrgb': '112_ndrgb_mos'}
+                       'ndrgb': '112_ndrgb_mos',
+                       'mask': '121_mask'}
 
     def export_to_file_lists(self, filt=True):
         """filter and export filelists"""
