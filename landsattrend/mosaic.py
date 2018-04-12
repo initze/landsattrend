@@ -21,10 +21,10 @@ class Mosaic(object):
         self.visual_file = os.path.join(self.mosaic_dir, visual_file)
         self.process = True
         self.df = pd.DataFrame()
+        self.df_tmp = None
         self._set_fnames()
         self._get_visual_timestamp()
         self._make_export_filenames()
-
 
     @staticmethod
     def get_basename(inpath):
@@ -35,7 +35,7 @@ class Mosaic(object):
         if os.path.exists(file_path):
             return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
         else:
-            return datetime.datetime(1900,1,1)
+            return datetime.datetime(1900, 1, 1)
 
     def _set_fnames(self):
         self.FNAMES = {'tcb': '001_tcb_mos',
@@ -74,32 +74,36 @@ class Mosaic(object):
             flist = glob.glob(r'{indir}\*{i}*.tif'.format(indir=self.tile_dir, i=i))
             basenames = [self.get_basename(f) for f in flist]
             timestamps = [self.get_timestamp(f) for f in flist]
-            self.df_tmp = pd.DataFrame(index=basenames, columns=[i, i+'_tstamp'])
+            self.df_tmp = pd.DataFrame(index=basenames, columns=[i, i + '_tstamp'])
             self.df_tmp[i] = flist
-            self.df_tmp[i+'_tstamp'] = timestamps
+            self.df_tmp[i + '_tstamp'] = timestamps
             self.df = self.df.join(self.df_tmp, how='outer')
 
     def export_to_file_lists(self, filt=True):
         """filter and export filelists"""
         self._make_export_filenames()
         for i in self.indices:
-            self.df.to_csv(self.mosaic_dir + r'\{i}.txt'.format(i=self.FNAMES[i]), header=False, index=False, columns=[i])
+            self.df.to_csv(self.mosaic_dir + r'\{i}.txt'.format(i=self.FNAMES[i]),
+                           header=False, index=False, columns=[i])
 
     def make_vrt(self):
         if self.process:
             # Needs to get fixed
             for i in self.indices:
-                os.system(r'gdalbuildvrt -srcnodata 0 -vrtnodata 0 -overwrite {p} -input_file_list {ft}'.format( p=self.list_vrt_path[i], ft=self.list_txt_path[i]))
+                os.system(r'gdalbuildvrt -srcnodata 0 -vrtnodata 0 -overwrite {p} -input_file_list {ft}'.format(
+                    p=self.list_vrt_path[i], ft=self.list_txt_path[i]))
             outfiles = ' '.join([self.list_vrt_path[i] for i in ['tcb', 'tcg', 'tcw']])
-            os.system(r'gdalbuildvrt -separate -srcnodata 0 -vrtnodata 0 {r} {out}'.format(r=self.rgb_vrt_file, out=outfiles))
+            os.system(r'gdalbuildvrt -separate -srcnodata 0 -vrtnodata 0 {r} {out}'.format(r=self.rgb_vrt_file,
+                                                                                           out=outfiles))
 
     def make_rgb_image(self, scaling_low=-0.12, scaling_high=0.12, format='GTiff'):
         if self.process:
-            execstr = 'gdal_translate -a_nodata none -scale {s_l} {s_h} 1 255 -ot Byte -of {fmt} {r} {p}'.format(s_l=scaling_low,
-                                                                                                                  s_h=scaling_high,
-                                                                                                                  p=self.rgb_tif_file_tmp,
-                                                                                                                  r=self.rgb_vrt_file,
-                                                                                                                  fmt=format)
+            execstr = 'gdal_translate -a_nodata none -scale {s_l} {s_h} 1 255 -ot Byte -of {fmt} {r} {p}'.format(
+                s_l=scaling_low,
+                s_h=scaling_high,
+                p=self.rgb_tif_file_tmp,
+                r=self.rgb_vrt_file,
+                fmt=format)
             os.system(execstr)
 
     def extract_mask(self):
@@ -159,7 +163,9 @@ class MosaicNewOnly(Mosaic):
             if len(df_filt) == 0:
                 self.process = False
             else:
-                df_filt.to_csv(self.mosaic_dir + r'\{i}.txt'.format(i=self.FNAMES[i]), header=False, index=False, columns=[i])
+                df_filt.to_csv(self.mosaic_dir + r'\{i}.txt'.format(i=self.FNAMES[i]), header=False, index=False,
+                               columns=[i])
+
 
 class MosaicFiltered(Mosaic):
     def __init__(self, infolder, indices=['tcb', 'tcg', 'tcw', 'ndvi', 'ndmi', 'ndwi', 'nobs'],
@@ -187,16 +193,16 @@ class MosaicFiltered(Mosaic):
                 f = glob.glob(os.path.join(self.tile_dir, '*{t}_{i}*.tif'.format(t=t, i=i)))
                 if len(f) > 0:
                     flist.append(f[0])
-            #flist = [glob.glob(os.path.join(self.tile_dir, '*{t}_{i}*.tif'.format(t=t, i=i)))[0] for t in self.tiles]
+            # flist = [glob.glob(os.path.join(self.tile_dir, '*{t}_{i}*.tif'.format(t=t, i=i)))[0] for t in self.tiles]
             basenames = [self.get_basename(f) for f in flist]
             self.df_tmp = pd.DataFrame(index=basenames, columns=[i])
             self.df_tmp[i] = flist
             self.df = self.df.join(self.df_tmp, how='outer')
 
-
     def export_to_raster(self):
         for i in self.indices:
-            execstring = 'gdal_translate -of GTiff {vrt} {of}'.format(vrt=self.list_vrt_path[i], of=self.list_tif_path[i])
+            execstring = 'gdal_translate -of GTiff {vrt} {of}'.format(vrt=self.list_vrt_path[i],
+                                                                      of=self.list_tif_path[i])
             os.system(execstring)
 
     def export_to_file_lists(self, filt=True):
