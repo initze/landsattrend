@@ -1,0 +1,10 @@
+Changes
+=======
+
+0.1.1
+New Features:
+
+
+Bug Fixes:
+- changed naming of mask file for MosaicNewOnly
+- Minor code style improvements

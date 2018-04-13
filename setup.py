@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name = 'landsattrend',
-    version='0.1.0',
+    version='0.1.1',
     description='Package to preprocess and create trends on Landsat time-series',
     author='Ingmar Nitze',
     author_email='ingmar.nitze@awi.de',

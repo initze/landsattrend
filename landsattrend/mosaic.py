@@ -11,10 +11,12 @@ import numpy as np
 class Mosaic(object):
     """Class to create a mosaic of tiled trend images"""
 
-    def __init__(self, infolder, indices=['tcb', 'tcg', 'tcw', 'ndvi', 'ndmi', 'ndwi', 'nobs'],
+    def __init__(self, infolder, indices=None,
                  tile_dir=r'tiles',
                  mosaic_dir=r'.',
                  visual_file=r'011_tcrgb_mos.tif'):
+        if indices is None:
+            indices = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndmi', 'ndwi', 'nobs']
         self.indices = indices
         self.mosaic_dir = os.path.normpath(os.path.join(infolder, mosaic_dir))
         self.tile_dir = os.path.normpath(os.path.join(infolder, tile_dir))
@@ -168,12 +170,16 @@ class MosaicNewOnly(Mosaic):
 
 
 class MosaicFiltered(Mosaic):
-    def __init__(self, infolder, indices=['tcb', 'tcg', 'tcw', 'ndvi', 'ndmi', 'ndwi', 'nobs'],
+    def __init__(self, infolder, indices=None,
                  tile_dir=r'tiles',
                  mosaic_dir=r'.',
                  visual_file=r'011_tcrgb_mos.tif',
-                 tiles=['24_6'],
+                 tiles=None,
                  outname='T2_Z052_22-29'):
+        if indices is None:
+            indices = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndmi', 'ndwi', 'nobs']
+        if tiles is None:
+            tiles = ['24_6']
         self.indices = indices
         self.mosaic_dir = os.path.normpath(os.path.join(infolder, mosaic_dir))
         self.tile_dir = os.path.normpath(os.path.join(infolder, tile_dir))
