@@ -5,6 +5,8 @@ import os
 import numpy as np
 import pandas as pd
 from osgeo import gdal_array as ga, gdal
+gdal.UseExceptions()
+import rasterio
 
 from . import lstools
 from .helper_funcs import sensorlist
@@ -126,6 +128,20 @@ class DataStack(object):
             src = gdal.Open(filepath)
             is_dataset = src is not None
             src = None
+        except:
+            is_dataset = False
+        return is_dataset
+
+    @staticmethod
+    def _is_gdal_dataset2(filepath):
+        """
+        Function to check if file is valid gdal-dataset
+        :param filepath: str
+        :return: bool
+        """
+        try:
+            rasterio.open(filepath)
+            is_dataset = True
         except:
             is_dataset = False
         return is_dataset
