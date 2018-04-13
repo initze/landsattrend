@@ -242,4 +242,3 @@ class DataStackList(DataStack):
         :return:
         """
         self.df_indata.filepath = np.array([os.path.abspath(f) for f in self.inlist])
-
