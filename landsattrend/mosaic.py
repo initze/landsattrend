@@ -109,31 +109,33 @@ class Mosaic(object):
             os.system(execstr)
 
     def extract_mask(self):
-        print("Extracting mask")
-        if os.path.exists(self.rgb_vrt_file):
-            vrt_master = self.rgb_vrt_file
-        else:
-            vrt_master = self.list_vrt_path['ndvi']
-        src = rasterio.open(vrt_master)
-        msk = src.read_masks(1)
-        array_to_file(msk, self.mask_file, vrt_master, dtype=gdal.GDT_Byte, compress=True)
+        if self.process:
+            print("Extracting mask")
+            if os.path.exists(self.rgb_vrt_file):
+                vrt_master = self.rgb_vrt_file
+            else:
+                vrt_master = self.list_vrt_path['ndvi']
+            src = rasterio.open(vrt_master)
+            msk = src.read_masks(1)
+            array_to_file(msk, self.mask_file, vrt_master, dtype=gdal.GDT_Byte, compress=True)
 
     def apply_mask(self):
         """
 
         :return:
         """
-        print("Applying mask")
-        data = rasterio.open(self.rgb_tif_file_tmp).read()
-        lo_msk = np.where(data == 0)
-        data[lo_msk] = 1
+        if self.process:
+            print("Applying mask")
+            data = rasterio.open(self.rgb_tif_file_tmp).read()
+            lo_msk = np.where(data == 0)
+            data[lo_msk] = 1
 
-        src_msk = np.squeeze(rasterio.open(self.mask_file).read())
-        m = np.array(src_msk > 0, dtype=np.float)
-        data = (data * m)
+            src_msk = np.squeeze(rasterio.open(self.mask_file).read())
+            m = np.array(src_msk > 0, dtype=np.float)
+            data = (data * m)
 
-        array_to_file(data, self.rgb_tif_file, self.rgb_tif_file_tmp, dtype=gdal.GDT_Byte, compress=True,
-                      noData=True, noDataVal=0)
+            array_to_file(data, self.rgb_tif_file, self.rgb_tif_file_tmp, dtype=gdal.GDT_Byte, compress=True,
+                          noData=True, noDataVal=0)
 
     def cleanup(self):
         # TODO: Check if relations are OK
