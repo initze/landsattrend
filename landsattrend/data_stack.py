@@ -4,17 +4,19 @@ import os
 
 import numpy as np
 import pandas as pd
-from osgeo import gdal_array as ga
+from osgeo import gdal_array as ga, gdal
 
 from . import lstools
 from .helper_funcs import sensorlist
 
 
 class DataStack(object):
-    def __init__(self, infolder, filetype='tif', indices=['tcb', 'tcg','tcw', 'ndvi', 'ndwi', 'ndmi'],
-                 xoff=0, yoff=0, xsize=None, ysize=None, nodata=0, factor=10000.,
+    def __init__(self, infolder, filetype='tif', indices=None,
+                 xoff=0, yoff=0, xsize=None, ysize=None, factor=10000.,
                  startmonth=7, endmonth=8,
                  startyear=1985, endyear=2017, tc_sensor='auto'):
+        if indices is None:
+            indices = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi']
         self.infolder = infolder
         self.filetype = filetype
         self.indices = indices
@@ -30,25 +32,32 @@ class DataStack(object):
         self.tc_sensor = tc_sensor
         self.indices_calculated = False
         self.infiles_exist = False
+        self.data_stack = None
         self.func_wrapper_1()
 
     def func_wrapper_1(self):
-        self.create_dataframe()
-        self.make_filelist()
+        self._create_dataframe()
+        self._make_filelist()
         if self.infiles_exist:
-            self.fill_dataframe()
-            self.sort_filelist()
-            self.filter_filelist()
+            self._fill_dataframe()
+            self._sort_filelist()
+            self._file_validation_check()
+            self._file_filter_check()
+            self._apply_file_filter()
 
     def load_data(self):
         self.load_stack()
         self.calc_indices()
 
-    def create_dataframe(self):
+    def _create_dataframe(self):
+        """
+        Create empty pandas DataFrame
+        :return:
+        """
         self.df_indata = pd.DataFrame(columns=['basename', 'filepath', 'dt', 'year', 'month', 'day', 'doy', 'ordinal_day',
-                                               'sensor', 'timestamp', 'process'])
+                                               'sensor', 'timestamp', 'infiles_filter', 'infiles_valid', 'process'])
 
-    def make_filelist(self):
+    def _make_filelist(self):
         """
         make list of input folder within indicated folder
         :return:
@@ -56,7 +65,12 @@ class DataStack(object):
         self.df_indata.filepath = glob.glob('{0}/*.{1}'.format(self.infolder, self.filetype))
         self.infiles_exist = len(self.df_indata.filepath) > 0
 
-    def fill_dataframe(self):
+    # TODO: Create consistency with self._get_datetime()
+    def _fill_dataframe(self):
+        """
+        Fill empty dataframe with file properties
+        :return:
+        """
         self.df_indata.basename = np.array([os.path.basename(f) for f in self.df_indata.filepath])
         self.df_indata.timestamp = np.array([datetime.datetime.fromtimestamp(os.path.getmtime(f)) for f in self.df_indata.filepath])
         self.df_indata.dt = self._get_datetime()
@@ -66,8 +80,18 @@ class DataStack(object):
         self.df_indata.doy = self.df_indata.dt.dt.dayofyear
         self.df_indata.ordinal_day = np.array([f.toordinal() for f in self.df_indata.dt])
         self.df_indata.sensor = np.array(sensorlist(self.df_indata.basename))
+        self.df_indata_infiles_filter = False
+        self.df_indata.infiles_valid = False
         self.df_indata.process = False
 
+    def _sort_filelist(self):
+        """
+        sort all input files by date (ascending)
+        :return:
+        """
+        self.df_indata.sort_values(by=['dt'], inplace=True)
+
+    # TODO: make staticmethod or write into objet
     def _get_datetime(self):
         """
         private function to get datetme from filename
@@ -84,18 +108,45 @@ class DataStack(object):
                 pass
         return np.array(dt)
 
-    def filter_filelist(self):
-        self.df_indata.process = np.all([self.df_indata.month.isin(list(range(self.startmonth, self.endmonth+1))),
-                                         self.df_indata.year.isin(list(range(self.startyear, self.endyear+1)))],
-                                        axis=0)
-        self.df_indata = self.df_indata[self.df_indata.process]
-
-    def sort_filelist(self):
+    def _file_validation_check(self):
         """
-        sort all input files by date (ascending)
+        Check integrity of input file to avoid error on loading
         :return:
         """
-        self.df_indata.sort_values(by=['dt'], inplace=True)
+        self.df_indata.infiles_valid = [self._is_gdal_dataset(f) for f in self.df_indata['filepath']]
+
+    @staticmethod
+    def _is_gdal_dataset(filepath):
+        """
+        Function to check if file is valid gdal-dataset
+        :param filepath: str
+        :return: bool
+        """
+        try:
+            src = gdal.Open(filepath)
+            is_dataset = src is not None
+            src = None
+        except:
+            is_dataset = False
+        return is_dataset
+
+    def _file_filter_check(self):
+        """
+        Check if files comply with filter settings (e.g. dates)
+        :return:
+        """
+        # TODO: close dataset properly
+        self.df_indata.infiles_filter = np.all([self.df_indata.month.isin(list(range(self.startmonth, self.endmonth+1))),
+                                                self.df_indata.year.isin(list(range(self.startyear, self.endyear+1)))],
+                                                axis=0)
+
+    def _apply_file_filter(self):
+        """
+        reduce dataframe to valid files
+        :return:
+        """
+        self.df_indata.process = self.df_indata[['infiles_filter', 'infiles_valid']].all(axis=1)
+        self.df_indata = self.df_indata[self.df_indata.process]
 
     def load_stack(self):
         """
@@ -122,35 +173,37 @@ class DataStack(object):
                 raise ValueError("Please use one of following values {'auto', 'TM', 'ETM', 'OLI', 'OLI_TIRS'")
 
             tc = np.ma.masked_equal(tc, 0)
-            self.index_data['tcb']= tc[:, 0]
-            self.index_data['tcg']= tc[:, 1]
-            self.index_data['tcw']= tc[:, 2]
+            self.index_data['tcb'] = tc[:, 0]
+            self.index_data['tcg'] = tc[:, 1]
+            self.index_data['tcw'] = tc[:, 2]
 
         if 'ndvi' in self.indices:
             ndvi = [lstools.ndvi(i, 3, 2) for i in self.data_stack]
-            self.index_data['ndvi']= np.ma.masked_equal(ndvi, 0)
+            self.index_data['ndvi'] = np.ma.masked_equal(ndvi, 0)
 
         if 'ndwi' in self.indices:
             ndwi = [lstools.ndvi(i, 1, 3) for i in self.data_stack]
-            self.index_data['ndwi']= np.ma.masked_equal(ndwi, 0)
+            self.index_data['ndwi'] = np.ma.masked_equal(ndwi, 0)
 
         if 'ndmi' in self.indices:
             ndmi = [lstools.ndvi(i, 3, 4) for i in self.data_stack]
-            self.index_data['ndmi']= np.ma.masked_equal(ndmi, 0)
+            self.index_data['ndmi'] = np.ma.masked_equal(ndmi, 0)
 
         if 'ndbr' in self.indices:
             ndbr = [lstools.ndvi(i, 3, 5) for i in self.data_stack]
-            self.index_data['ndbr']= np.ma.masked_equal(ndbr, 0)
+            self.index_data['ndbr'] = np.ma.masked_equal(ndbr, 0)
 
         self.indices_calculated = True
 
 
 class DataStackList(DataStack):
-    def __init__(self, inlist, infolder, filetype='tif', indices=['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi'], xoff=0,
+    def __init__(self, inlist, infolder, filetype='tif', indices=None, xoff=0,
                  yoff=0, xsize=None, ysize=None, nodata=0, factor=10000., startmonth=7, endmonth=8, startyear=1985,
                  endyear=2014):
         super(DataStackList, self).__init__(infolder, filetype, indices, xoff, yoff, xsize, ysize, nodata, factor,
                                             startmonth, endmonth, startyear, endyear)
+        if indices is None:
+            indices = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi']
         self.inlist = inlist
         self.filetype = filetype
         self.indices = indices

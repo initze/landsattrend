@@ -1,9 +1,15 @@
 Changes
 =======
-
-0.1.1
+0.1.1a1
 New Features:
 
+Bug Fixes:
+- Fixed crash on invalid input images
+- Minor code style improvements
+
+----------
+0.1.1
+New Features:
 
 Bug Fixes:
 - changed naming of mask file for MosaicNewOnly

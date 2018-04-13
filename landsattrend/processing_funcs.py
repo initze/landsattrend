@@ -171,7 +171,8 @@ class Processor(object):
         self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2)
         self.df_outdata['timestamp'] = self.df_outdata['filepath'][self.df_outdata['exists']].apply(make_timestamp)
         self.df_outdata['process'] = self.df_outdata['timestamp'][self.df_outdata['exists']] < self.infiles.timestamp.max()
-        self.df_outdata['process'][~self.df_outdata['exists']] = True #Throws warning
+        # TODO: fix this line: throws warning at runtime
+        self.df_outdata['process'][~self.df_outdata['exists']] = True
 
     def print_info(self):
         """
