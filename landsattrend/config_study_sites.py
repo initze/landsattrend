@@ -442,5 +442,15 @@ study_sites = {
         'result_dir': os.path.join(RESULT_DIR, 'Z005_local'),
         'epsg': 32605,
         'bbox': [319995, 709995, 7060000, 7900000]},
+
+    'testcase': {
+        'name': 'testcase',
+        'fishnet_file': os.path.join(VECTOR_DIR, '053_Z053.shp'),
+        'data_dir': None,
+        'processing_dir': None,
+        'dem_dir': None,
+        'result_dir': r'P:\initze\landsattrend\landsattrend\tests\data\raster\result',
+        'epsg': 32653,
+        'bbox': None},
 }
 wrs2_path = os.path.join(VECTOR_DIR, 'wrs2_descending.shp')

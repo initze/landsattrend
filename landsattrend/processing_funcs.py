@@ -19,7 +19,7 @@ __author__ = 'initze'
 # TODO: check for not existant tiles (e.g. not preprocesed)
 # TODO: reporting if completely new of new data arrived
 class Processor(object):
-    def __init__(self, study_site, outfolder, indices=['tcb', 'tcg','tcw', 'ndvi', 'ndwi', 'ndmi', 'nobs'],
+    def __init__(self, study_site, outfolder, infolder= None, indices=['tcb', 'tcg','tcw', 'ndvi', 'ndwi', 'ndmi', 'nobs'],
                  startyear=1985, endyear=2014, startmonth=7, endmonth=8,
                  naming_convention='old', prefix='trendimage',
                  path=None, row=None, pr_string=None,
@@ -30,6 +30,7 @@ class Processor(object):
 
         self.study_site = study_site
         self.outfolder = outfolder
+        self.infolder = infolder
         self.indices = np.array(indices)
         self.startyear = startyear
         self.endyear = endyear
@@ -51,40 +52,35 @@ class Processor(object):
         self.infiles_check = False
         self.outfiles_check = False
         self.start_time = time.time()
-        self.startup_funcs1()
+        self._startup_funcs1()
 
         if self.infiles_check:
-            self.startup_funcs2()
-
+            self._startup_funcs2()
 
         if self.outfiles_check:
-            self.startup_funcs3()
-            self.run_calculation_full()
-            self.finalize()
+            self._startup_funcs3()
 
+    def _startup_funcs1(self):
+        self._check_pr()
+        self._setup_infolder()
+        self._make_infile_list()
+        self._print_info()
 
+    def _startup_funcs2(self):
+        self._make_outfile_list()
+        self._setup_outfolder()
+        self._set_processing_bool()
+        self._final_precheck()
 
-    def startup_funcs1(self):
-        self.check_pr()
-        self.setup_infolder()
-        self.make_infile_list()
-        self.print_info()
+    def _startup_funcs3(self):
+        self._get_raster_size(self.infiles.filepath.iloc[0])
+        self._subsample()
+        self._setup_result_layers()
 
-    def startup_funcs2(self):
-        self.make_outfile_list()
-        self.setup_outfolder()
-        self.set_processing_bool()
-        self.final_precheck()
-
-    def startup_funcs3(self):
-        self.get_raster_size(self.infiles.filepath.iloc[0])
-        self.subsample()
-        self.setup_result_layers()
-
-    def run_calculation_mode_full(self, i=0):
+    def _run_calculation_mode_full(self, i=0):
         print("\nProcessing tile {0}/{1}".format(i+1, self.ntiles))
         self.load_data(i)
-        self.rescaling_intercept()
+        self._rescaling_intercept()
         if self.parallel:
             self.calc_trend_parallel(i)
         else:
@@ -92,10 +88,10 @@ class Processor(object):
         if self.nobs_process:
             self.calc_nobs(i)
 
-    def run_calculation_mode_median(self, i=0):
+    def _run_calculation_mode_median(self, i=0):
         print("\nProcessing tile {0}/{1}".format(i+1, self.ntiles))
         self.load_data(i)
-        self.rescaling_intercept()
+        self._rescaling_intercept()
         if self.parallel:
             self.calc_trend_parallel_median(i)
         else:
@@ -103,50 +99,50 @@ class Processor(object):
         if self.nobs_process:
             self.calc_nobs(i)
 
-    def run_calculation_full(self):
+    def calculate_trend(self):
         print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
         # TODO: insert here if new files arrived after last processing
         if self.outfiles_check:
             for i in range(self.ntiles):
                 if self.ts_mode == 'full':
-                    self.run_calculation_mode_full(i)
+                    self._run_calculation_mode_full(i)
                 elif self.ts_mode == 'median_year':
-                    self.run_calculation_mode_median(i)
+                    self._run_calculation_mode_median(i)
                 else:
                     raise ValueError("Please choose correct ts_mode. 'full' or 'median_year'")
 
-    def finalize(self):
+    def export_result(self):
         if self.outfiles_check:
-            self.create_metadata()
-            self.export_files()
-            #self.make_report()
+            self._create_metadata()
+            self._export_files()
             print("Full Processing took {0} seconds".format(round(time.time()-self.start_time)))
 
-    def check_pr(self):
+    def _check_pr(self):
         """
         check and transform Path/Row string
         :return:
         """
         if (self.row is None) and (self.path is None) and (type(self.pr_string) == str):
-            self.pr_string_to_pr()
+            self._pr_string_to_pr()
         elif (self.row is None) and (self.path is None) and (type(self.pr_string) != str):
             raise ValueError ("Please indicate either row and path or pr_string")
 
-    def pr_string_to_pr(self):
+    def _pr_string_to_pr(self):
         """
         make row/path integers from string
         :return:
         """
         self.row, self.path = np.array(self.pr_string.split('_'), dtype=np.int)
 
-    def setup_infolder(self):
+    def _setup_infolder(self):
         """
         Create path for outfolder
         :return:
         """
-        self.infolder = os.path.join(self.ss_indir, '{0}_{1}_{2}'.format(self.ss_name, self.row, self.path))
+        if not self.infolder:
+            self.infolder = os.path.join(self.ss_indir, '{0}_{1}_{2}'.format(self.ss_name, self.row, self.path))
 
-    def make_infile_list(self):
+    def _make_infile_list(self):
         """
         Get infile properties using DataStack without loading data explicitly
         :return:
@@ -157,7 +153,7 @@ class Processor(object):
                                  startyear=self.startyear, endyear=self.endyear).df_indata
         self.infiles_check = len(self.infiles) > 0
 
-    def make_outfile_list(self):
+    def _make_outfile_list(self):
         """
         Create Dataframe with outfile properties, e.g. if already existing, timestamp and if it will be processed
         :return:
@@ -174,7 +170,7 @@ class Processor(object):
         # TODO: fix this line: throws warning at runtime
         self.df_outdata['process'][~self.df_outdata['exists']] = True
 
-    def print_info(self):
+    def _print_info(self):
         """
         Small printing wrapper
         :return:
@@ -186,7 +182,7 @@ class Processor(object):
             print("Skip processing, No Data available for this subset!\n")
 
 
-    def set_processing_bool(self):
+    def _set_processing_bool(self):
         """
         Create boolean variables to check for later processing
         :return:
@@ -199,11 +195,11 @@ class Processor(object):
             self.nobs_process = self.df_outdata.loc['nobs', 'process']
 
 
-    def final_precheck(self):
+    def _final_precheck(self):
         if not self.outfiles_check:
             print("Skip processing, data already exist!")
 
-    def setup_outfolder(self):
+    def _setup_outfolder(self):
         """
         Check if outfolder exists, create otherwise
         :return:
@@ -211,7 +207,7 @@ class Processor(object):
         if not os.path.isdir(self.outfolder):
             os.makedirs(self.outfolder)
 
-    def get_raster_size(self, path):
+    def _get_raster_size(self, path):
         """
         Get Rastersize of Raster
         :param path:
@@ -221,7 +217,7 @@ class Processor(object):
         self.nrows = ds.RasterYSize
         self.ncols = ds.RasterXSize
 
-    def subsample(self):
+    def _subsample(self):
         """
         setup subsampling coordinates for tiled-processing
         :return:
@@ -229,7 +225,7 @@ class Processor(object):
         self.roff, self.coff, self.rsize, self.csize = tiling(self.nrows, self.ncols, 250, 250)
         self.ntiles = len(self.roff)
 
-    def setup_result_layers(self):
+    def _setup_result_layers(self):
         """
         Create result layers as np.arrays wrapped in a dict
         :return:
@@ -254,7 +250,7 @@ class Processor(object):
                               startyear=self.startyear, endyear=self.endyear, tc_sensor=self.tc_sensor)
         self.data.load_data()
 
-    def rescaling_intercept(self):
+    def _rescaling_intercept(self):
         """
         Rescale intercept value to defined date
         :return:
@@ -350,7 +346,7 @@ class Processor(object):
             self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = nobs_out
 
 
-    def create_metadata(self):
+    def _create_metadata(self):
         """
         Function to setup Metadata
         :return:
@@ -362,7 +358,7 @@ class Processor(object):
                                   'PROCESSING_VERSION':'',
                                   'REGRESSION_ALGORITHM':'Theil-Sen'}
 
-    def export_files(self):
+    def _export_files(self):
         """
         Write calculated output data to Raster files
         :return:

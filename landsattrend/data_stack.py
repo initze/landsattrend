@@ -41,9 +41,10 @@ class DataStack(object):
         self._create_dataframe()
         self._make_filelist()
         if self.infiles_exist:
+            self._file_validation_check_gdal()
+            self._file_validation_check_name()
             self._fill_dataframe()
             self._sort_filelist()
-            self._file_validation_check()
             self._file_filter_check()
             self._apply_file_filter()
 
@@ -83,7 +84,7 @@ class DataStack(object):
         self.df_indata.ordinal_day = np.array([f.toordinal() for f in self.df_indata.dt])
         self.df_indata.sensor = np.array(sensorlist(self.df_indata.basename))
         self.df_indata_infiles_filter = False
-        self.df_indata.infiles_valid = False
+        #self.df_indata.infiles_valid = False
         self.df_indata.process = False
 
     def _sort_filelist(self):
@@ -110,12 +111,24 @@ class DataStack(object):
                 pass
         return np.array(dt)
 
-    def _file_validation_check(self):
+    def _file_validation_check_gdal(self):
         """
         Check integrity of input file to avoid error on loading
         :return:
         """
         self.df_indata.infiles_valid = [self._is_gdal_dataset(f) for f in self.df_indata['filepath']]
+        self.df_indata = self.df_indata[self.df_indata.infiles_valid]
+
+    def _file_validation_check_name(self):
+        """
+        Check integrity of input file to avoid error on loading
+        :return:
+        """
+        # get file naming version
+        #  old and new version
+        # remove wrong names
+        self.df_indata.infiles_valid_name = [self._is_gdal_dataset(f) for f in self.df_indata['filepath']]
+        self.df_indata = self.df_indata[self.df_indata.infiles_valid_name]
 
     @staticmethod
     def _is_gdal_dataset(filepath):
@@ -236,7 +249,7 @@ class DataStackList(DataStack):
         self.infiles_exist = False
         self.func_wrapper_1()
 
-    def make_filelist(self):
+    def _make_filelist(self):
         """
         make list of input folder within indicated folder
         :return:
