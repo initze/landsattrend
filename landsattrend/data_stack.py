@@ -41,8 +41,9 @@ class DataStack(object):
         self._create_dataframe()
         self._make_filelist()
         if self.infiles_exist:
-            self._file_validation_check_gdal()
+            self._file_validation_check_raster()
             self._file_validation_check_name()
+            self._filter_invalid_files()
             self._fill_dataframe()
             self._sort_filelist()
             self._file_filter_check()
@@ -57,16 +58,20 @@ class DataStack(object):
         Create empty pandas DataFrame
         :return:
         """
-        self.df_indata = pd.DataFrame(columns=['basename', 'filepath', 'dt', 'year', 'month', 'day', 'doy', 'ordinal_day',
-                                               'sensor', 'timestamp', 'infiles_filter', 'infiles_valid', 'process'])
+        columns = ['basename', 'filepath', 'datetime', 'year', 'month', 'day', 'doy', 'ordinal_day', 'sensor', 'timestamp',
+                   'infiles_valid_raster', 'infiles_valid_name', 'infiles_valid_filter', 'infiles_naming_version', 'process']
+        self.df_indata_raw = pd.DataFrame(columns=columns)
+        self.df_indata = pd.DataFrame(columns=columns)
+
 
     def _make_filelist(self):
         """
         make list of input folder within indicated folder
         :return:
         """
-        self.df_indata.filepath = glob.glob('{0}/*.{1}'.format(self.infolder, self.filetype))
-        self.infiles_exist = len(self.df_indata.filepath) > 0
+        self.df_indata_raw.filepath = glob.glob('{0}/*.{1}'.format(self.infolder, self.filetype))
+        self.df_indata_raw.basename = np.array([os.path.basename(f) for f in self.df_indata_raw.filepath])
+        self.infiles_exist = len(self.df_indata_raw.filepath) > 0
 
     # TODO: Create consistency with self._get_datetime()
     def _fill_dataframe(self):
@@ -74,61 +79,87 @@ class DataStack(object):
         Fill empty dataframe with file properties
         :return:
         """
-        self.df_indata.basename = np.array([os.path.basename(f) for f in self.df_indata.filepath])
         self.df_indata.timestamp = np.array([datetime.datetime.fromtimestamp(os.path.getmtime(f)) for f in self.df_indata.filepath])
-        self.df_indata.dt = self._get_datetime()
-        self.df_indata.year = self.df_indata.dt.dt.year
-        self.df_indata.month = self.df_indata.dt.dt.month
-        self.df_indata.day = self.df_indata.dt.dt.day
-        self.df_indata.doy = self.df_indata.dt.dt.dayofyear
-        self.df_indata.ordinal_day = np.array([f.toordinal() for f in self.df_indata.dt])
-        self.df_indata.sensor = np.array(sensorlist(self.df_indata.basename))
-        self.df_indata_infiles_filter = False
-        #self.df_indata.infiles_valid = False
-        self.df_indata.process = False
+        self._get_datetime()
+        self.df_indata.loc[:, ['datetime']] = pd.to_datetime(self.df_indata['datetime'])
+        self.df_indata.loc[:, ['year']] = self.df_indata['datetime'].dt.year
+        self.df_indata.loc[:, ['month']] = self.df_indata['datetime'].dt.month
+        self.df_indata.loc[:, ['day']] = self.df_indata['datetime'].dt.day
+        self.df_indata.loc[:, ['doy']] = self.df_indata['datetime'].dt.dayofyear
+        self.df_indata.loc[:, ['ordinal_day']] = np.array([f.toordinal() for f in self.df_indata['datetime']])
+        self.df_indata.loc[:, ['sensor']] = np.array(sensorlist(self.df_indata.basename))
+        #self.df_indata.loc[:, ['infiles_valid_filter']] = False
+        self.df_indata.loc[:, ['process']] = False
 
     def _sort_filelist(self):
         """
         sort all input files by date (ascending)
         :return:
         """
-        self.df_indata.sort_values(by=['dt'], inplace=True)
+        self.df_indata.sort_values(by=['datetime'], inplace=True)
 
-    # TODO: make staticmethod or write into objet
+    def _check_ls_naming_version(self):
+        pass
+
+    # TODO: make staticmethod or write into object
+    @staticmethod
+    def _get_datetime_v1(basename):
+        basename = basename.split('_')[0]
+        return datetime.datetime.strptime("{0}-{1}".format(basename[9:13], basename[13:16]), "%Y-%j")
+
+    @staticmethod
+    def _get_datetime_v2(basename):
+        return datetime.datetime.strptime("{0}-{1}-{2}".format(basename[10:14], basename[14:16],
+                                                               basename[16:18]), "%Y-%m-%d")
+
     def _get_datetime(self):
         """
         private function to get datetme from filename
         Checks for old and new naming convention
         :return:
         """
-        dt = []
-        for f in self.df_indata.basename:
-            if len(f.split('_')[0]) == 16:
-                dt.append(datetime.datetime.strptime("{0}-{1}".format(f[9:13], f[13:16]), "%Y-%j"))
-            elif len(f.split('_')[0]) == 22:
-                dt.append(datetime.datetime.strptime("{0}-{1}-{2}".format(f[10:14], f[14:16], f[16:18]), "%Y-%m-%d"))
-            else:
-                pass
-        return np.array(dt)
+        v1 = self.df_indata[self.df_indata.infiles_naming_version == 'v1']
+        self.df_indata.loc[v1.index, 'datetime'] = pd.to_datetime(v1.basename.apply(self._get_datetime_v1))
+        v2 = self.df_indata[self.df_indata.infiles_naming_version == 'v2']
+        self.df_indata.loc[v2.index, 'datetime'] = pd.to_datetime(v2.basename.apply(self._get_datetime_v2))
 
-    def _file_validation_check_gdal(self):
+
+    def _file_validation_check_raster(self):
         """
         Check integrity of input file to avoid error on loading
         :return:
         """
-        self.df_indata.infiles_valid = [self._is_gdal_dataset(f) for f in self.df_indata['filepath']]
-        self.df_indata = self.df_indata[self.df_indata.infiles_valid]
+        self.df_indata_raw.infiles_valid_raster = [self._is_gdal_dataset(f) for f in self.df_indata_raw['filepath']]
+        self.df_indata_raw = self.df_indata_raw[self.df_indata_raw.infiles_valid_raster]
 
     def _file_validation_check_name(self):
         """
-        Check integrity of input file to avoid error on loading
+        Check integrity of input file name to avoid error on loading
+        Check landsat ESPA naming version
         :return:
         """
         # get file naming version
         #  old and new version
         # remove wrong names
-        self.df_indata.infiles_valid_name = [self._is_gdal_dataset(f) for f in self.df_indata['filepath']]
-        self.df_indata = self.df_indata[self.df_indata.infiles_valid_name]
+        valid_name = []
+        naming_version = []
+
+        for f in self.df_indata_raw['basename']:
+            if len(f.split('_')) == 5:
+                valid_name.append(True)
+                if len(f.split('_')[0]) == 16:
+                    naming_version.append('v1')
+                elif len(f.split('_')[0]) == 22:
+                    naming_version.append('v2')
+                else:
+                    naming_version.append(None)
+                    valid_name.append(False)
+            else:
+                naming_version.append(None)
+                valid_name.append(False)
+
+        self.df_indata_raw.infiles_valid_name = valid_name
+        self.df_indata_raw.infiles_naming_version = naming_version
 
     @staticmethod
     def _is_gdal_dataset(filepath):
@@ -145,19 +176,9 @@ class DataStack(object):
             is_dataset = False
         return is_dataset
 
-    @staticmethod
-    def _is_gdal_dataset2(filepath):
-        """
-        Function to check if file is valid gdal-dataset
-        :param filepath: str
-        :return: bool
-        """
-        try:
-            rasterio.open(filepath)
-            is_dataset = True
-        except:
-            is_dataset = False
-        return is_dataset
+    def _filter_invalid_files(self):
+        valid = self.df_indata_raw.loc[:,['infiles_valid_name', 'infiles_valid_raster']].all(axis=1)
+        self.df_indata = self.df_indata_raw.loc[valid]
 
     def _file_filter_check(self):
         """
@@ -165,7 +186,7 @@ class DataStack(object):
         :return:
         """
         # TODO: close dataset properly
-        self.df_indata.infiles_filter = np.all([self.df_indata.month.isin(list(range(self.startmonth, self.endmonth+1))),
+        self.df_indata['infiles_valid_filter'] = np.all([self.df_indata.month.isin(list(range(self.startmonth, self.endmonth+1))),
                                                 self.df_indata.year.isin(list(range(self.startyear, self.endyear+1)))],
                                                 axis=0)
 
@@ -174,8 +195,8 @@ class DataStack(object):
         reduce dataframe to valid files
         :return:
         """
-        self.df_indata.process = self.df_indata[['infiles_filter', 'infiles_valid']].all(axis=1)
-        self.df_indata = self.df_indata[self.df_indata.process]
+        self.df_indata['process'] = self.df_indata[['infiles_valid_filter', 'infiles_valid_raster', 'infiles_valid_name']].all(axis=1)
+        self.df_indata = self.df_indata[self.df_indata['process']]
 
     def load_stack(self):
         """
