@@ -135,15 +135,16 @@ def trend_image(image_stack, image_dates, tiling=True, tile_size=(1, 1), mode='t
     # return images (slope per decade)
     return slope_image * factor
 
-def trend_image2(image_stack, image_dates, tiling=True, tile_size=(1, 1), mode='ts', factor=3650, obs_min=4):
+def trend_image2(image_stack, image_dates, processing_mask=None, factor=3650, obs_min=4):
     """
     calculates trend of image values
     input:
     image_stack: 3-D array, array/list of image dates (ordinal)
-    image_dates
+    image_dates: 1-D array
+    processing_mask: Boolean mask to check which location should be processed
 
     output:
-    slope_image: 2-D array of slope
+    slope_image: 3-D array of slope, intercept and confidence intervals of slope
     """
 
     # re-distribute data for further analysis
@@ -157,19 +158,28 @@ def trend_image2(image_stack, image_dates, tiling=True, tile_size=(1, 1), mode='
     slope_image = np.zeros((4, nrows * ncols))
 
     # Check which parts do contain data
-    ind = np.where((~image_stack.mask).sum(axis=1) >= obs_min)[0]
+    if isinstance(processing_mask, np.ndarray):
+        ind = np.where(processing_mask.ravel())[0]
+    else:
+        ind = np.where((~image_stack.mask).sum(axis=1) >= obs_min)[0]
     if len(ind) != 0:
         # iterate over each image tile
         # TODO: throws Error in single mode in some locations (median year)
-        slope_image[:, ind] = np.array([theilslopes_ma_local(d, image_dates) for d in image_stack[ind]]).T
+        # Use Index for better logging
+        local_results = []
+        for d in image_stack[ind]:
+            try:
+                local_results.append(theilslopes_ma_local(d, image_dates))
+            except Exception as e:
+                local_results.append((0,0,0,0))
+        slope_image[:, ind] = np.array(local_results).T
+
+        #slope_image[:, ind] = np.array([theilslopes_ma_local(d, image_dates) for d in image_stack[ind]]).T
         slope_image[[0,2,3]] *= factor
-
-
 
     if ndim == 3:
         slope_image = np.reshape(slope_image, (4, nrows, ncols))
 
-    # return images (slope per decade)
     return slope_image
 
 @jit

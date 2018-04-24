@@ -1,5 +1,16 @@
 Changes
 =======
+0.1.2
+New Features:
+- Added Metadata Information
+- First test implementation for DataStack
+
+Bug Fixes:
+- Fixed crash during trend analysis
+- Corrected nobs-layer information for median_year
+
+----------
+
 0.1.1a1
 New Features:
 

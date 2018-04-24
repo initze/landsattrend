@@ -11,6 +11,7 @@ from .config_study_sites import wrs2_path, study_sites
 from .data_stack import DataStack
 from .helper_funcs import get_foldernames, tiling, array_to_file
 from .trend_funcs import trend_image2
+from .version import __version__
 
 __author__ = 'initze'
 
@@ -81,28 +82,28 @@ class Processor(object):
         print("\nProcessing tile {0}/{1}".format(i+1, self.ntiles))
         self.load_data(i)
         self._rescaling_intercept()
+        self._calc_nobs(i)
         if self.parallel:
             self.calc_trend_parallel(i)
         else:
             self.calc_trend(i)
-        if self.nobs_process:
-            self.calc_nobs(i)
 
     def _run_calculation_mode_median(self, i=0):
         print("\nProcessing tile {0}/{1}".format(i+1, self.ntiles))
         self.load_data(i)
         self._rescaling_intercept()
+        self._group_data_by_year()
+        self._calc_nobs_median(i)
         if self.parallel:
             self.calc_trend_parallel_median(i)
         else:
             self.calc_trend_median()
-        if self.nobs_process:
-            self.calc_nobs(i)
 
     def calculate_trend(self):
         print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
         # TODO: insert here if new files arrived after last processing
         if self.outfiles_check:
+            print ("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
             for i in range(self.ntiles):
                 if self.ts_mode == 'full':
                     self._run_calculation_mode_full(i)
@@ -279,12 +280,19 @@ class Processor(object):
         :param i:
         :return:
         """
-        print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
-        out = Parallel(n_jobs=self.n_jobs) (delayed(trend_image2)(self.data.index_data[idx], self.data.df_indata.ordinal_day) for idx in self.indices_process)
+        processing_mask = self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]]
+        processing_mask = processing_mask >= 6
+        out = Parallel(n_jobs=self.n_jobs) (delayed(trend_image2)(self.data.index_data[idx],
+                                                                  self.data.df_indata.ordinal_day,
+                                                                  processing_mask=processing_mask) for idx in self.indices_process)
         ctr = 0
         for idx in self.indices_process:
             self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
             ctr += 1
+
+    def _group_data_by_year(self):
+        self.index_data_filt = {}
+        [self._group_by_year(idx) for idx in self.indices_process]
 
     def calc_trend_median(self, i=0):
         """
@@ -295,8 +303,6 @@ class Processor(object):
         """
         print("Processing of trends")
         # arange data
-        self.index_data_filt = {}
-        [self._group_by_year(idx) for idx in self.indices_process]
         out = [trend_image2(self.index_data_filt[idx], self.years, factor=10.) for idx in self.indices_process]
         ctr = 0
         for idx in self.indices_process:
@@ -311,31 +317,39 @@ class Processor(object):
         :param i:
         :return:
         """
-        print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
+        # print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
         # arange data
-        self.index_data_filt = {}
-        [self._group_by_year(idx) for idx in self.indices_process]
-        out = Parallel(n_jobs=self.n_jobs) (delayed(trend_image2)(self.index_data_filt[idx], self.years, factor=10.) for idx in self.indices_process)
-        ctr = 0
-        for idx in self.indices_process:
-            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
-            ctr += 1
+        processing_mask = self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]]
+        processing_mask = processing_mask >= 6
+        try:
+            out = Parallel(n_jobs=self.n_jobs)(delayed(trend_image2)(self.index_data_filt[idx],
+                                                                     self.years, factor=10.,
+                                                                     processing_mask=processing_mask)
+                                               for idx in self.indices_process)
+            ctr = 0
+            for idx in self.indices_process:
+                self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
+                ctr += 1
+        except Exception as e:
+            # TODO logging
+            print (e)
+            pass
 
     def _group_by_year(self, index):
         """
         :param index:
         :return:
         """
-        df_tcb = pd.DataFrame(data=self.data.index_data[index].reshape(len(self.data.df_indata), -1), index=self.data.df_indata.index)
+        df_indexdata = pd.DataFrame(data=self.data.index_data[index].reshape(len(self.data.df_indata), -1), index=self.data.df_indata.index)
         shp = self.data.index_data[index].shape
-        joined = self.data.df_indata[['year']].join(df_tcb)
+        joined = self.data.df_indata[['year']].join(df_indexdata)
         grouped = joined.groupby(by='year', axis=0).median().sort_index()
         m = grouped.as_matrix().T
         self.years = grouped.index.values
         self.index_data_filt[index] = np.ma.MaskedArray(data=m, mask=np.isnan(m)).T.reshape(len(self.years), shp[1], shp[2])
 
 
-    def calc_nobs(self, i=0):
+    def _calc_nobs(self, i=0):
         """
         create layer with number of obervations
         :param i:
@@ -343,6 +357,16 @@ class Processor(object):
         """
         if self.nobs_process:
             nobs_out = (~self.data.data_stack.mask[:,0]).sum(axis=0)
+            self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = nobs_out
+
+    def _calc_nobs_median(self, i=0):
+        """
+        create layer with number of obervations
+        :param i:
+        :return:
+        """
+        if self.nobs_process:
+            nobs_out = (~self.index_data_filt[self.indices_process[0]].mask).sum(axis=0)
             self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = nobs_out
 
 
@@ -355,8 +379,12 @@ class Processor(object):
         for key in list(self.results.keys()):
             self.metadata[key] = {'DESCRIPTION':'Trend Map of Index: {0}'.format(key),
                                   'CREATION TIMESTAMP':datetime.datetime.fromtimestamp(time.time()).isoformat(),
-                                  'PROCESSING_VERSION':'',
-                                  'REGRESSION_ALGORITHM':'Theil-Sen'}
+                                  'PROCESSING_VERSION':__version__,
+                                  'REGRESSION_ALGORITHM':'Theil-Sen',
+                                  'DATA_YEARS':'{s}-{e}'.format(s=self.startyear, e=self.endyear),
+                                  'DATA_MONTHS':'{s}-{e}'.format(s=self.startmonth, e=self.endmonth),
+                                  'DATA_FILTER_MODE':self.ts_mode,
+                                  'TASSELED_CAP_MODE':self.tc_sensor}
 
     def _export_files(self):
         """
