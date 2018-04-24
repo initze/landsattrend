@@ -15,12 +15,13 @@ from .version import __version__
 
 __author__ = 'initze'
 
+
 # TODO: make explicit function calls
 # TODO: better print out. overwrite vs new processing
 # TODO: check for not existant tiles (e.g. not preprocesed)
 # TODO: reporting if completely new of new data arrived
 class Processor(object):
-    def __init__(self, study_site, outfolder, infolder= None, indices=['tcb', 'tcg','tcw', 'ndvi', 'ndwi', 'ndmi', 'nobs'],
+    def __init__(self, study_site, outfolder, infolder=None, indices=None,
                  startyear=1985, endyear=2014, startmonth=7, endmonth=8,
                  naming_convention='old', prefix='trendimage',
                  path=None, row=None, pr_string=None,
@@ -29,6 +30,8 @@ class Processor(object):
                  parallel=True,
                  n_jobs=12):
 
+        if indices is None:
+            indices = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi', 'nobs']
         self.study_site = study_site
         self.outfolder = outfolder
         self.infolder = infolder
@@ -48,6 +51,9 @@ class Processor(object):
         self.ts_mode = ts_mode
         self.parallel = parallel
         self.n_jobs = n_jobs
+        self.data = None
+        self.report_file = None
+        self.df_outdata = None
         self.ss_name = study_sites[study_site]['name']
         self.ss_indir = study_sites[study_site]['processing_dir']
         self.infiles_check = False
@@ -103,7 +109,7 @@ class Processor(object):
         print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
         # TODO: insert here if new files arrived after last processing
         if self.outfiles_check:
-            print ("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
+            print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
             for i in range(self.ntiles):
                 if self.ts_mode == 'full':
                     self._run_calculation_mode_full(i)
@@ -126,7 +132,7 @@ class Processor(object):
         if (self.row is None) and (self.path is None) and (type(self.pr_string) == str):
             self._pr_string_to_pr()
         elif (self.row is None) and (self.path is None) and (type(self.pr_string) != str):
-            raise ValueError ("Please indicate either row and path or pr_string")
+            raise ValueError("Please indicate either row and path or pr_string")
 
     def _pr_string_to_pr(self):
         """
@@ -148,7 +154,7 @@ class Processor(object):
         Get infile properties using DataStack without loading data explicitly
         :return:
         """
-        print('loading Data') # fix for skip
+        print('loading Data')# fix for skip
         self.infiles = DataStack(self.infolder,
                                  startmonth=self.startmonth, endmonth=self.endmonth,
                                  startyear=self.startyear, endyear=self.endyear).df_indata
@@ -161,8 +167,9 @@ class Processor(object):
         """
         def make_timestamp(x):
             return datetime.datetime.fromtimestamp(os.path.getmtime(x))
-        self.df_outdata = pd.DataFrame(index = self.indices, columns=['filepath', 'exists', 'timestamp', 'process'])
-        self.df_outdata.filepath = np.array(['{0}_{1}_{2}_{3}_{4}.tif'.format(self.prefix, self.ss_name, self.row, self.path, idx) for idx in self.indices])
+        self.df_outdata = pd.DataFrame(index=self.indices, columns=['filepath', 'exists', 'timestamp', 'process'])
+        self.df_outdata.filepath = np.array(['{0}_{1}_{2}_{3}_{4}.tif'.format(self.prefix, self.ss_name, self.row,
+                                                                              self.path, idx) for idx in self.indices])
         self.df_outdata.filepath = [os.path.join(self.outfolder, f) for f in self.df_outdata.filepath]
         self.df_outdata['exists'] = self.df_outdata['filepath'].apply(os.path.exists)
         self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2)
@@ -182,7 +189,6 @@ class Processor(object):
         if not self.infiles_check:
             print("Skip processing, No Data available for this subset!\n")
 
-
     def _set_processing_bool(self):
         """
         Create boolean variables to check for later processing
@@ -194,7 +200,6 @@ class Processor(object):
         self.nobs_process = False
         if 'nobs' in self.df_outdata.index:
             self.nobs_process = self.df_outdata.loc['nobs', 'process']
-
 
     def _final_precheck(self):
         if not self.outfiles_check:
@@ -243,7 +248,7 @@ class Processor(object):
         :param i:
         :return:
         """
-        #print 'loading Data'
+        # print 'loading Data'
         self.data = DataStack(self.infolder, indices=self.indices_process,
                               xoff=int(self.coff[i]), xsize=int(self.csize[i]),
                               yoff=int(self.roff[i]), ysize=int(self.rsize[i]),
@@ -260,7 +265,6 @@ class Processor(object):
             self.data.df_indata.ordinal_day -= self.rescale_intercept.toordinal()
             self.data.df_indata.year -= 2014
 
-
     def calc_trend(self, i=0):
         """
         Calculate Trend
@@ -270,19 +274,19 @@ class Processor(object):
         out = [trend_image2(self.data.index_data[idx], self.data.df_indata.ordinal_day) for idx in self.indices_process]
         ctr = 0
         for idx in self.indices_process:
-            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
+            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i],
+            self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
             ctr += 1
 
     def calc_trend_parallel(self, i=0):
         """
         Calculate Trend with parallel processing
-        :param n_jobs:
         :param i:
         :return:
         """
         processing_mask = self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]]
         processing_mask = processing_mask >= 6
-        out = Parallel(n_jobs=self.n_jobs) (delayed(trend_image2)(self.data.index_data[idx],
+        out = Parallel(n_jobs=self.n_jobs)(delayed(trend_image2)(self.data.index_data[idx],
                                                                   self.data.df_indata.ordinal_day,
                                                                   processing_mask=processing_mask) for idx in self.indices_process)
         ctr = 0
@@ -297,7 +301,6 @@ class Processor(object):
     def calc_trend_median(self, i=0):
         """
         Calculate Trend with parallel processing
-        :param n_jobs:
         :param i:
         :return:
         """
@@ -309,11 +312,9 @@ class Processor(object):
             self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
             ctr += 1
 
-
     def calc_trend_parallel_median(self, i=0):
         """
         Calculate Trend with parallel processing
-        :param n_jobs:
         :param i:
         :return:
         """
@@ -332,7 +333,7 @@ class Processor(object):
                 ctr += 1
         except Exception as e:
             # TODO logging
-            print (e)
+            print(e)
             pass
 
     def _group_by_year(self, index):
@@ -348,7 +349,6 @@ class Processor(object):
         self.years = grouped.index.values
         self.index_data_filt[index] = np.ma.MaskedArray(data=m, mask=np.isnan(m)).T.reshape(len(self.years), shp[1], shp[2])
 
-
     def _calc_nobs(self, i=0):
         """
         create layer with number of obervations
@@ -356,7 +356,7 @@ class Processor(object):
         :return:
         """
         if self.nobs_process:
-            nobs_out = (~self.data.data_stack.mask[:,0]).sum(axis=0)
+            nobs_out = (~self.data.data_stack.mask[:, 0]).sum(axis=0)
             self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = nobs_out
 
     def _calc_nobs_median(self, i=0):
@@ -369,7 +369,6 @@ class Processor(object):
             nobs_out = (~self.index_data_filt[self.indices_process[0]].mask).sum(axis=0)
             self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = nobs_out
 
-
     def _create_metadata(self):
         """
         Function to setup Metadata
@@ -377,14 +376,14 @@ class Processor(object):
         """
         self.metadata = {}
         for key in list(self.results.keys()):
-            self.metadata[key] = {'DESCRIPTION':'Trend Map of Index: {0}'.format(key),
-                                  'CREATION TIMESTAMP':datetime.datetime.fromtimestamp(time.time()).isoformat(),
-                                  'PROCESSING_VERSION':__version__,
-                                  'REGRESSION_ALGORITHM':'Theil-Sen',
-                                  'DATA_YEARS':'{s}-{e}'.format(s=self.startyear, e=self.endyear),
-                                  'DATA_MONTHS':'{s}-{e}'.format(s=self.startmonth, e=self.endmonth),
-                                  'DATA_FILTER_MODE':self.ts_mode,
-                                  'TASSELED_CAP_MODE':self.tc_sensor}
+            self.metadata[key] = {'DESCRIPTION': 'Trend Map of Index: {0}'.format(key),
+                                  'CREATION TIMESTAMP': datetime.datetime.fromtimestamp(time.time()).isoformat(),
+                                  'PROCESSING_VERSION': __version__,
+                                  'REGRESSION_ALGORITHM': 'Theil-Sen',
+                                  'DATA_YEARS': '{s}-{e}'.format(s=self.startyear, e=self.endyear),
+                                  'DATA_MONTHS': '{s}-{e}'.format(s=self.startmonth, e=self.endmonth),
+                                  'DATA_FILTER_MODE': self.ts_mode,
+                                  'TASSELED_CAP_MODE': self.tc_sensor}
 
     def _export_files(self):
         """
@@ -415,123 +414,11 @@ class Processor(object):
             src.write(text)
         pass
 
-class MedianMosaic(Processor):
-    def __init__(self, study_site, outfolder, startyear=1985, endyear=2014, startmonth=7, endmonth=8,
-                 naming_convention='old', prefix='MedianMos',
-                 path=None, row=None, pr_string=None):
-
-        self.study_site = study_site
-        self.outfolder = outfolder
-        self.startyear = startyear
-        self.endyear = endyear
-        self.startmonth = startmonth
-        self.endmonth = endmonth
-        self.naming_convention = naming_convention
-        self.prefix = prefix
-        self.row = row
-        self.path = path
-        self.pr_string = pr_string
-        self.ss_name = study_sites[study_site]['name']
-        self.ss_indir = study_sites[study_site]['processing_dir']
-        self.infiles_check = False
-        self.outfiles_check = False
-        self.start_time = time.time()
-        self.startup_funcs1()
-
-
-        if self.infiles_check:
-            self.startup_funcs2()
-
-
-        if self.outfiles_check:
-            self.startup_funcs3()
-            self.run_calculation_full()
-            self.finalize()
-
-
-    def run_calculation(self, i=0):
-        print("\nProcessing tile {0}/{1}".format(i+1, self.ntiles))
-        self.load_data(i)
-        self.calculate_medians(i)
-
-    def run_calculation_full(self):
-        #print "Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index))
-        # TODO: insert here if new files arrived after last processing
-        if self.outfiles_check:
-            for i in range(self.ntiles):
-                self.run_calculation(i)
-
-    def set_processing_bool(self):
-        """
-        Create boolean variables to check for later processing
-        :return:
-        """
-        self.outfiles_check = any(self.df_outdata.process)
-
-    def make_outfile_list(self):
-        """
-        Create Dataframe with outfile properties, e.g. if already existing, timestamp and if it will be processed
-        :return:
-        """
-        def make_timestamp(x):
-            return datetime.datetime.fromtimestamp(os.path.getmtime(x))
-        self.df_outdata = pd.DataFrame(columns=['filepath', 'exists', 'timestamp', 'process'])
-        self.df_outdata.filepath = ['{0}_{1}_{2}_{3}.tif'.format(self.prefix, self.ss_name, self.row, self.path)]
-        self.df_outdata.filepath = [os.path.join(self.outfolder, f) for f in self.df_outdata.filepath]
-        self.df_outdata['exists'] = self.df_outdata['filepath'].apply(os.path.exists)
-        self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2)
-        self.df_outdata['timestamp'] = self.df_outdata['filepath'][self.df_outdata['exists']].apply(make_timestamp)
-        self.df_outdata['process'] = self.df_outdata['timestamp'][self.df_outdata['exists']] < self.infiles.timestamp.max()
-        self.df_outdata['process'][~self.df_outdata['exists']] = True
-
-    def setup_result_layers(self):
-        """
-        Create result layers as np.arrays wrapped in a dict
-        :return:
-        """
-        self.results = {}
-        for i in ['reflectance']:
-            self.results[i] = np.zeros((6, self.nrows, self.ncols), dtype=np.float)
-
-    def load_data(self, i=0):
-        """
-        Load input data and indices using DataStack
-        :param i:
-        :return:
-        """
-        #print 'loading Data'
-        self.data = DataStack(self.infolder,
-                              xoff=self.coff[i], xsize=self.csize[i], yoff=self.roff[i], ysize=self.rsize[i],
-                              startmonth=self.startmonth, endmonth=self.endmonth,
-                              startyear=self.startyear, endyear=self.endyear, factor=1.)
-        self.data.load_data()
-
-    def calculate_medians(self, i=0):
-        """
-        Function to calculate non-masked medians
-        :param i:
-        :return:
-        """
-        for idx in ['reflectance']:
-            out = np.ma.median(self.data.data_stack, axis=0)
-            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out
-
-    def export_files(self):
-        """
-        Write calculated output data to Raster files
-        :return:
-        """
-        array_to_file(self.results['reflectance'],
-                      self.df_outdata.iloc[0]['filepath'],
-                      self.infiles.filepath.iloc[0], dtype=gdal.GDT_UInt16, compress=False)
-
 
 class LocPreProcessor(object):
     """
     Class to process final data to trend images
     """
-
-
 
     def __init__(self, study_site, row=None, path=None, pr_string=None, parallel=False, bufsize=4000, *args, **kwargs):
         """
@@ -565,7 +452,7 @@ class LocPreProcessor(object):
         try:
             self.startup_funcs()
             self.startup_funcs2()
-            if (self.pr_exists and self.continue_process):
+            if self.pr_exists and self.continue_process:
                 self.startup_funcs3()
         except:
             pass
@@ -578,11 +465,10 @@ class LocPreProcessor(object):
         if (self.row is None) and (self.path is None) and (type(self.pr_string) == str):
             self.pr_string_to_pr()
         elif (self.row is None) and (self.path is None) and (type(self.pr_string) != str):
-            raise ValueError ("Please indicate either row and path or pr_string")
+            raise ValueError("Please indicate either row and path or pr_string")
         # TODO: Check for GDAL_DATA environment variable
         if not os.path.exists(wrs2_path):
             raise IOError("Path to WRS-2 vector file is not correctly defined")
-
 
     def startup_funcs(self):
         """
@@ -636,7 +522,7 @@ class LocPreProcessor(object):
         :return:
         """
         ds2 = fiona.open(self.fishnet_file)
-        filtered = len([f for f in ds2 if (f['properties']['path']==self.path) and (f['properties']['row']==self.row)])
+        filtered = len([f for f in ds2 if (f['properties']['path'] == self.path) and (f['properties']['row'] == self.row)])
         if filtered == 1:
             self.pr_exists = True
         else:
@@ -649,7 +535,7 @@ class LocPreProcessor(object):
         """
         ds1 = fiona.open(wrs2_path)
         ds2 = fiona.open(self.fishnet_file)
-        filtered = [f for f in ds2 if (f['properties']['path']==self.path) and (f['properties']['row']==self.row)]
+        filtered = [f for f in ds2 if (f['properties']['path'] == self.path) and (f['properties']['row'] == self.row)]
         sr2 = osr.SpatialReference()
         sr2.ImportFromWkt(ds2.crs_wkt)
         sr1 = osr.SpatialReference()
@@ -660,16 +546,16 @@ class LocPreProcessor(object):
 
         # check for upper and lower case
         try:
-            self.coords = np.array([ds2[0]['properties'][feat] for feat in ['XMIN','YMIN', 'XMAX', 'YMAX']])
+            self.coords = np.array([ds2[0]['properties'][feat] for feat in ['XMIN', 'YMIN', 'XMAX', 'YMAX']])
         except:
             self.coords = np.array([ds2[0]['properties'][feat] for feat in ['xmin', 'ymin', 'xmax', 'ymax']])
         bbox = self.coords + np.array([-self.bufsize, -self.bufsize, self.bufsize, self.bufsize])
-        bnds = np.array(bbox).reshape((2,2))
+        bnds = np.array(bbox).reshape((2, 2))
 
         tr = osr.CoordinateTransformation(sr2, sr1)
         bbx = np.array(tr.TransformPoints(bnds))
 
-        ds1_f = ds1.filter(bbox=tuple(bbx.ravel()[[0,1,3,4]]))
+        ds1_f = ds1.filter(bbox=tuple(bbx.ravel()[[0, 1, 3, 4]]))
         pr = np.array([(d['properties']['PATH'], d['properties']['ROW']) for d in ds1_f])
         self.wrs2path, self.wrs2row = pr.T
 
@@ -797,9 +683,10 @@ class LocPreProcessor(object):
         else:
             print("No Data available, skip processing!")
 
+
 # TODO: cleanup structure, e.g. make generic class and each processing as subclass
 class LocPreProcessorDEM(LocPreProcessor):
-    def __init__(self, study_site, master_dem = r'F:\18_Paper02_LakeAnalysis\02_AuxData\04_DEM\DEM.vrt',
+    def __init__(self, study_site, master_dem=r'F:\18_Paper02_LakeAnalysis\02_AuxData\04_DEM\DEM.vrt',
                  row=None, path=None, pr_string=None, parallel=False, bufsize=4000, *args, **kwargs):
         """
         Class to clip pre-processed Landsat image to local subsets
@@ -829,7 +716,6 @@ class LocPreProcessorDEM(LocPreProcessor):
         self._initial_check()
         try:
             self.startup_funcs()
-            #self._check_master_dem()
             self._get_coords()
             self._setup_outpaths()
         except:
@@ -873,13 +759,14 @@ class LocPreProcessorDEM(LocPreProcessor):
         run process using gdalwarp
         :return:
         """
-        s_dem = r'gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(epsg=self.epsg,
-                                                                                                                        xmin=self.coords[0],
-                                                                                                                        ymin=self.coords[1],
-                                                                                                                        xmax=self.coords[2],
-                                                                                                                        ymax=self.coords[3],
-                                                                                                                        infile=self.master_dem,
-                                                                                                                        outfile=self.dem_path_)
+        s_dem = r'gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} ' \
+                r'{xmax} {ymax} {infile} {outfile}'.format(epsg=self.epsg,
+                                                           xmin=self.coords[0],
+                                                           ymin=self.coords[1],
+                                                           xmax=self.coords[2],
+                                                           ymax=self.coords[3],
+                                                           infile=self.master_dem,
+                                                           outfile=self.dem_path_)
 
         s_slope = r'gdaldem slope -compute_edges -alg ZevenbergenThorne {infile} {slopefile}'.format(infile=self.dem_path_, slopefile=self.slope_path_)
 
@@ -888,6 +775,7 @@ class LocPreProcessorDEM(LocPreProcessor):
 
         if not os.path.exists(self.slope_path_):
             os.system(s_slope)
+
 
 def auto_prlist(prlist, study_site):
     if prlist[0] in ['full', 'auto']:
