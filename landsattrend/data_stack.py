@@ -5,8 +5,8 @@ import os
 import numpy as np
 import pandas as pd
 from osgeo import gdal_array as ga, gdal
+
 gdal.UseExceptions()
-import rasterio
 
 from . import lstools
 from .helper_funcs import sensorlist

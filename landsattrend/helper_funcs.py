@@ -1,23 +1,23 @@
-import os
 import csv
-import glob
-import subprocess
-import shutil
-import fiona
-import joblib
-import rasterio
 import datetime
-import geopandas
-import pandas as pd
-import netCDF4
+import glob
+import os
+import shutil
+import subprocess
 
+import fiona
+import geopandas
+import joblib
+import netCDF4
+import pandas as pd
+import rasterio
 from osgeo import gdal
 from osgeo import gdal_array as ga
 
 from . import lstools
-from .trend_funcs import *
 from .config_study_sites import study_sites
 from .spatial_funcs import geom_sr_from_bbox
+from .trend_funcs import *
 
 
 def sortlist(inlist):
@@ -170,7 +170,7 @@ def get_esd(doy, filepath='P:\\initze\\888_scripts\\esd.csv'):
     return float(esd)
 
 
-def load_data(path, indices = ['tc', 'ndvi', 'ndwi', 'ndmi'], xoff=0, yoff=0, xsize=None, ysize=None, factor = 1.,
+def load_data(path, indices=None, xoff=0, yoff=0, xsize=None, ysize=None, factor = 1.,
               filter=True, filetype='tif', outdict=False, **kwargs):
     """
     :param path:
@@ -185,6 +185,8 @@ def load_data(path, indices = ['tc', 'ndvi', 'ndwi', 'ndmi'], xoff=0, yoff=0, xs
     :param kwargs:
     :return:
     """
+    if indices is None:
+        indices = ['tc', 'ndvi', 'ndwi', 'ndmi']
     os.chdir(path)
     flist = glob.glob('*.{0}'.format(filetype))
     flist = sortlist(flist)  # sort images by specific naming pattern
@@ -405,7 +407,9 @@ def uncompress_folders(indir, delete=True, parallel=False):
 
 
 class Masking(object):
-    def __init__(self, infolder, dst_file, valid_val=[0, 1], dst_nodata=0, cleanup=True, processing_type='sr'):
+    def __init__(self, infolder, dst_file, valid_val=None, dst_nodata=0, cleanup=True, processing_type='sr'):
+        if valid_val is None:
+            valid_val = [0, 1]
         self.infolder = infolder
         self.dst_file = dst_file
         self.valid_val = valid_val

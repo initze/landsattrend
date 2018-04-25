@@ -1,8 +1,8 @@
+import bottleneck as bn
 import numpy as np
+from numba import jit
 from scipy import stats
 from scipy.stats import itemfreq
-import bottleneck as bn
-from numba import jit
 
 
 def median_slopes(x1, x2, y1, y2, full=False):

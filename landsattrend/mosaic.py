@@ -1,11 +1,13 @@
+import datetime
 import glob
 import os
-import pandas as pd
-import datetime
-import rasterio
-from .helper_funcs import array_to_file
-from osgeo import gdal
+
 import numpy as np
+import pandas as pd
+import rasterio
+from osgeo import gdal
+
+from .helper_funcs import array_to_file
 
 
 class Mosaic(object):

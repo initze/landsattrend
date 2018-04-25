@@ -1,7 +1,7 @@
-import os
-import tarfile
-import shutil
 import argparse
+import os
+import shutil
+import tarfile
 
 # Argument parsing #
 parser = argparse.ArgumentParser()

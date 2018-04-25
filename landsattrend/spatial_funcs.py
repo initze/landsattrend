@@ -1,6 +1,6 @@
 """
 Author: Ingmar Nitze
-PhD student, Alfred Wegener Institute for Marine and Polar Research, Potsdam, Germany
+Alfred Wegener Institute for Polar and Marine Research, Potsdam, Germany
 ingmar.nitze@awi.de
 28/02/2015
 
@@ -9,18 +9,22 @@ based on gdal and ogr
 """
 
 
-from .config_study_sites import study_sites
-from .lstools import align_px_to_ls
-from .data_stack import *
-from osgeo import ogr, gdal, osr
-import numpy as np
-import os, glob, pyproj
+import glob
+import os
+import pyproj
+
 import fiona
-from fiona.crs import from_epsg
-from shapely.geometry import Polygon, mapping
-import rasterio
 import geopandas as gpd
+import numpy as np
+import rasterio
 import shapely
+from fiona.crs import from_epsg
+from osgeo import ogr, gdal, osr
+from shapely.geometry import Polygon, mapping
+
+from .config_study_sites import study_sites
+from .data_stack import DataStack
+from .lstools import align_px_to_ls
 
 
 def geom_sr_from_point(x, y, epsg):
@@ -225,7 +229,7 @@ def geom_sr_from_vectorfile(filepath, fid=None):
     tmp_feat = lyr.GetFeature(0)
     outgeom = tmp_feat.geometry().Clone()
 
-    if fid == None and fc > 1:
+    if fid is None and fc > 1:
         for fid in range(1, fc):
             feat = lyr.GetFeature(fid)
             geom = feat.geometry()
@@ -385,7 +389,7 @@ def global_to_local_coords(datadir, coordinates, force_inside=True):
     :return:
     """
     f_0 = glob.glob(os.path.join(datadir, '*.tif'))[0]
-    if f_0 == None:
+    if f_0 is None:
         raise IOError('No Data available')
     with rasterio.open(f_0) as src:
         cc, rr = src.index(*coordinates)

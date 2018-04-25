@@ -1,16 +1,19 @@
-from skimage import morphology, segmentation, feature, measure, filters
-import numpy as np
-import os
-import rasterio
-import joblib
-import pandas as pd
-import geopandas as gpd
-from osgeo import gdal_array as ga, gdal
-from .classify import Classify, ClassifyDEM
 import glob
-from .helper_funcs import array_to_file
-from .config_study_sites import study_sites
+import os
+
+import geopandas as gpd
+import joblib
+import numpy as np
+import pandas as pd
+import rasterio
+from osgeo import gdal_array as ga, gdal
+from skimage import morphology, segmentation, feature, measure, filters
 from sklearn import cluster
+
+from .classify import Classify, ClassifyDEM
+from .config_study_sites import study_sites
+from .helper_funcs import array_to_file
+
 
 # remove from landsattrend !!!
 
@@ -162,7 +165,7 @@ def load_data(zone, query='proba <= 0.5', model_path = r'F:\18_Paper02_LakeAnaly
 
 # TODO: integrate to LakeMaker object?
 def improps_to_df(label_image, intensity_image,
-                  properties=['label', 'min', 'mean', 'max'], prefix=None):
+                  properties=None, prefix=None):
     """
     Function to read imagestatistics from labelled image raster objects and intensity image.
     Function based on skimage.measure.regionprops
@@ -172,6 +175,8 @@ def improps_to_df(label_image, intensity_image,
     :param prefix:
     :return:
     """
+    if properties is None:
+        properties = ['label', 'min', 'mean', 'max']
     zz = []
     props = measure.regionprops(label_image, intensity_image=intensity_image)
     for p in props:
@@ -743,16 +748,20 @@ class LakeMaker(object):
         pass
 
     # TODO: Add option for feature and different types
-    def export_gridded_results(self, blocksize_list=[100, 250], type_list=['netchange', 'grossgain', 'grossloss',
-                                                                           'waterstable', 'area_start_ha',
-                                                                           'area_end_ha', 'limnicity_start',
-                                                                           'limnicity_end']):
+    def export_gridded_results(self, blocksize_list=None, type_list=None):
         """
         function to export chosen result/feature to gridded information of defined size
         :param blocksize: int - number of pixels for aggregating info
         :return:
         """
 
+        if type_list is None:
+            type_list = ['netchange', 'grossgain', 'grossloss',
+                         'waterstable', 'area_start_ha',
+                         'area_end_ha', 'limnicity_start',
+                         'limnicity_end']
+        if blocksize_list is None:
+            blocksize_list = [100, 250]
         _, pr_array = self._load_classdata()
 
         # check if df_filter is loaded already, otherwise load explicitly

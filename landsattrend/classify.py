@@ -1,15 +1,16 @@
-from helper_funcs import array_to_file, merge_pr
-from osgeo import gdal_array as ga
-from osgeo import gdal
+import glob
+import os
+
+import geopandas
 import numpy as np
 import pandas as pd
-import geopandas
-import os
 import rasterio
-import glob
-from config_study_sites import study_sites
-from spatial_funcs import coord_raster
-from skimage import filters
+from osgeo import gdal
+from osgeo import gdal_array as ga
+
+from .config_study_sites import study_sites
+from .helper_funcs import array_to_file, merge_pr
+from .spatial_funcs import coord_raster
 
 
 def combine_idxlist(idxlist, extlist):
@@ -36,11 +37,13 @@ class Classify(object):
                  tile='27_11',
                  imagefolder=r'F:\06_Trendimages\Z004_2016_2mths\1999-2014\tiles',
                  cirange=True,
-                 indexlist=['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi'],
+                 indexlist=None,
                  outputfolder=r'F:\08_Classification\test',
                  coords=True,
                  overwrite=False):
 
+        if indexlist is None:
+            indexlist = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi']
         self.model = model
         self.zone = zone
         self.tile = tile
@@ -183,9 +186,11 @@ class GroundTruth(object):
                  study_sites,
                  image_dir,
                  cirange=True,
-                 indexlist=['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi'],
+                 indexlist=None,
                  image_dir_style=r'1999-2014\tiles'):
 
+        if indexlist is None:
+            indexlist = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi']
         self.zone = zone
         self.gt_file = gt_file
         self.study_sites = study_sites
