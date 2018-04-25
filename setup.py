@@ -11,7 +11,7 @@ setup(
     package_dir={'': '.'},
     packages=['landsattrend'],
     install_requires=['numpy',
-    'pandas>', 'geopandas',
+    'pandas', 'geopandas',
     'netCDF4', 'gdal',
     'rasterio',
     'fiona',

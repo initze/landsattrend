@@ -18,8 +18,7 @@ __author__ = 'initze'
 
 # TODO: make explicit function calls
 # TODO: better print out. overwrite vs new processing
-# TODO: check for not existant tiles (e.g. not preprocesed)
-# TODO: reporting if completely new of new data arrived
+# TODO: reporting if completely new data arrived
 class Processor(object):
     def __init__(self, study_site, outfolder, infolder=None, indices=None,
                  startyear=1985, endyear=2014, startmonth=7, endmonth=8,
@@ -67,6 +66,25 @@ class Processor(object):
         if self.outfiles_check:
             self._startup_funcs3()
 
+    def calculate_trend(self):
+        print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
+        # TODO: insert here if new files arrived after last processing
+        if self.outfiles_check:
+            print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
+            for i in range(self.ntiles):
+                if self.ts_mode == 'full':
+                    self._run_calculation_mode_full(i)
+                elif self.ts_mode == 'median_year':
+                    self._run_calculation_mode_median(i)
+                else:
+                    raise ValueError("Please choose correct ts_mode. 'full' or 'median_year'")
+
+    def export_result(self):
+        if self.outfiles_check:
+            self._create_metadata()
+            self._export_files()
+            print("Full Processing took {0} seconds".format(round(time.time()-self.start_time)))
+
     def _startup_funcs1(self):
         self._check_pr()
         self._setup_infolder()
@@ -101,28 +119,9 @@ class Processor(object):
         self._group_data_by_year()
         self._calc_nobs_median(i)
         if self.parallel:
-            self.calc_trend_parallel_median(i)
+            self._calc_trend_parallel_median(i)
         else:
-            self.calc_trend_median()
-
-    def calculate_trend(self):
-        print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
-        # TODO: insert here if new files arrived after last processing
-        if self.outfiles_check:
-            print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
-            for i in range(self.ntiles):
-                if self.ts_mode == 'full':
-                    self._run_calculation_mode_full(i)
-                elif self.ts_mode == 'median_year':
-                    self._run_calculation_mode_median(i)
-                else:
-                    raise ValueError("Please choose correct ts_mode. 'full' or 'median_year'")
-
-    def export_result(self):
-        if self.outfiles_check:
-            self._create_metadata()
-            self._export_files()
-            print("Full Processing took {0} seconds".format(round(time.time()-self.start_time)))
+            self._calc_trend_median()
 
     def _check_pr(self):
         """
@@ -154,7 +153,7 @@ class Processor(object):
         Get infile properties using DataStack without loading data explicitly
         :return:
         """
-        print('loading Data')# fix for skip
+        print('loading Data')  # fix for skip
         self.infiles = DataStack(self.infolder,
                                  startmonth=self.startmonth, endmonth=self.endmonth,
                                  startyear=self.startyear, endyear=self.endyear).df_indata
@@ -298,7 +297,7 @@ class Processor(object):
         self.index_data_filt = {}
         [self._group_by_year(idx) for idx in self.indices_process]
 
-    def calc_trend_median(self, i=0):
+    def _calc_trend_median(self, i=0):
         """
         Calculate Trend with parallel processing
         :param i:
@@ -312,7 +311,7 @@ class Processor(object):
             self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
             ctr += 1
 
-    def calc_trend_parallel_median(self, i=0):
+    def _calc_trend_parallel_median(self, i=0):
         """
         Calculate Trend with parallel processing
         :param i:
@@ -573,7 +572,6 @@ class LocPreProcessor(object):
             print("No Data available for selected region")
             self.continue_process = False
 
-
     def get_infolders(self):
         """
         Find all subfolders within the defined folder structure
@@ -582,7 +580,6 @@ class LocPreProcessor(object):
         for f in self.wrs_folderlist:
             self.infolders.extend(get_foldernames(f, global_path=True))
 
-    # TODO: make Filter for months and years
     def get_infiles(self):
         """
         Find all preprocessed tif_files within defined folder structure
@@ -596,7 +593,6 @@ class LocPreProcessor(object):
             else:
                 self.empty_fld = np.append(self.empty_fld, infile)  # non existant files (empty folder)
         self.n_files_in = len(self.infiles)
-
 
     def make_outnames(self):
         """
@@ -686,8 +682,8 @@ class LocPreProcessor(object):
 
 # TODO: cleanup structure, e.g. make generic class and each processing as subclass
 class LocPreProcessorDEM(LocPreProcessor):
-    def __init__(self, study_site, master_dem=r'F:\18_Paper02_LakeAnalysis\02_AuxData\04_DEM\DEM.vrt',
-                 row=None, path=None, pr_string=None, parallel=False, bufsize=4000, *args, **kwargs):
+    def __init__(self, study_site, master_dem=r'F:\18_Paper02_LakeAnalysis\02_AuxData\04_DEM\DEM.vrt', row=None,
+                 path=None, pr_string=None, parallel=False, bufsize=4000, *args, **kwargs):
         """
         Class to clip pre-processed Landsat image to local subsets
         :param study_site: str
@@ -699,6 +695,7 @@ class LocPreProcessorDEM(LocPreProcessor):
         :param kwargs:
         :return:
         """
+        super().__init__(study_site, row, path, pr_string, parallel, bufsize, *args, **kwargs)
         self.study_site = study_site
         self.master_dem = master_dem
         self.row = row
