@@ -8,14 +8,10 @@ description: python module containing different spatial functions
 based on gdal and ogr
 """
 
-
-import glob
-import os
 import pyproj
 
 import fiona
 import geopandas as gpd
-import numpy as np
 import rasterio
 import shapely
 from fiona.crs import from_epsg
