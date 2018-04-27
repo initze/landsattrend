@@ -19,7 +19,7 @@ from osgeo import ogr, gdal, osr
 from shapely.geometry import Polygon, mapping
 
 from .config_study_sites import study_sites
-from .data_stack import DataStack
+from .data_stack import *
 from .lstools import align_px_to_ls
 
 
