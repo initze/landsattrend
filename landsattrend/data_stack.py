@@ -6,10 +6,13 @@ import numpy as np
 import pandas as pd
 from osgeo import gdal_array as ga, gdal
 
+import landsattrend.utils
+from landsattrend.config_study_sites import study_sites
+from landsattrend.utils import get_datafolder, global_to_local_coords, reproject_coords
+
 gdal.UseExceptions()
 
-from . import lstools
-from .helper_funcs import sensorlist
+from .utils import sensorlist
 
 
 class DataStack(object):
@@ -211,9 +214,9 @@ class DataStack(object):
         self.index_data = {}
         if 'tcb' or 'tcg' or 'tcw' in self.indices:
             if self.tc_sensor == 'auto':
-                tc = np.array([lstools.tasseled_cap(i, s) for i, s in zip(self.data_stack, self.df_indata.sensor)])
+                tc = np.array([landsattrend.utils.tasseled_cap(i, s) for i, s in zip(self.data_stack, self.df_indata.sensor)])
             elif self.tc_sensor in ['TM', 'ETM', 'OLI', 'OLI_TIRS']:
-                tc = np.array([lstools.tasseled_cap(i, self.tc_sensor) for i in self.data_stack])
+                tc = np.array([landsattrend.utils.tasseled_cap(i, self.tc_sensor) for i in self.data_stack])
             else:
                 raise ValueError("Please use one of following values {'auto', 'TM', 'ETM', 'OLI', 'OLI_TIRS'")
 
@@ -223,19 +226,19 @@ class DataStack(object):
             self.index_data['tcw'] = tc[:, 2]
 
         if 'ndvi' in self.indices:
-            ndvi = [lstools.ndvi(i, 3, 2) for i in self.data_stack]
+            ndvi = [landsattrend.utils.ndvi(i, 3, 2) for i in self.data_stack]
             self.index_data['ndvi'] = np.ma.masked_equal(ndvi, 0)
 
         if 'ndwi' in self.indices:
-            ndwi = [lstools.ndvi(i, 1, 3) for i in self.data_stack]
+            ndwi = [landsattrend.utils.ndvi(i, 1, 3) for i in self.data_stack]
             self.index_data['ndwi'] = np.ma.masked_equal(ndwi, 0)
 
         if 'ndmi' in self.indices:
-            ndmi = [lstools.ndvi(i, 3, 4) for i in self.data_stack]
+            ndmi = [landsattrend.utils.ndvi(i, 3, 4) for i in self.data_stack]
             self.index_data['ndmi'] = np.ma.masked_equal(ndmi, 0)
 
         if 'ndbr' in self.indices:
-            ndbr = [lstools.ndvi(i, 3, 5) for i in self.data_stack]
+            ndbr = [landsattrend.utils.ndvi(i, 3, 5) for i in self.data_stack]
             self.index_data['ndbr'] = np.ma.masked_equal(ndbr, 0)
 
         self.indices_calculated = True
@@ -271,3 +274,34 @@ class DataStackList(DataStack):
         :return:
         """
         self.df_indata.filepath = np.array([os.path.abspath(f) for f in self.inlist])
+
+# TODO: Improve
+def load_point_ts(study_site, coordinates, startmonth=7, endmonth=8, startyear=1999, endyear=2014):
+    """
+    wrapper function to load Stack of one specific point
+    :param study_site: string
+    :param coordinates: tuple
+    :param startmonth: int
+    :param endmonth: int
+    :return:
+    """
+    try:
+        infolder = get_datafolder(study_site, coordinates, epsg='auto')
+        xout, yout = global_to_local_coords(infolder, coordinates)
+    except:
+        # transform coords from latlon to local coordinates (e.g. UTM)
+        coordinates_tr = reproject_coords(4326, study_sites[study_site]['epsg'], coordinates)
+        infolder = get_datafolder(study_site, coordinates_tr)
+        # make error handler if file does not exist
+        xout, yout = global_to_local_coords(infolder, coordinates_tr)
+
+    ds = DataStack(infolder=infolder, xoff=xout, yoff=yout, xsize=1, ysize=1,
+                   startmonth=startmonth, endmonth=endmonth,
+                   startyear=startyear, endyear=endyear)
+    ds.load_data()
+    df = ds.df_indata
+    for k in list(ds.index_data.keys()):
+        df.loc[:, k] = np.squeeze(ds.index_data[k])
+        df.loc[:,'mask'] = df[k] != 0
+        #df.mask(df[k] == 0, inplace=True)
+    return df[df['mask']]

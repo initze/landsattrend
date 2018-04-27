@@ -9,8 +9,7 @@ from osgeo import gdal
 from osgeo import gdal_array as ga
 
 from .config_study_sites import study_sites
-from .helper_funcs import array_to_file, merge_pr
-from .spatial_funcs import coord_raster
+from landsattrend.utils import array_to_file, merge_pr, coord_raster
 
 
 def combine_idxlist(idxlist, extlist):

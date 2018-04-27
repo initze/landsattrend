@@ -7,7 +7,7 @@ import time
 import numpy as np
 
 from .config_study_sites import study_sites
-from .helper_funcs import Masking, MaskingNG, WRS_Mover
+from landsattrend.utils import Masking, MaskingNG, WRS_Mover
 
 
 class FilePreProcessor(object):

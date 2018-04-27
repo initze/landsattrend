@@ -1,6 +1,5 @@
 import bottleneck as bn
 import numpy as np
-from numba import jit
 from scipy import stats
 from scipy.stats import itemfreq
 
@@ -9,10 +8,8 @@ def median_slopes(x1, x2, y1, y2, full=False):
     a = (y2-y1)/(x2-x1)
     return np.median(a, axis=0)
 
-
 def slope(x1, x2, y1, y2, full=False):
     return (y2-y1)/(x2-x1)
-
 
 def crossindex(data, nodata=0):
     """
@@ -27,7 +24,6 @@ def crossindex(data, nodata=0):
     c = c[np.triu_indices_from(c)].ravel()
     r = r[np.triu_indices_from(r)].ravel()
     return r, c
-
 
 def non_duplicates(d, dates):
     """
@@ -50,7 +46,6 @@ def non_duplicates(d, dates):
 
     return d[valid_idx], dates[valid_idx], valid_idx
 
-
 def get_n_observations(data, imdates, decision='<'):
     """
     returns number of observations from 3-d boolean mask
@@ -69,7 +64,6 @@ def get_n_observations(data, imdates, decision='<'):
             #gt = np.where(mask[i] > mask[i+1])
             #mask[i][gt] = mask[i+1][gt]
     return np.invert(data[idx]).sum(axis=0)
-
 
 def theil_sen(x, y, full=False):
     """
@@ -95,7 +89,6 @@ def theil_sen(x, y, full=False):
     else:
         return np.median(slp)
 
-
 def theil_sen2(x, y, full=False):
     """
     x: imagedates in ordinal dates
@@ -107,7 +100,6 @@ def theil_sen2(x, y, full=False):
 
     slp, ict, ci_l, ci_u = stats.mstats.theilslopes(y, x)
     return slp, ci_l, ci_u
-
 
 def trend_image(image_stack, image_dates, tiling=True, tile_size=(1, 1), mode='ts', factor=3650):
     """
@@ -182,11 +174,9 @@ def trend_image2(image_stack, image_dates, processing_mask=None, factor=3650, ob
 
     return slope_image
 
-@jit
 def sig2_calc(n, z ):
     return np.sqrt(1/18. * n * (n-1) * (2*n +5)) * z
 
-@jit
 def theilslopes_local(y, x=None):
     """
     """
@@ -215,8 +205,6 @@ def theilslopes_local(y, x=None):
 
     return medslope, medinter, delta[0], delta[1]
 
-
-@jit
 def theilslopes_ma_local(y, x=None, alpha=0.95):
     y = np.ma.asarray(y).flatten()
     if x is None:

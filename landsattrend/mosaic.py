@@ -7,7 +7,7 @@ import pandas as pd
 import rasterio
 from osgeo import gdal
 
-from .helper_funcs import array_to_file
+from .utils import array_to_file
 
 
 class Mosaic(object):

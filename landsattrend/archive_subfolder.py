@@ -8,7 +8,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--delete', action='store_true')
 args = parser.parse_args()
 
-
 def make_tgz(folder, delete=args.delete):
     # list all subfolders
     subfld = [name for name in os.listdir(folder) if os.path.isdir(os.path.join(folder, name))]
@@ -32,10 +31,8 @@ def make_tgz(folder, delete=args.delete):
 
     return 0
 
-
 def main():
     make_tgz('.', args.delete)
-
 
 if __name__ == '__main__':
     main()

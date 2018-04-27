@@ -12,7 +12,7 @@ from sklearn import cluster
 
 from .classify import Classify, ClassifyDEM
 from .config_study_sites import study_sites
-from .helper_funcs import array_to_file
+from landsattrend.utils import array_to_file
 
 
 # remove from landsattrend !!!
