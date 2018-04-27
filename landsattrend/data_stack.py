@@ -96,12 +96,11 @@ class DataStack(object):
         sort all input files by date (ascending)
         :return:
         """
-        self.df_indata.sort_values(by=['datetime'], inplace=True)
+        self.df_indata = self.df_indata.sort_values(by=['datetime'])
 
     def _check_ls_naming_version(self):
         pass
 
-    # TODO: make staticmethod or write into object
     @staticmethod
     def _get_datetime_v1(basename):
         basename = basename.split('_')[0]
@@ -123,7 +122,6 @@ class DataStack(object):
         v2 = self.df_indata[self.df_indata.infiles_naming_version == 'v2']
         self.df_indata.loc[v2.index, 'datetime'] = pd.to_datetime(v2.basename.apply(self._get_datetime_v2))
 
-
     def _file_validation_check_raster(self):
         """
         Check integrity of input file to avoid error on loading
@@ -138,9 +136,6 @@ class DataStack(object):
         Check landsat ESPA naming version
         :return:
         """
-        # get file naming version
-        #  old and new version
-        # remove wrong names
         valid_name = []
         naming_version = []
 
@@ -186,7 +181,7 @@ class DataStack(object):
         :return:
         """
         # TODO: close dataset properly
-        self.df_indata['infiles_valid_filter'] = np.all([self.df_indata.month.isin(list(range(self.startmonth, self.endmonth+1))),
+        self.df_indata.loc[:, 'infiles_valid_filter'] = np.all([self.df_indata.month.isin(list(range(self.startmonth, self.endmonth+1))),
                                                 self.df_indata.year.isin(list(range(self.startyear, self.endyear+1)))],
                                                 axis=0)
 
@@ -195,7 +190,7 @@ class DataStack(object):
         reduce dataframe to valid files
         :return:
         """
-        self.df_indata['process'] = self.df_indata[['infiles_valid_filter', 'infiles_valid_raster', 'infiles_valid_name']].all(axis=1)
+        self.df_indata.loc[:, 'process'] = self.df_indata[['infiles_valid_filter', 'infiles_valid_raster', 'infiles_valid_name']].all(axis=1)
         self.df_indata = self.df_indata[self.df_indata['process']]
 
     def load_stack(self):
