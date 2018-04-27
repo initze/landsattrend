@@ -1,5 +1,14 @@
 Changes
 =======
+0.1.2b
+New Features:
+- expanded DataStack tests
+
+Bug Fixes:
+- Fixed import crash
+- Style Improvements (e.g. imports, pandas indexing warning
+
+----------
 0.1.2
 New Features:
 - Added Metadata Information
