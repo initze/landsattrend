@@ -10,8 +10,8 @@ from osgeo import gdal_array as ga, gdal
 from skimage import morphology, segmentation, feature, measure, filters
 from sklearn import cluster
 
-from .classify import Classify, ClassifyDEM
-from .config_study_sites import study_sites
+from landsattrend.classify import Classify, ClassifyDEM
+from landsattrend.config_study_sites import study_sites
 from landsattrend.utils import array_to_file
 
 

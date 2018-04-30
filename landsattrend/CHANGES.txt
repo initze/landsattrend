@@ -1,5 +1,12 @@
 Changes
 =======
+0.1.2c
+New Features:
+fixed file structure of utils
+
+Bug Fixes:
+- Fixed import crash of None type raster loading
+----------
 0.1.2b
 New Features:
 - expanded DataStack tests

@@ -8,11 +8,10 @@ import pandas as pd
 from joblib import Parallel, delayed
 from osgeo import osr, gdal
 
-from .config_study_sites import wrs2_path, study_sites
-from .data_stack import DataStack
-from landsattrend.utils import get_foldernames, array_to_file, tiling
-from .trend_funcs import trend_image2
-from .version import __version__
+from landsattrend.config_study_sites import wrs2_path, study_sites
+from landsattrend.data_stack import DataStack
+from landsattrend.utils import get_foldernames, array_to_file, tiling, trend_image2
+from landsattrend.version import __version__
 
 __author__ = 'initze'
 

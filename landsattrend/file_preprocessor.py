@@ -6,7 +6,7 @@ import time
 
 import numpy as np
 
-from .config_study_sites import study_sites
+from landsattrend.config_study_sites import study_sites
 from landsattrend.utils import Masking, MaskingNG, WRS_Mover
 
 
