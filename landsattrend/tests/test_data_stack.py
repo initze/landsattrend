@@ -38,9 +38,9 @@ class DataStackTest(TestCase):
 
     def test_singlepoint_timeseries(self):
         # GroupData by year median
-        assert self.singlepoint.outdata is not None
-        assert True == True
-
+        assert len(self.singlepoint.df_indata) == 164
+        assert len(self.singlepoint.df_indata_raw) == 165
+        assert self.singlepoint.data_stack.size == 984
 
     def tearDown(self):
         pass
