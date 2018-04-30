@@ -1,6 +1,7 @@
 from unittest import TestCase
 from landsattrend import DataStack
-
+from landsattrend.data_stack import DataStack, load_point_ts
+import pandas as pd
 
 class DataStackTest(TestCase):
 
@@ -10,6 +11,8 @@ class DataStackTest(TestCase):
                               startmonth=7, endmonth=8)
         self.datafull = DataStack(raster_dir, indices=['ndvi', 'tcb'], tc_sensor='auto', startyear=1900, endyear=2100,
                               startmonth=1, endmonth=12)
+
+        self.singlepoint = load_point_ts('', (470307.882181, 7899742.63389), startmonth=1, endmonth=12, startyear=1980, endyear=2017, infolder=raster_dir)
 
     def test_filelist_length(self):
         assert len(self.datafull.df_indata) == 164
@@ -32,6 +35,12 @@ class DataStackTest(TestCase):
         assert len(self.data19992014.df_indata.query('year == 2012')) == 11
         assert len(self.data19992014.df_indata.query('month == 8')) == 58
         assert len(self.data19992014.df_indata.query('day == 7')) == 4
+
+    def test_singlepoint_timeseries(self):
+        # GroupData by year median
+        assert self.singlepoint.outdata is not None
+        assert True == True
+
 
     def tearDown(self):
         pass

@@ -276,7 +276,7 @@ class DataStackList(DataStack):
         self.df_indata.filepath = np.array([os.path.abspath(f) for f in self.inlist])
 
 # TODO: Improve
-def load_point_ts(study_site, coordinates, startmonth=7, endmonth=8, startyear=1999, endyear=2014):
+def load_point_ts(study_site, coordinates, startmonth=7, endmonth=8, startyear=1999, endyear=2014, infolder=None):
     """
     wrapper function to load Stack of one specific point
     :param study_site: string
@@ -285,23 +285,31 @@ def load_point_ts(study_site, coordinates, startmonth=7, endmonth=8, startyear=1
     :param endmonth: int
     :return:
     """
-    try:
-        infolder = get_datafolder(study_site, coordinates, epsg='auto')
+    if infolder is None:
+        try:
+            infolder = get_datafolder(study_site, coordinates, epsg='auto')
+            xout, yout = global_to_local_coords(infolder, coordinates)
+        except:
+            # transform coords from latlon to local coordinates (e.g. UTM)
+            coordinates_tr = reproject_coords(4326, study_sites[study_site]['epsg'], coordinates)
+            infolder = get_datafolder(study_site, coordinates_tr)
+            # make error handler if file does not exist
+            xout, yout = global_to_local_coords(infolder, coordinates_tr)
+    else:
         xout, yout = global_to_local_coords(infolder, coordinates)
-    except:
-        # transform coords from latlon to local coordinates (e.g. UTM)
-        coordinates_tr = reproject_coords(4326, study_sites[study_site]['epsg'], coordinates)
-        infolder = get_datafolder(study_site, coordinates_tr)
-        # make error handler if file does not exist
-        xout, yout = global_to_local_coords(infolder, coordinates_tr)
 
     ds = DataStack(infolder=infolder, xoff=xout, yoff=yout, xsize=1, ysize=1,
                    startmonth=startmonth, endmonth=endmonth,
                    startyear=startyear, endyear=endyear)
     ds.load_data()
+    # TODO reorganize to single DF with data
+    # Check function --> def _group_by_year(self, index)
+    return ds
+    """
     df = ds.df_indata
     for k in list(ds.index_data.keys()):
         df.loc[:, k] = np.squeeze(ds.index_data[k])
         df.loc[:,'mask'] = df[k] != 0
         #df.mask(df[k] == 0, inplace=True)
     return df[df['mask']]
+    """
