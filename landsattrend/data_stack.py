@@ -62,7 +62,7 @@ class DataStack(object):
         :return:
         """
         columns = ['basename', 'filepath', 'datetime', 'year', 'month', 'day', 'doy', 'ordinal_day', 'sensor', 'timestamp',
-                   'infiles_valid_raster', 'infiles_valid_name', 'infiles_valid_filter', 'infiles_naming_version', 'process']
+                   'infiles_valid_raster', 'infiles_valid_name', 'infiles_valid_filter', 'infiles_naming_version', 'process', 'file_loaded']
         self.df_indata_raw = pd.DataFrame(columns=columns)
         self.df_indata = pd.DataFrame(columns=columns)
 
@@ -202,8 +202,16 @@ class DataStack(object):
         :return:
         """
         # TODO check for errors
-        self.data_stack = np.array([ga.LoadFile(f, xoff=self.xoff, xsize=self.xsize, yoff=self.yoff, ysize=self.ysize) for f in self.df_indata.filepath])
-        self.data_stack = np.ma.masked_equal(self.data_stack, 0)
+        #self.data_stack = np.array([ga.LoadFile(f, xoff=self.xoff, xsize=self.xsize, yoff=self.yoff, ysize=self.ysize) for f in self.df_indata.filepath])
+        data_stack = []
+        for index, row in self.df_indata.iterrows():
+            d = ga.LoadFile(row['filepath'], xoff=self.xoff, xsize=self.xsize, yoff=self.yoff, ysize=self.ysize)
+            if isinstance(d, np.ndarray):
+                self.df_indata[index, 'file_loaded'] = True
+                data_stack.append(d)
+            else:
+                continue
+        self.data_stack = np.ma.masked_equal(np.asarray(data_stack), 0)
         self.data_stack = self.data_stack / self.factor
 
     def calc_indices(self):

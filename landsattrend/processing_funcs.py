@@ -67,6 +67,20 @@ class Processor(object):
         if self.outfiles_check:
             self._startup_funcs3()
 
+    def load_data(self, i=0):
+        """
+        Load input data and indices using DataStack
+        :param i:
+        :return:
+        """
+        # print 'loading Data'
+        self.data = DataStack(self.infolder, indices=self.indices_process,
+                              xoff=int(self.coff[i]), xsize=int(self.csize[i]),
+                              yoff=int(self.roff[i]), ysize=int(self.rsize[i]),
+                              startmonth=self.startmonth, endmonth=self.endmonth,
+                              startyear=self.startyear, endyear=self.endyear, tc_sensor=self.tc_sensor)
+        self.data.load_data()
+
     def calculate_trend(self):
         print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
         # TODO: insert here if new files arrived after last processing
@@ -241,20 +255,6 @@ class Processor(object):
             self.results[i] = np.zeros((4, self.nrows, self.ncols), dtype=np.float)
         if 'nobs' in self.indices:
             self.results['nobs'] = np.zeros((self.nrows, self.ncols), dtype=np.uint16)
-
-    def load_data(self, i=0):
-        """
-        Load input data and indices using DataStack
-        :param i:
-        :return:
-        """
-        # print 'loading Data'
-        self.data = DataStack(self.infolder, indices=self.indices_process,
-                              xoff=int(self.coff[i]), xsize=int(self.csize[i]),
-                              yoff=int(self.roff[i]), ysize=int(self.rsize[i]),
-                              startmonth=self.startmonth, endmonth=self.endmonth,
-                              startyear=self.startyear, endyear=self.endyear, tc_sensor=self.tc_sensor)
-        self.data.load_data()
 
     def _rescaling_intercept(self):
         """
