@@ -59,8 +59,9 @@ class DataStack(object):
 
     def group_data(self, attribute='year', type='median'):
         """
-        :param attribute:
-        :param type:
+        function to group data/indices by common temporal attributes (e.g. year)
+        :param attribute: str - attribute name to group on {'year', 'month', 'day'}
+        :param type: str - type of grouping {'median', 'mean', 'max, 'min'}
         :return:
         """
         self.index_data_grouped = {}
@@ -72,10 +73,13 @@ class DataStack(object):
                 grouped = joined.groupby(by=attribute, axis=0).median().sort_index()
             elif type == 'mean':
                 grouped = joined.groupby(by=attribute, axis=0).mean().sort_index()
+            elif type == 'max':
+                grouped = joined.groupby(by=attribute, axis=0).max().sort_index()
+            elif type == 'min':
+                grouped = joined.groupby(by=attribute, axis=0).min().sort_index()
             m = grouped.as_matrix().T
             self.grouped_feature = grouped.index.values
             self.index_data_grouped[index] = np.ma.MaskedArray(data=m, mask=np.isnan(m)).T.reshape(len(self.grouped_feature), shp[1], shp[2])
-        pass
 
     def _create_dataframe(self):
         """
@@ -328,7 +332,7 @@ def load_point_ts(study_site, coordinates, startmonth=7, endmonth=8, startyear=1
 
     ds = DataStack(infolder=infolder, xoff=xout, yoff=yout, xsize=1, ysize=1,
                    startmonth=startmonth, endmonth=endmonth,
-                   startyear=startyear, endyear=endyear)
+                   startyear=startyear, endyear=endyear, **kwargs)
     ds.load_data()
     # TODO reorganize to single DF with data
     # Check function --> def _group_by_year(self, index)
