@@ -1,5 +1,10 @@
 Changes
 =======
+0.1.2d
+New Features:
+added grouping for DataStack
+
+----------
 0.1.2c
 New Features:
 fixed file structure of utils
