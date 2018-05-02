@@ -42,5 +42,13 @@ class DataStackTest(TestCase):
         assert len(self.singlepoint.df_indata_raw) == 165
         assert self.singlepoint.data_stack.size == 984
 
+    def test_temporal_grouping(self):
+        self.datafull.load_data()
+        assert not self.datafull.index_data_grouped
+        self.datafull.group_data(attribute='year', type='median')
+        assert (self.datafull.grouped_feature == range(2000, 2017)).all()
+        self.datafull.group_data(attribute='month', type='median')
+        assert (self.datafull.grouped_feature == range(7, 9)).all()
+
     def tearDown(self):
         pass

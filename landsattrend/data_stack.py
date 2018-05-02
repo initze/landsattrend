@@ -38,6 +38,7 @@ class DataStack(object):
         self.indices_calculated = False
         self.infiles_exist = False
         self.data_stack = None
+        self.index_data_grouped = None
         self.func_wrapper_1()
 
     def func_wrapper_1(self):
@@ -53,8 +54,28 @@ class DataStack(object):
             self._apply_file_filter()
 
     def load_data(self):
-        self.load_stack()
-        self.calc_indices()
+        self._load_stack()
+        self._calc_indices()
+
+    def group_data(self, attribute='year', type='median'):
+        """
+        :param attribute:
+        :param type:
+        :return:
+        """
+        self.index_data_grouped = {}
+        for index in self.indices:
+            df_indexdata = pd.DataFrame(data=self.index_data[index].reshape(len(self.df_indata), -1), index=self.df_indata.index)
+            shp = self.index_data[index].shape
+            joined = self.df_indata[[attribute]].join(df_indexdata)
+            if type == 'median':
+                grouped = joined.groupby(by=attribute, axis=0).median().sort_index()
+            elif type == 'mean':
+                grouped = joined.groupby(by=attribute, axis=0).mean().sort_index()
+            m = grouped.as_matrix().T
+            self.grouped_feature = grouped.index.values
+            self.index_data_grouped[index] = np.ma.MaskedArray(data=m, mask=np.isnan(m)).T.reshape(len(self.grouped_feature), shp[1], shp[2])
+        pass
 
     def _create_dataframe(self):
         """
@@ -91,7 +112,6 @@ class DataStack(object):
         self.df_indata.loc[:, ['doy']] = self.df_indata['datetime'].dt.dayofyear
         self.df_indata.loc[:, ['ordinal_day']] = np.array([f.toordinal() for f in self.df_indata['datetime']])
         self.df_indata.loc[:, ['sensor']] = np.array(sensorlist(self.df_indata.basename))
-        #self.df_indata.loc[:, ['infiles_valid_filter']] = False
         self.df_indata.loc[:, ['process']] = False
 
     def _sort_filelist(self):
@@ -196,7 +216,7 @@ class DataStack(object):
         self.df_indata.loc[:, 'process'] = self.df_indata[['infiles_valid_filter', 'infiles_valid_raster', 'infiles_valid_name']].all(axis=1)
         self.df_indata = self.df_indata[self.df_indata['process']]
 
-    def load_stack(self):
+    def _load_stack(self):
         """
         load data to 4-D data stack. dim1: date, dim2: spectral band, dim3: row, dim4: path
         :return:
@@ -214,7 +234,7 @@ class DataStack(object):
         self.data_stack = np.ma.masked_equal(np.asarray(data_stack), 0)
         self.data_stack = self.data_stack / self.factor
 
-    def calc_indices(self):
+    def _calc_indices(self):
         """
         calculate indices
         :return:
