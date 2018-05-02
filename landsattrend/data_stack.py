@@ -308,7 +308,7 @@ class DataStackList(DataStack):
         self.df_indata.filepath = np.array([os.path.abspath(f) for f in self.inlist])
 
 # TODO: Improve
-def load_point_ts(study_site, coordinates, startmonth=7, endmonth=8, startyear=1999, endyear=2014, infolder=None):
+def load_point_ts(study_site, coordinates, startmonth=7, endmonth=8, startyear=1999, endyear=2014, infolder=None, **kwargs):
     """
     wrapper function to load Stack of one specific point
     :param study_site: string
@@ -332,7 +332,7 @@ def load_point_ts(study_site, coordinates, startmonth=7, endmonth=8, startyear=1
 
     ds = DataStack(infolder=infolder, xoff=xout, yoff=yout, xsize=1, ysize=1,
                    startmonth=startmonth, endmonth=endmonth,
-                   startyear=startyear, endyear=endyear)
+                   startyear=startyear, endyear=endyear, **kwargs)
     ds.load_data()
     # TODO reorganize to single DF with data
     # Check function --> def _group_by_year(self, index)
