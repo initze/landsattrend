@@ -332,7 +332,7 @@ def load_point_ts(study_site, coordinates, startmonth=7, endmonth=8, startyear=1
 
     ds = DataStack(infolder=infolder, xoff=xout, yoff=yout, xsize=1, ysize=1,
                    startmonth=startmonth, endmonth=endmonth,
-                   startyear=startyear, endyear=endyear, **kwargs)
+                   startyear=startyear, endyear=endyear)
     ds.load_data()
     # TODO reorganize to single DF with data
     # Check function --> def _group_by_year(self, index)
