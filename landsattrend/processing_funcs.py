@@ -186,7 +186,8 @@ class Processor(object):
         self.df_outdata['exists'] = self.df_outdata['filepath'].apply(os.path.exists)
         self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2)
         self.df_outdata['timestamp'] = self.df_outdata['filepath'][self.df_outdata['exists']].apply(make_timestamp)
-        self.df_outdata['process'] = self.df_outdata['timestamp'][self.df_outdata['exists']] < self.infiles.timestamp.max()
+        self.df_outdata['process'] = \
+            self.df_outdata['timestamp'][self.df_outdata['exists']] < self.infiles.timestamp.max()
         # TODO: fix this line: throws warning at runtime
         self.df_outdata['process'][~self.df_outdata['exists']] = True
 
@@ -282,11 +283,12 @@ class Processor(object):
         :param i:
         :return:
         """
-        processing_mask = self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]]
+        processing_mask = \
+            self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]]
         processing_mask = processing_mask >= 6
-        out = Parallel(n_jobs=self.n_jobs)(delayed(trend_image2)(self.data.index_data[idx],
-                                                                  self.data.df_indata.ordinal_day,
-                                                                  processing_mask=processing_mask) for idx in self.indices_process)
+        out = Parallel(n_jobs=self.n_jobs)\
+            (delayed(trend_image2)(self.data.index_data[idx], self.data.df_indata.ordinal_day,
+                                   processing_mask=processing_mask) for idx in self.indices_process)
         ctr = 0
         for idx in self.indices_process:
             self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
@@ -501,11 +503,11 @@ class LocPreProcessor(object):
         fetch study site properties
         :return:
         """
-        self.fishnet_file = study_sites[self.study_site]['fishnet_file']
-        self.data_dir = study_sites[self.study_site]['data_dir']
-        self.out_dir = study_sites[self.study_site]['processing_dir']
-        self.ss_name = study_sites[self.study_site]['name']
-        self.epsg = study_sites[self.study_site]['epsg']
+        self.fishnet_file_ = study_sites[self.study_site]['fishnet_file']
+        self.data_dir_ = study_sites[self.study_site]['data_dir']
+        self.out_dir_ = study_sites[self.study_site]['processing_dir']
+        self.ss_name_ = study_sites[self.study_site]['name']
+        self.epsg_ = study_sites[self.study_site]['epsg']
 
     def pr_string_to_pr(self):
         """
@@ -519,7 +521,7 @@ class LocPreProcessor(object):
         Check if indicated fishnet row/path combination exists
         :return:
         """
-        ds2 = fiona.open(self.fishnet_file)
+        ds2 = fiona.open(self.fishnet_file_)
         filtered = len([f for f in ds2 if (f['properties']['path'] == self.path) and (f['properties']['row'] == self.row)])
         if filtered == 1:
             self.pr_exists = True
@@ -532,7 +534,7 @@ class LocPreProcessor(object):
         :return:
         """
         ds1 = fiona.open(wrs2_path)
-        ds2 = fiona.open(self.fishnet_file)
+        ds2 = fiona.open(self.fishnet_file_)
         filtered = [f for f in ds2 if (f['properties']['path'] == self.path) and (f['properties']['row'] == self.row)]
         sr2 = osr.SpatialReference()
         sr2.ImportFromWkt(ds2.crs_wkt)
@@ -564,7 +566,7 @@ class LocPreProcessor(object):
         """
         self.wrs_folderlist = []
         for p, r in zip(self.wrs2path, self.wrs2row):
-            fld = os.path.join(self.data_dir, 'p{0:03d}_r{1:02d}'.format(p, r))
+            fld = os.path.join(self.data_dir_, 'p{0:03d}_r{1:02d}'.format(p, r))
             if os.path.exists(fld):
                 self.wrs_folderlist.append(fld)
         if len(self.wrs_folderlist) == 0:
@@ -598,9 +600,9 @@ class LocPreProcessor(object):
         Make list of output filenames
         :return:
         """
-        self.out_dir_tile = os.path.join(self.out_dir, '{0}_{1}_{2}'.format(self.ss_name, self.row, self.path))
+        self.out_dir_tile = os.path.join(self.out_dir_, '{0}_{1}_{2}'.format(self.ss_name_, self.row, self.path))
         for f in self.infiles:
-            outname = os.path.basename(f).split('.tif')[0] + '_{0}_{1}_{2}.tif'.format(self.ss_name, self.row, self.path)
+            outname = os.path.basename(f).split('.tif')[0] + '_{0}_{1}_{2}.tif'.format(self.ss_name_, self.row, self.path)
             self.outfiles = np.append(self.outfiles, os.path.join(self.out_dir_tile, outname))
 
     def check_outnames(self):
@@ -628,7 +630,7 @@ class LocPreProcessor(object):
         coords = '{0} {1} {2} {3}'.format(xmin, ymin, xmax, ymax)
         outstr = []
         for infile, outfile in zip(self.infiles[~self.outfile_exists], self.outfiles[~self.outfile_exists]):
-            outstr.append(r'gdalwarp -tr 30 30 -te {0} -srcnodata 0 -dstnodata 0 -t_srs EPSG:{3} -r cubic -co COMPRESS=LZW {1} {2}'.format(coords, infile, outfile, self.epsg))
+            outstr.append(r'gdalwarp -tr 30 30 -te {0} -srcnodata 0 -dstnodata 0 -t_srs EPSG:{3} -r cubic -co COMPRESS=LZW {1} {2}'.format(coords, infile, outfile, self.epsg_))
         self.output_string = np.array(outstr)
 
     def report_pre_processing(self):
@@ -730,14 +732,14 @@ class LocPreProcessorDEM(LocPreProcessor):
         Function to get intersecting WRS-tiles
         :return:
         """
-        ds2 = fiona.open(self.fishnet_file)
-        filtered = [f for f in ds2 if (f['properties']['path']==self.path) and (f['properties']['row']==self.row)]
+        ds2 = fiona.open(self.fishnet_file_)
+        filtered = [f for f in ds2 if (f['properties']['path'] == self.path) and (f['properties']['row'] == self.row)]
         sr2 = osr.SpatialReference()
         sr2.ImportFromWkt(ds2.crs_wkt)
         ds2.close()
         ds2 = filtered
 
-        self.coords = np.array([ds2[0]['properties'][feat] for feat in ['XMIN','YMIN', 'XMAX', 'YMAX']])
+        self.coords = np.array([ds2[0]['properties'][feat] for feat in ['XMIN', 'YMIN', 'XMAX', 'YMAX']])
 
     def _setup_outpaths(self):
         """
@@ -756,7 +758,7 @@ class LocPreProcessorDEM(LocPreProcessor):
         :return:
         """
         s_dem = r'gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} ' \
-                r'{xmax} {ymax} {infile} {outfile}'.format(epsg=self.epsg,
+                r'{xmax} {ymax} {infile} {outfile}'.format(epsg=self.epsg_,
                                                            xmin=self.coords[0],
                                                            ymin=self.coords[1],
                                                            xmax=self.coords[2],
