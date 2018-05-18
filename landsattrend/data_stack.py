@@ -57,6 +57,7 @@ class DataStack(object):
         self._load_stack()
         self._calc_indices()
 
+    # TODO add grouping for spectral
     def group_data(self, attribute='year', type='median'):
         """
         function to group data/indices by common temporal attributes (e.g. year)

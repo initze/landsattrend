@@ -16,8 +16,6 @@ from landsattrend.version import __version__
 __author__ = 'initze'
 
 
-# TODO: make explicit function calls
-# TODO: better print out. overwrite vs new processing
 # TODO: reporting if completely new data arrived
 class Processor(object):
     def __init__(self, study_site, outfolder, infolder=None, indices=None,
@@ -26,7 +24,7 @@ class Processor(object):
                  path=None, row=None, pr_string=None,
                  rescale_intercept=datetime.datetime(2014, 7, 1),
                  nobs=False, tc_sensor='auto', ts_mode='full',
-                 parallel=True,
+                 parallel=True, tile_size=250,
                  n_jobs=12):
 
         if indices is None:
@@ -49,6 +47,7 @@ class Processor(object):
         self.tc_sensor = tc_sensor
         self.ts_mode = ts_mode
         self.parallel = parallel
+        self.tile_size = tile_size
         self.n_jobs = n_jobs
         self.data = None
         self.report_file = None
@@ -241,7 +240,7 @@ class Processor(object):
         setup subsampling coordinates for tiled-processing
         :return:
         """
-        self.roff, self.coff, self.rsize, self.csize = tiling(self.nrows, self.ncols, 250, 250)
+        self.roff, self.coff, self.rsize, self.csize = tiling(self.nrows, self.ncols, self.tile_size, self.tile_size)
         self.ntiles = len(self.roff)
 
     def _setup_result_layers(self):
