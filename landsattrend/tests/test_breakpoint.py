@@ -20,6 +20,5 @@ class DataStackTest(TestCase):
         self.breakpoint.fit()
         assert self.breakpoint.results_best_['break_year1'] == 2012
 
-
     def tearDown(self):
         pass

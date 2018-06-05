@@ -20,6 +20,13 @@ class Breakpoint(object):
         self.n_breaks = n_breaks
         self.predictor = predictor
         self.data_len_ = len(x)
+        self._validate_input()
+
+    def _validate_input(self):
+        if self.n_breaks not in [1,2]:
+            raise ValueError('Currently only 1 or 2 Breakpoints supported!')
+        if self.predictor not in ["r2", "mae"]:
+            raise ValueError('Currently only "mae" or "r2" supported!')
 
     def _define_indices(self):
         """define indices of possible combinations"""
