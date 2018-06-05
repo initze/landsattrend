@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn import metrics, linear_model
 import pandas as pd
+import matplotlib.pyplot as plt
 
 __author__ = 'Ingmar Nitze'
 
@@ -86,6 +87,16 @@ class Breakpoint(object):
         self._get_best_fit()
 
     def plot(self):
+        """
+        function to plot results
+        :return:
+        """
+        idx = self.results_best_['break_loc1']
+        plt.plot(self.x, self.y)
+        plt.plot(self.x[:], self.regression(self.x[:], self.y[:]), ls='--')
+        plt.plot(self.x[:idx], Breakpoint.regression(self.x[:idx], self.y[:idx]))
+        plt.plot(self.x[idx:], Breakpoint.regression(self.x[idx:], self.y[idx:]))
+        plt.show()
         pass
 
     @staticmethod
