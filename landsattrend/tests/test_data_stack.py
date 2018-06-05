@@ -1,7 +1,5 @@
 from unittest import TestCase
-from landsattrend import DataStack
 from landsattrend.data_stack import DataStack, load_point_ts
-import pandas as pd
 
 class DataStackTest(TestCase):
 
