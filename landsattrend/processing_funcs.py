@@ -8,6 +8,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from osgeo import osr, gdal
 
+from landsattrend.breakpoint import Breakpoint
 from landsattrend.config_study_sites import wrs2_path, study_sites
 from landsattrend.data_stack import DataStack
 from landsattrend.utils import get_foldernames, array_to_file, tiling, trend_image2
@@ -16,8 +17,209 @@ from landsattrend.version import __version__
 __author__ = 'initze'
 
 
+class Process(object):
+    def __init__(self, study_site, outfolder, infolder=None, indices=None,
+                 prefix='trendimage',
+                 startyear=1985, endyear=2014, startmonth=7, endmonth=8,
+                 path=None, row=None, pr_string=None,
+                 parallel=True, tile_size=250,
+                 tc_sensor='auto',
+                 n_jobs=-1):
+
+        if indices is None:
+            indices = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi', 'nobs']
+        self.study_site = study_site
+        self.outfolder = outfolder
+        self.infolder = infolder
+        self.indices = np.array(indices)
+        self.startyear = startyear
+        self.endyear = endyear
+        self.startmonth = startmonth
+        self.endmonth = endmonth
+        self.prefix = prefix
+        self.row = row
+        self.path = path
+        self.pr_string = pr_string
+        self.parallel = parallel
+        self.tile_size = tile_size
+        self.n_jobs = n_jobs
+        self.tc_sensor = tc_sensor
+        self.data = None
+        self.report_file = None
+        self.df_outdata = None
+        self.ss_name = study_sites[study_site]['name']
+        self.ss_indir = study_sites[study_site]['processing_dir']
+        self.infiles_check = False
+        self.outfiles_check = False
+        self.start_time = time.time()
+        self._startup_funcs1()
+        if self.infiles_check:
+            self._startup_funcs2()
+        if self.outfiles_check:
+            self._startup_funcs3()
+
+    def load_data(self, i=0):
+        """
+        Load input data and indices using DataStack
+        :param i:
+        :return:
+        """
+        # print 'loading Data'
+        self.data = DataStack(self.infolder, indices=self.indices_process,
+                              xoff=int(self.coff[i]), xsize=int(self.csize[i]),
+                              yoff=int(self.roff[i]), ysize=int(self.rsize[i]),
+                              startmonth=self.startmonth, endmonth=self.endmonth,
+                              startyear=self.startyear, endyear=self.endyear, tc_sensor=self.tc_sensor)
+        self.data.load_data()
+
+    def _startup_funcs1(self):
+        self._check_pr()
+        self._setup_infolder()
+        self._make_infile_list()
+        self._print_info()
+
+    def _startup_funcs2(self):
+        self._make_outfile_list()
+        self._setup_outfolder()
+        self._set_processing_bool()
+        self._final_precheck()
+
+    def _startup_funcs3(self):
+        self._get_raster_size(self.infiles.filepath.iloc[0])
+        self._subsample()
+        self._setup_result_layers()
+
+    def _check_pr(self):
+        """
+        check and transform Path/Row string
+        :return:
+        """
+        if (self.row is None) and (self.path is None) and (type(self.pr_string) == str):
+            self._pr_string_to_pr()
+        elif (self.row is None) and (self.path is None) and (type(self.pr_string) != str):
+            raise ValueError("Please indicate either row and path or pr_string")
+
+    def _setup_infolder(self):
+        """
+        Create path for outfolder
+        :return:
+        """
+        if not self.infolder:
+            self.infolder = os.path.join(self.ss_indir, '{0}_{1}_{2}'.format(self.ss_name, self.row, self.path))
+
+    def _make_infile_list(self):
+        """
+        Get infile properties using DataStack without loading data explicitly
+        :return:
+        """
+        print('loading Data')  # fix for skip
+        self.infiles = DataStack(self.infolder,
+                                 startmonth=self.startmonth, endmonth=self.endmonth,
+                                 startyear=self.startyear, endyear=self.endyear).df_indata
+        self.infiles_check = len(self.infiles) > 0
+
+    def _print_info(self):
+        """
+        Small printing wrapper
+        :return:
+        """
+        print("\n\n")
+        print("Study Site: {0}".format(self.study_site))
+        print("Processing Dataset: {0}".format(self.pr_string))
+        if not self.infiles_check:
+            print("Skip processing, No Data available for this subset!\n")
+
+    def _final_precheck(self):
+        if not self.outfiles_check:
+            print("Skip processing, data already exist!")
+
+    def _get_raster_size(self, path):
+        """
+        Get Rastersize of Raster
+        :param path:
+        :return:
+        """
+        ds = gdal.Open(path)
+        self.nrows = ds.RasterYSize
+        self.ncols = ds.RasterXSize
+
+    def _group_data_by_year(self):
+        self.index_data_filt = {}
+        [self._group_by_year(idx) for idx in self.indices_process]
+
+    def _group_by_year(self, index):
+        """
+        :param index:
+        :return:
+        """
+        df_indexdata = pd.DataFrame(data=self.data.index_data[index].reshape(len(self.data.df_indata), -1), index=self.data.df_indata.index)
+        shp = self.data.index_data[index].shape
+        joined = self.data.df_indata[['year']].join(df_indexdata)
+        grouped = joined.groupby(by='year', axis=0).median().sort_index()
+        m = grouped.as_matrix().T
+        self.years = grouped.index.values
+        self.index_data_filt[index] = np.ma.MaskedArray(data=m, mask=np.isnan(m)).T.reshape(len(self.years), shp[1], shp[2])
+
+    def _make_outfile_list(self):
+        """
+        Create Dataframe with outfile properties, e.g. if already existing, timestamp and if it will be processed
+        :return:
+        """
+        def make_timestamp(x):
+            return datetime.datetime.fromtimestamp(os.path.getmtime(x))
+        self.df_outdata = pd.DataFrame(index=self.indices, columns=['filepath', 'exists', 'timestamp', 'process'])
+        self.df_outdata.filepath = np.array(['{0}_{1}_{2}_{3}_{4}.tif'.format(self.prefix, self.ss_name, self.row,
+                                                                              self.path, idx) for idx in self.indices])
+        self.df_outdata.filepath = [os.path.join(self.outfolder, f) for f in self.df_outdata.filepath]
+        self.df_outdata['exists'] = self.df_outdata['filepath'].apply(os.path.exists)
+        self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2)
+        self.df_outdata['timestamp'] = self.df_outdata['filepath'][self.df_outdata['exists']].apply(make_timestamp)
+        self.df_outdata['process'] = \
+            self.df_outdata['timestamp'][self.df_outdata['exists']] < self.infiles.timestamp.max()
+        # TODO: fix this line: throws warning at runtime
+        self.df_outdata['process'][~self.df_outdata['exists']] = True
+
+    def _pr_string_to_pr(self):
+        """
+        make row/path integers from string
+        :return:
+        """
+        self.row, self.path = np.array(self.pr_string.split('_'), dtype=np.int)
+
+    def _set_processing_bool(self):
+        """
+        Create boolean variables to check for later processing
+        :return:
+        """
+        self.outfiles_check = any(self.df_outdata.process)
+        x = self.indices[self.indices != 'nobs']
+        self.indices_process = np.array(self.df_outdata.loc[x][self.df_outdata.loc[x]['process']].index)
+        self.nobs_process = False
+        if 'nobs' in self.df_outdata.index:
+            self.nobs_process = self.df_outdata.loc['nobs', 'process']
+
+    def _setup_outfolder(self):
+        """
+        Check if outfolder exists, create otherwise
+        :return:
+        """
+        if not os.path.isdir(self.outfolder):
+            os.makedirs(self.outfolder)
+
+    def _setup_result_layers(self):
+        pass
+
+    def _subsample(self):
+        """
+        setup subsampling coordinates for tiled-processing
+        :return:
+        """
+        self.roff, self.coff, self.rsize, self.csize = tiling(self.nrows, self.ncols, self.tile_size, self.tile_size)
+        self.ntiles = len(self.roff)
+
+
 # TODO: reporting if completely new data arrived
-class Processor(object):
+class Processor(Process):
     def __init__(self, study_site, outfolder, infolder=None, indices=None,
                  startyear=1985, endyear=2014, startmonth=7, endmonth=8,
                  naming_convention='old', prefix='trendimage',
@@ -65,19 +267,7 @@ class Processor(object):
         if self.outfiles_check:
             self._startup_funcs3()
 
-    def load_data(self, i=0):
-        """
-        Load input data and indices using DataStack
-        :param i:
-        :return:
-        """
-        # print 'loading Data'
-        self.data = DataStack(self.infolder, indices=self.indices_process,
-                              xoff=int(self.coff[i]), xsize=int(self.csize[i]),
-                              yoff=int(self.roff[i]), ysize=int(self.rsize[i]),
-                              startmonth=self.startmonth, endmonth=self.endmonth,
-                              startyear=self.startyear, endyear=self.endyear, tc_sensor=self.tc_sensor)
-        self.data.load_data()
+
 
     def calculate_trend(self):
         print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
@@ -97,23 +287,6 @@ class Processor(object):
             self._create_metadata()
             self._export_files()
             print("Full Processing took {0} seconds".format(round(time.time()-self.start_time)))
-
-    def _startup_funcs1(self):
-        self._check_pr()
-        self._setup_infolder()
-        self._make_infile_list()
-        self._print_info()
-
-    def _startup_funcs2(self):
-        self._make_outfile_list()
-        self._setup_outfolder()
-        self._set_processing_bool()
-        self._final_precheck()
-
-    def _startup_funcs3(self):
-        self._get_raster_size(self.infiles.filepath.iloc[0])
-        self._subsample()
-        self._setup_result_layers()
 
     def _run_calculation_mode_full(self, i=0):
         print("\nProcessing tile {0}/{1}".format(i+1, self.ntiles))
@@ -135,114 +308,6 @@ class Processor(object):
             self._calc_trend_parallel_median(i)
         else:
             self._calc_trend_median()
-
-    def _check_pr(self):
-        """
-        check and transform Path/Row string
-        :return:
-        """
-        if (self.row is None) and (self.path is None) and (type(self.pr_string) == str):
-            self._pr_string_to_pr()
-        elif (self.row is None) and (self.path is None) and (type(self.pr_string) != str):
-            raise ValueError("Please indicate either row and path or pr_string")
-
-    def _pr_string_to_pr(self):
-        """
-        make row/path integers from string
-        :return:
-        """
-        self.row, self.path = np.array(self.pr_string.split('_'), dtype=np.int)
-
-    def _setup_infolder(self):
-        """
-        Create path for outfolder
-        :return:
-        """
-        if not self.infolder:
-            self.infolder = os.path.join(self.ss_indir, '{0}_{1}_{2}'.format(self.ss_name, self.row, self.path))
-
-    def _make_infile_list(self):
-        """
-        Get infile properties using DataStack without loading data explicitly
-        :return:
-        """
-        print('loading Data')  # fix for skip
-        self.infiles = DataStack(self.infolder,
-                                 startmonth=self.startmonth, endmonth=self.endmonth,
-                                 startyear=self.startyear, endyear=self.endyear).df_indata
-        self.infiles_check = len(self.infiles) > 0
-
-    def _make_outfile_list(self):
-        """
-        Create Dataframe with outfile properties, e.g. if already existing, timestamp and if it will be processed
-        :return:
-        """
-        def make_timestamp(x):
-            return datetime.datetime.fromtimestamp(os.path.getmtime(x))
-        self.df_outdata = pd.DataFrame(index=self.indices, columns=['filepath', 'exists', 'timestamp', 'process'])
-        self.df_outdata.filepath = np.array(['{0}_{1}_{2}_{3}_{4}.tif'.format(self.prefix, self.ss_name, self.row,
-                                                                              self.path, idx) for idx in self.indices])
-        self.df_outdata.filepath = [os.path.join(self.outfolder, f) for f in self.df_outdata.filepath]
-        self.df_outdata['exists'] = self.df_outdata['filepath'].apply(os.path.exists)
-        self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2)
-        self.df_outdata['timestamp'] = self.df_outdata['filepath'][self.df_outdata['exists']].apply(make_timestamp)
-        self.df_outdata['process'] = \
-            self.df_outdata['timestamp'][self.df_outdata['exists']] < self.infiles.timestamp.max()
-        # TODO: fix this line: throws warning at runtime
-        self.df_outdata['process'][~self.df_outdata['exists']] = True
-
-    def _print_info(self):
-        """
-        Small printing wrapper
-        :return:
-        """
-        print("\n\n")
-        print("Study Site: {0}".format(self.study_site))
-        print("Processing Dataset: {0}".format(self.pr_string))
-        if not self.infiles_check:
-            print("Skip processing, No Data available for this subset!\n")
-
-    def _set_processing_bool(self):
-        """
-        Create boolean variables to check for later processing
-        :return:
-        """
-        self.outfiles_check = any(self.df_outdata.process)
-        x = self.indices[self.indices != 'nobs']
-        self.indices_process = np.array(self.df_outdata.loc[x][self.df_outdata.loc[x]['process']].index)
-        self.nobs_process = False
-        if 'nobs' in self.df_outdata.index:
-            self.nobs_process = self.df_outdata.loc['nobs', 'process']
-
-    def _final_precheck(self):
-        if not self.outfiles_check:
-            print("Skip processing, data already exist!")
-
-    def _setup_outfolder(self):
-        """
-        Check if outfolder exists, create otherwise
-        :return:
-        """
-        if not os.path.isdir(self.outfolder):
-            os.makedirs(self.outfolder)
-
-    def _get_raster_size(self, path):
-        """
-        Get Rastersize of Raster
-        :param path:
-        :return:
-        """
-        ds = gdal.Open(path)
-        self.nrows = ds.RasterYSize
-        self.ncols = ds.RasterXSize
-
-    def _subsample(self):
-        """
-        setup subsampling coordinates for tiled-processing
-        :return:
-        """
-        self.roff, self.coff, self.rsize, self.csize = tiling(self.nrows, self.ncols, self.tile_size, self.tile_size)
-        self.ntiles = len(self.roff)
 
     def _setup_result_layers(self):
         """
@@ -294,9 +359,7 @@ class Processor(object):
             self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
             ctr += 1
 
-    def _group_data_by_year(self):
-        self.index_data_filt = {}
-        [self._group_by_year(idx) for idx in self.indices_process]
+
 
     def _calc_trend_median(self, i=0):
         """
@@ -335,19 +398,6 @@ class Processor(object):
             # TODO logging
             print(e)
             pass
-
-    def _group_by_year(self, index):
-        """
-        :param index:
-        :return:
-        """
-        df_indexdata = pd.DataFrame(data=self.data.index_data[index].reshape(len(self.data.df_indata), -1), index=self.data.df_indata.index)
-        shp = self.data.index_data[index].shape
-        joined = self.data.df_indata[['year']].join(df_indexdata)
-        grouped = joined.groupby(by='year', axis=0).median().sort_index()
-        m = grouped.as_matrix().T
-        self.years = grouped.index.values
-        self.index_data_filt[index] = np.ma.MaskedArray(data=m, mask=np.isnan(m)).T.reshape(len(self.years), shp[1], shp[2])
 
     def _calc_nobs(self, i=0):
         """
@@ -394,12 +444,14 @@ class Processor(object):
             print(self.df_outdata.loc[idx]['filepath'])
             array_to_file(self.results[idx],
                           self.df_outdata.loc[idx]['filepath'],
-                          self.infiles.filepath.iloc[0], dtype=gdal.GDT_Float32, compress=False, metadata=self.metadata[idx])
+                          self.infiles.filepath.iloc[0], dtype=gdal.GDT_Float32,
+                          compress=False, metadata=self.metadata[idx])
 
         if 'nobs' in list(self.results.keys()):
             array_to_file(self.results['nobs'],
                           self.df_outdata.loc['nobs', 'filepath'],
-                          self.infiles.filepath.iloc[0], dtype=gdal.GDT_UInt16, compress=False, metadata=self.metadata['nobs'])
+                          self.infiles.filepath.iloc[0], dtype=gdal.GDT_UInt16,
+                          compress=False, metadata=self.metadata['nobs'])
 
     def make_report(self):
         """
@@ -414,6 +466,120 @@ class Processor(object):
             src.write(text)
         pass
 
+class ProcessorBreakpoint(Process):
+    def __init__(self, study_site, outfolder, infolder=None, indices=None,
+                 startyear=1985, endyear=2014, startmonth=7, endmonth=8,
+                 naming_convention='old', prefix='trendimage',
+                 path=None, row=None, pr_string=None,
+                 rescale_intercept=datetime.datetime(2014, 7, 1),
+                 nobs=False, tc_sensor='auto', ts_mode='full',
+                 parallel=True, tile_size=250,
+                 n_jobs=-1):
+
+        if indices is None:
+            indices = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi', 'nobs']
+        self.study_site = study_site
+        self.outfolder = outfolder
+        self.infolder = infolder
+        self.indices = np.array(indices)
+        self.startyear = startyear
+        self.endyear = endyear
+        self.startmonth = startmonth
+        self.endmonth = endmonth
+        self.naming_convention = naming_convention
+        self.prefix = prefix
+        self.row = row
+        self.path = path
+        self.pr_string = pr_string
+        self.rescale_intercept = rescale_intercept
+        self.nobs = nobs
+        self.tc_sensor = tc_sensor
+        self.ts_mode = ts_mode
+        self.parallel = parallel
+        self.tile_size = tile_size
+        self.n_jobs = n_jobs
+        self.data = None
+        self.report_file = None
+        self.df_outdata = None
+        self.ss_name = study_sites[study_site]['name']
+        self.ss_indir = study_sites[study_site]['processing_dir']
+        self.infiles_check = False
+        self.outfiles_check = False
+        self.start_time = time.time()
+        self._startup_funcs1()
+        if self.infiles_check:
+            self._startup_funcs2()
+        if self.outfiles_check:
+            self._startup_funcs3()
+
+    def calculate_breaks(self):
+        print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
+        # TODO: insert here if new files arrived after last processing
+        for i in range(self.ntiles):
+            self._run_calculation_mode_median(i)
+
+    def export_result(self):
+        if self.outfiles_check:
+            self._export_files()
+            print("Full Processing took {0} seconds".format(round(time.time()-self.start_time)))
+
+    def _run_calculation_mode_median(self, i=0):
+        print("\nProcessing tile {0}/{1}".format(i+1, self.ntiles))
+        self.load_data(i)
+        self._group_data_by_year()
+        self._calc_break_parallel_median(i)
+
+    @staticmethod
+    def breakpoint(data, years):
+        res = []
+        for d in data:
+            msk = d.mask
+            x, y = years[~msk], d[~msk]
+            bp = Breakpoint(x, y, predictor='mae')
+            bp.fit()
+            res.append(bp.results_best_)
+        result = pd.concat(res, ignore_index=True, axis=1).transpose()
+        return result
+
+    def _calc_break_parallel_median(self, i=0):
+        """
+        Calculate Trend with parallel processing
+        :param i:
+        :return:
+        """
+        # print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
+        for idx in self.indices_process:
+            data = self.index_data_filt[idx].reshape(len(self.years), -1).T
+            try:
+                out = Parallel(n_jobs=self.n_jobs)(delayed(self.breakpoint)(d, self.years) for d in np.array_split(data, 50))
+                #out = [self.breakpoint(d, self.years) for d in np.array_split(data, 50)]
+                out = pd.concat(out)
+                tmp = np.asarray(out['break_year1'].values).reshape((int(self.rsize[i]), int(self.csize[i])))
+                self.results[idx][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = tmp
+            except Exception as e:
+                # TODO logging
+                print(e)
+                pass
+
+    def _setup_result_layers(self):
+        """
+        Create result layers as np.arrays wrapped in a dict
+        :return:
+        """
+        self.results = {}
+        for i in self.indices_process:
+            self.results[i] = np.zeros((self.nrows, self.ncols), dtype=np.float)
+
+    def _export_files(self):
+        """
+        Write calculated output data to Raster files
+        :return:
+        """
+        for idx in self.indices_process:
+            print(self.df_outdata.loc[idx]['filepath'])
+            array_to_file(self.results[idx],
+                          self.df_outdata.loc[idx]['filepath'],
+                          self.infiles.filepath.iloc[0], dtype=gdal.GDT_UInt16, compress=False, noData=True)
 
 class LocPreProcessor(object):
     """
@@ -679,6 +845,7 @@ class LocPreProcessor(object):
             print("All output files already exist!")
         else:
             print("No Data available, skip processing!")
+
 
 
 # TODO: cleanup structure, e.g. make generic class and each processing as subclass
