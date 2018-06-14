@@ -8,7 +8,7 @@ __author__ = 'Ingmar Nitze'
 class Breakpoint(object):
     """
     """
-    def __init__(self, x, y, n_breaks=1, predictor='r2'):
+    def __init__(self, x, y, n_breaks=1, predictor='mae'):
         """
         :param x:
         :param y:

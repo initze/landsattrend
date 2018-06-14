@@ -80,6 +80,7 @@ class Process(object):
 
     def _startup_funcs2(self):
         self._make_outfile_list()
+        self._fill_outfile_list()
         self._setup_outfolder()
         self._set_processing_bool()
         self._final_precheck()
@@ -165,19 +166,30 @@ class Process(object):
         Create Dataframe with outfile properties, e.g. if already existing, timestamp and if it will be processed
         :return:
         """
+        # TODO: fill type specific, subclass specific functions
+
+        self.df_outdata = pd.DataFrame(index=self.indices, columns=['filepath', 'exists', 'timestamp', 'process', 'ms_index', 'output_feature', 'array_name'])
+
+    def _fill_outfile_list(self):
+        """
+        Fill DataFrame of outfiles
+        :return:
+        """
         def make_timestamp(x):
             return datetime.datetime.fromtimestamp(os.path.getmtime(x))
-        self.df_outdata = pd.DataFrame(index=self.indices, columns=['filepath', 'exists', 'timestamp', 'process'])
+
         self.df_outdata.filepath = np.array(['{0}_{1}_{2}_{3}_{4}.tif'.format(self.prefix, self.ss_name, self.row,
                                                                               self.path, idx) for idx in self.indices])
         self.df_outdata.filepath = [os.path.join(self.outfolder, f) for f in self.df_outdata.filepath]
         self.df_outdata['exists'] = self.df_outdata['filepath'].apply(os.path.exists)
-        self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2)
+        self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2) # dummy insertion to define col as dt
         self.df_outdata['timestamp'] = self.df_outdata['filepath'][self.df_outdata['exists']].apply(make_timestamp)
         self.df_outdata['process'] = \
             self.df_outdata['timestamp'][self.df_outdata['exists']] < self.infiles.timestamp.max()
         # TODO: fix this line: throws warning at runtime
         self.df_outdata['process'][~self.df_outdata['exists']] = True
+        self.df_outdata['ms_index'] = self.indices
+        self.df_outdata['array_name'] = self.indices
 
     def _pr_string_to_pr(self):
         """
@@ -215,6 +227,7 @@ class Process(object):
         :return:
         """
         self.roff, self.coff, self.rsize, self.csize = tiling(self.nrows, self.ncols, self.tile_size, self.tile_size)
+        self.idxs_row, self.idxs_col = np.mgrid[250:500, 0:250].reshape((2,-1))
         self.ntiles = len(self.roff)
 
 
@@ -267,9 +280,7 @@ class Processor(Process):
         if self.outfiles_check:
             self._startup_funcs3()
 
-
-
-    def calculate_trend(self):
+    def process(self):
         print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
         # TODO: insert here if new files arrived after last processing
         if self.outfiles_check:
@@ -358,8 +369,6 @@ class Processor(Process):
         for idx in self.indices_process:
             self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
             ctr += 1
-
-
 
     def _calc_trend_median(self, i=0):
         """
@@ -468,16 +477,18 @@ class Processor(Process):
 
 class ProcessorBreakpoint(Process):
     def __init__(self, study_site, outfolder, infolder=None, indices=None,
-                 startyear=1985, endyear=2014, startmonth=7, endmonth=8,
-                 naming_convention='old', prefix='trendimage',
+                 startyear=1999, endyear=2014, startmonth=7, endmonth=8,
+                 naming_convention='old', prefix='breakpoint',
                  path=None, row=None, pr_string=None,
                  rescale_intercept=datetime.datetime(2014, 7, 1),
-                 nobs=False, tc_sensor='auto', ts_mode='full',
+                 nobs=False, tc_sensor='TM', ts_mode='median_year',
+                 breakpoint_predictor='mae',
                  parallel=True, tile_size=250,
+                 mask_file=None, mask_process_values=None,
                  n_jobs=-1):
 
         if indices is None:
-            indices = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi', 'nobs']
+            indices = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi']
         self.study_site = study_site
         self.outfolder = outfolder
         self.infolder = infolder
@@ -498,6 +509,9 @@ class ProcessorBreakpoint(Process):
         self.parallel = parallel
         self.tile_size = tile_size
         self.n_jobs = n_jobs
+        self.breakpoint_predictor = breakpoint_predictor
+        self.mask_file = mask_file
+        self.mask_process_values = mask_process_values
         self.data = None
         self.report_file = None
         self.df_outdata = None
@@ -512,7 +526,7 @@ class ProcessorBreakpoint(Process):
         if self.outfiles_check:
             self._startup_funcs3()
 
-    def calculate_breaks(self):
+    def process(self):
         print("Index: {0}".format(' '.join(self.df_outdata[self.df_outdata['process']].index)))
         # TODO: insert here if new files arrived after last processing
         for i in range(self.ntiles):
@@ -530,12 +544,12 @@ class ProcessorBreakpoint(Process):
         self._calc_break_parallel_median(i)
 
     @staticmethod
-    def breakpoint(data, years):
+    def breakpoint(data, years, predictor):
         res = []
         for d in data:
             msk = d.mask
             x, y = years[~msk], d[~msk]
-            bp = Breakpoint(x, y, predictor='mae')
+            bp = Breakpoint(x, y, predictor=predictor)
             bp.fit()
             res.append(bp.results_best_)
         result = pd.concat(res, ignore_index=True, axis=1).transpose()
@@ -547,19 +561,34 @@ class ProcessorBreakpoint(Process):
         :param i:
         :return:
         """
-        # print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
         for idx in self.indices_process:
             data = self.index_data_filt[idx].reshape(len(self.years), -1).T
             try:
-                out = Parallel(n_jobs=self.n_jobs)(delayed(self.breakpoint)(d, self.years) for d in np.array_split(data, 50))
-                #out = [self.breakpoint(d, self.years) for d in np.array_split(data, 50)]
+                out = Parallel(n_jobs=self.n_jobs)(delayed(self.breakpoint)(d, self.years, self.breakpoint_predictor) for d in np.array_split(data, 50))
                 out = pd.concat(out)
-                tmp = np.asarray(out['break_year1'].values).reshape((int(self.rsize[i]), int(self.csize[i])))
-                self.results[idx][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = tmp
+                tmp = out[['break_year1', 'mae_linear', 'mae', 'r2_linear', 'r2']].values.T.reshape(
+                    (5, int(self.rsize[i]), int(self.csize[i])))
+                self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = tmp
+
             except Exception as e:
                 # TODO logging
                 print(e)
                 pass
+
+    def _create_metadata(self):
+        """
+        Function to setup Metadata
+        :return:
+        """
+        self.metadata = {}
+        for key in list(self.results.keys()):
+            self.metadata[key] = {'DESCRIPTION': 'Breakpoint Calculation of: {0}'.format(key),
+                                  'CREATION TIMESTAMP': datetime.datetime.fromtimestamp(time.time()).isoformat(),
+                                  'PROCESSING_VERSION': __version__,
+                                  'BREAKPOINT_PREDICTOR': self.breakpoint_predictor,
+                                  'DATA_YEARS': '{s}-{e}'.format(s=self.startyear, e=self.endyear),
+                                  'DATA_MONTHS': '{s}-{e}'.format(s=self.startmonth, e=self.endmonth),
+                                  'DATA_FILTER_MODE': self.ts_mode}
 
     def _setup_result_layers(self):
         """
@@ -568,7 +597,8 @@ class ProcessorBreakpoint(Process):
         """
         self.results = {}
         for i in self.indices_process:
-            self.results[i] = np.zeros((self.nrows, self.ncols), dtype=np.float)
+            self.results[i] = np.zeros((5, self.nrows, self.ncols), dtype=np.float)
+
 
     def _export_files(self):
         """
@@ -577,9 +607,31 @@ class ProcessorBreakpoint(Process):
         """
         for idx in self.indices_process:
             print(self.df_outdata.loc[idx]['filepath'])
+
             array_to_file(self.results[idx],
                           self.df_outdata.loc[idx]['filepath'],
-                          self.infiles.filepath.iloc[0], dtype=gdal.GDT_UInt16, compress=False, noData=True)
+                          self.infiles.filepath.iloc[0], dtype=gdal.GDT_Float32, compress=False, noData=True)
+
+    def _fill_outfile_list(self):
+        """
+        Fill DataFrame of outfiles
+        :return:
+        """
+        def make_timestamp(x):
+            return datetime.datetime.fromtimestamp(os.path.getmtime(x))
+
+        self.df_outdata.filepath = np.array(['{0}_{1}_{2}_{3}_{4}.tif'.format(self.prefix, self.ss_name, self.row,
+                                                                              self.path, idx) for idx in self.indices])
+        self.df_outdata.filepath = [os.path.join(self.outfolder, f) for f in self.df_outdata.filepath]
+        self.df_outdata['exists'] = self.df_outdata['filepath'].apply(os.path.exists)
+        self.df_outdata['timestamp'] = datetime.datetime(1800, 1, 2) # dummy insertion to define col as dt
+        self.df_outdata['timestamp'] = self.df_outdata['filepath'][self.df_outdata['exists']].apply(make_timestamp)
+        self.df_outdata['process'] = \
+            self.df_outdata['timestamp'][self.df_outdata['exists']] < self.infiles.timestamp.max()
+        # TODO: fix this line: throws warning at runtime
+        self.df_outdata['process'][~self.df_outdata['exists']] = True
+        self.df_outdata['ms_index'] = self.indices
+        self.df_outdata['array_name'] = self.indices
 
 class LocPreProcessor(object):
     """
@@ -659,10 +711,10 @@ class LocPreProcessor(object):
         """
         self.get_infolders()
         self.get_infiles()
-        self.make_outnames()
-        self.check_outnames()
-        self.check_outfolder_structure()
-        self.make_output_string()
+        self._make_outnames()
+        self._check_outnames()
+        self._check_outfolder_structure()
+        self._make_output_string()
 
     def get_study_site_features(self):
         """
@@ -761,7 +813,7 @@ class LocPreProcessor(object):
                 self.empty_fld = np.append(self.empty_fld, infile)  # non existant files (empty folder)
         self.n_files_in = len(self.infiles)
 
-    def make_outnames(self):
+    def _make_outnames(self):
         """
         Make list of output filenames
         :return:
@@ -771,14 +823,14 @@ class LocPreProcessor(object):
             outname = os.path.basename(f).split('.tif')[0] + '_{0}_{1}_{2}.tif'.format(self.ss_name_, self.row, self.path)
             self.outfiles = np.append(self.outfiles, os.path.join(self.out_dir_tile, outname))
 
-    def check_outnames(self):
+    def _check_outnames(self):
         """
         Check which outfiles already exist and filter accordingly
         :return:
         """
         self.outfile_exists = np.array([os.path.exists(f) for f in self.outfiles])
 
-    def check_outfolder_structure(self):
+    def _check_outfolder_structure(self):
         """
         make output dir if not existant
         :return:
@@ -786,7 +838,7 @@ class LocPreProcessor(object):
         if not os.path.exists(self.out_dir_tile):
             os.makedirs(self.out_dir_tile)
 
-    def make_output_string(self):
+    def _make_output_string(self):
         """
         Create processing command for gdalwarp and system processing
         :return:
