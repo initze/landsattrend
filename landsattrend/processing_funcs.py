@@ -328,8 +328,8 @@ class Processor(Process):
         self.results = {}
         for i in self.indices_process:
             self.results[i] = np.zeros((4, self.nrows, self.ncols), dtype=np.float)
-        if 'nobs' in self.indices:
-            self.results['nobs'] = np.zeros((self.nrows, self.ncols), dtype=np.uint16)
+        #if 'nobs' in self.indices:
+        self.results['nobs'] = np.zeros((self.nrows, self.ncols), dtype=np.uint16)
 
     def _rescaling_intercept(self):
         """
@@ -349,8 +349,7 @@ class Processor(Process):
         out = [trend_image2(self.data.index_data[idx], self.data.df_indata.ordinal_day) for idx in self.indices_process]
         ctr = 0
         for idx in self.indices_process:
-            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i],
-            self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
+            self.results[idx][:, self.idxs_row, self.idxs_row] = out[ctr]
             ctr += 1
 
     def calc_trend_parallel(self, i=0):
@@ -367,7 +366,7 @@ class Processor(Process):
                                    processing_mask=processing_mask) for idx in self.indices_process)
         ctr = 0
         for idx in self.indices_process:
-            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
+            self.results[idx][:, self.idxs_row, self.idxs_row] = out[ctr]
             ctr += 1
 
     def _calc_trend_median(self, i=0):
@@ -381,7 +380,7 @@ class Processor(Process):
         out = [trend_image2(self.index_data_filt[idx], self.years, factor=10.) for idx in self.indices_process]
         ctr = 0
         for idx in self.indices_process:
-            self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
+            self.results[idx][:, self.idxs_row, self.idxs_row] = out[ctr]
             ctr += 1
 
     def _calc_trend_parallel_median(self, i=0):
@@ -392,7 +391,7 @@ class Processor(Process):
         """
         # print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
         # arange data
-        processing_mask = self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]]
+        processing_mask = self.results['nobs'][self.idxs_row, self.idxs_row]
         processing_mask = processing_mask >= 6
         try:
             out = Parallel(n_jobs=self.n_jobs)(delayed(trend_image2)(self.index_data_filt[idx],
@@ -401,7 +400,7 @@ class Processor(Process):
                                                for idx in self.indices_process)
             ctr = 0
             for idx in self.indices_process:
-                self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = out[ctr]
+                self.results[idx][:, self.idxs_row, self.idxs_row] = out[ctr]
                 ctr += 1
         except Exception as e:
             # TODO logging
@@ -566,9 +565,8 @@ class ProcessorBreakpoint(Process):
             try:
                 out = Parallel(n_jobs=self.n_jobs)(delayed(self.breakpoint)(d, self.years, self.breakpoint_predictor) for d in np.array_split(data, 50))
                 out = pd.concat(out)
-                tmp = out[['break_year1', 'mae_linear', 'mae', 'r2_linear', 'r2']].values.T.reshape(
-                    (5, int(self.rsize[i]), int(self.csize[i])))
-                self.results[idx][:, self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = tmp
+                tmp = np.asarray(out[['break_year1', 'mae_linear', 'mae', 'r2_linear', 'r2']].values).T
+                self.results[idx][:, self.idxs_row, self.idxs_col] = tmp
 
             except Exception as e:
                 # TODO logging
