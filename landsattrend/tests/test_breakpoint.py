@@ -1,12 +1,12 @@
 from unittest import TestCase
 from landsattrend.breakpoint import Breakpoint
-from landsattrend.data_stack import DataStack, load_point_ts
+from landsattrend.data_stack import load_point_ts
 import numpy as np
 
 class DataStackTest(TestCase):
 
     def setUp(self):
-        raster_dir = 'landsattrend/tests/data/raster'
+        raster_dir = 'data/raster'
         self.singlepoint = load_point_ts('', (470307.882181, 7899742.63389), startmonth=1, endmonth=12, startyear=1980, endyear=2017, infolder=raster_dir)
         self.singlepoint.load_data()
         self.singlepoint.group_data(type='median')

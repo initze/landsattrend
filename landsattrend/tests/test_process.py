@@ -8,11 +8,11 @@ class ProcessorTest(TestCase):
 
     def setUp(self):
         raster_dir = r'P:\initze\landsattrend\landsattrend\tests\data\raster'
-        self.proc = Processor('testcase', 'landsattrend/tests/data/raster/trendresult', infolder=raster_dir, indices=['ndvi'],
+        self.proc = Processor('testcase', 'landsattrend/tests/data/raster/trendresult', infolder=raster_dir, indices=['tcb', 'ndvi', 'tcw', 'tcg'],
                               startyear=1999, endyear=2014,
                               startmonth=7, endmonth=8, pr_string='32_7',
-                              n_jobs=10, tc_sensor='auto', ts_mode='full')
-    #"""
+                              n_jobs=10, tc_sensor='auto', ts_mode='full',nobs=False)
+
     def test_filelist_length(self):
         assert len(self.proc.infiles) == 142
 
@@ -20,7 +20,16 @@ class ProcessorTest(TestCase):
         assert len(self.proc.infiles.query('sensor == "ETM"')) == 108
         assert len(self.proc.infiles.query('sensor == "TM"')) == 20
         assert len(self.proc.infiles.query('sensor == "OLI"')) == 14
-    #"""
+
+    def test_filelist_outnames(self):
+        assert len(self.proc.df_outdata) == 4
+        assert (self.proc.df_outdata['ms_index'].values == self.proc.indices).all()
+    """
+    def test_process(self):
+        self.proc.process()
+
+
+    """
     """
     def test_indices_reader(self):
         assert True == False

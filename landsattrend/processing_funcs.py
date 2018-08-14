@@ -66,7 +66,7 @@ class Process(object):
         """
         # print 'loading Data'
         self.data = DataStack(self.infolder, indices=self.indices_process,
-                              xoff=int(self.coff[i]), xsize=int(self.csize[i]),
+                              xoff=int(self.idxs_row[i].min()), xsize=int(),
                               yoff=int(self.roff[i]), ysize=int(self.rsize[i]),
                               startmonth=self.startmonth, endmonth=self.endmonth,
                               startyear=self.startyear, endyear=self.endyear, tc_sensor=self.tc_sensor)
@@ -221,7 +221,7 @@ class Process(object):
     def _setup_result_layers(self):
         pass
 
-    def _subsample(self):
+    def _subsampleX(self):
         """
         setup subsampling coordinates for tiled-processing
         :return:
@@ -229,6 +229,17 @@ class Process(object):
         self.roff, self.coff, self.rsize, self.csize = tiling(self.nrows, self.ncols, self.tile_size, self.tile_size)
         self.idxs_row, self.idxs_col = np.mgrid[250:500, 0:250].reshape((2,-1))
         self.ntiles = len(self.roff)
+
+    def _subsample(self):
+        n_splits = np.int(np.ceil(self.nrows/self.tile_size * self.ncols/self.tile_size))
+        r, c = np.mgrid[:self.nrows, :self.ncols].reshape(2, -1)
+        self.idxs_row = np.array_split(r, n_splits)
+        self.idxs_col = np.array_split(c, n_splits)
+        self.roff, r_max = np.array(self.idxs_row).min(axis=1), np.array(self.idxs_row).max(axis=1)
+        self.rsize = r_max - self.roff
+        self.coff, c_max = np.array(self.idxs_row).min(axis=1), np.array(self.idxs_row).max(axis=1)
+        self.csize = c_max - self.roff
+        self.ntiles = n_splits
 
 
 # TODO: reporting if completely new data arrived
@@ -359,7 +370,7 @@ class Processor(Process):
         :return:
         """
         processing_mask = \
-            self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]]
+            self.results['nobs'][self.idxs_row, self.idxs_col]
         processing_mask = processing_mask >= 6
         out = Parallel(n_jobs=self.n_jobs)\
             (delayed(trend_image2)(self.data.index_data[idx], self.data.df_indata.ordinal_day,
@@ -400,7 +411,7 @@ class Processor(Process):
                                                for idx in self.indices_process)
             ctr = 0
             for idx in self.indices_process:
-                self.results[idx][:, self.idxs_row, self.idxs_row] = out[ctr]
+                self.results[idx][:, self.idxs_row[i], self.idxs_row[i]] = out[ctr]
                 ctr += 1
         except Exception as e:
             # TODO logging
@@ -415,7 +426,7 @@ class Processor(Process):
         """
         if self.nobs_process:
             nobs_out = (~self.data.data_stack.mask[:, 0]).sum(axis=0)
-            self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = nobs_out
+            self.results['nobs'][self.idxs_row[i], self.idxs_col[i]] = nobs_out
 
     def _calc_nobs_median(self, i=0):
         """
@@ -425,7 +436,7 @@ class Processor(Process):
         """
         if self.nobs_process:
             nobs_out = (~self.index_data_filt[self.indices_process[0]].mask).sum(axis=0)
-            self.results['nobs'][self.roff[i]:self.roff[i]+self.rsize[i], self.coff[i]:self.coff[i]+self.csize[i]] = nobs_out
+            self.results['nobs'][self.idxs_row[i], self.idxs_col[i]] = nobs_out
 
     def _create_metadata(self):
         """
@@ -761,6 +772,7 @@ class LocPreProcessor(object):
         ds2 = filtered
 
         # check for upper and lower case
+        # TODO: better check Geometry?
         try:
             self.coords = np.array([ds2[0]['properties'][feat] for feat in ['XMIN', 'YMIN', 'XMAX', 'YMAX']])
         except:

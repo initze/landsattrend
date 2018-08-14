@@ -539,6 +539,11 @@ def tiling(xsize, ysize, xstepsize, ystepsize):
 
     return x, y, dist_x, dist_y
 
+def tiling_new(inarray, tile_size=250):
+    shp = inarray.shape
+
+
+
 
 def compress_folders(indir, delete=True):
     """
