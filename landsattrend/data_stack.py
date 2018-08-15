@@ -232,7 +232,7 @@ class DataStack(object):
         for index, row in self.df_indata.iterrows():
             d = ga.LoadFile(row['filepath'], xoff=self.xoff, xsize=self.xsize, yoff=self.yoff, ysize=self.ysize)
             if isinstance(d, np.ndarray):
-                self.df_indata[index, 'file_loaded'] = True
+                self.df_indata.loc[index, 'file_loaded'] = True
                 data_stack.append(d)
             else:
                 continue
