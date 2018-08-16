@@ -371,7 +371,7 @@ class Processor(Process):
         out = [trend_image2(self.data.index_data[idx], self.data.df_indata.ordinal_day) for idx in self.indices_process]
         ctr = 0
         for idx in self.indices_process:
-            self.results[idx][:, self.idxs_row, self.idxs_col] = out[ctr]
+            self.results[idx][:, self.idxs_row[i], self.idxs_col[i]] = out[ctr].reshape((4, -1))
             ctr += 1
 
     def calc_trend_parallel(self, i=0):
@@ -381,14 +381,14 @@ class Processor(Process):
         :return:
         """
         processing_mask = \
-            self.results['nobs'][self.idxs_row, self.idxs_col]
+            self.results['nobs'][self.idxs_row[i], self.idxs_col[i]].reshape((self.rsize[i], self.csize[i]))
         processing_mask = processing_mask >= 6
         out = Parallel(n_jobs=self.n_jobs)\
             (delayed(trend_image2)(self.data.index_data[idx], self.data.df_indata.ordinal_day,
                                    processing_mask=processing_mask) for idx in self.indices_process)
         ctr = 0
         for idx in self.indices_process:
-            self.results[idx][:, self.idxs_row, self.idxs_col] = out[ctr]
+            self.results[idx][:, self.idxs_row[i], self.idxs_col[i]] = out[ctr].reshape((4, -1))
             ctr += 1
 
     def _calc_trend_median(self, i=0):
@@ -402,7 +402,7 @@ class Processor(Process):
         out = [trend_image2(self.index_data_filt[idx], self.years, factor=10.) for idx in self.indices_process]
         ctr = 0
         for idx in self.indices_process:
-            self.results[idx][:, self.idxs_row, self.idxs_col] = out[ctr]
+            self.results[idx][:, self.idxs_row[i], self.idxs_col[i]] = out[ctr].reshape((4, -1))
             ctr += 1
 
     def _calc_trend_parallel_median(self, i=0):
@@ -437,7 +437,7 @@ class Processor(Process):
         """
         if self.nobs_process:
             nobs_out = (~self.data.data_stack.mask[:, 0]).sum(axis=0)
-            self.results['nobs'][self.idxs_row[i], self.idxs_col[i]] = nobs_out
+            self.results['nobs'][self.idxs_row[i], self.idxs_col[i]] = nobs_out.ravel()
 
     def _calc_nobs_median(self, i=0):
         """
