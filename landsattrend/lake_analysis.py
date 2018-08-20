@@ -581,7 +581,7 @@ class LakeMaker(object):
         self.df_start =  pd.DataFrame.from_csv(self.lake_dataset_path_)
 
     #TODO: tmp
-    def filter_data(self, model_path, query='proba <= 0.5 and max > 0.95 '):
+    def filter_data(self, model_path, query='proba <= 0.5 and max > 0.95'):
         """
         Function to filter rivers and fire data
         :param model_path: path to saved scikit-learn model for filtering river or other low-quality info
@@ -599,7 +599,7 @@ class LakeMaker(object):
         df = self.df_start.copy()
         df['class'] = pr
         df['proba'] = proba[:, 1]
-        self.df_filter = df.query(query)
+        self.df_filter = df[np.all([df['proba'] <= 0.5, df['max'] > 0.95], axis=0)]
 
     def save_filtered_data(self):
         """
@@ -795,7 +795,7 @@ class LakeMaker(object):
                 A = np.zeros((len(rr), len(cc)))
                 for r in rr:
                     for c in cc:
-                        A[r/blocksize:r/blocksize+1, c/blocksize:c/blocksize+1] = grid[type][r:r+blocksize, c:c+blocksize].sum()
+                        A[int(r/blocksize):int(r/blocksize+1), int(c/blocksize):int(c/blocksize+1)] = grid[type][r:int(r+blocksize), c:int(c+blocksize)].sum()
 
                 self._setup_gridded_result_paths(blocksize, type=type)
                 array_to_file(A*0.09, self.gridded_result_netchange_path_,
