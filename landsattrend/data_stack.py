@@ -238,6 +238,7 @@ class DataStack(object):
                 continue
         self.data_stack = np.ma.masked_equal(np.asarray(data_stack), 0)
         self.data_stack = self.data_stack / self.factor
+        self.df_indata = self.df_indata[self.df_indata['file_loaded'] == True]
 
     def _calc_indices(self):
         """

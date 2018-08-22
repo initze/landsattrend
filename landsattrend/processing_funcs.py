@@ -307,6 +307,7 @@ class Processor(Process):
         # TODO: insert here if new files arrived after last processing
         if self.outfiles_check:
             print("Parallel Processing of trends with {0} CPUs".format(self.n_jobs))
+            #for i in range(4,7):
             for i in range(self.ntiles):
                 if self.ts_mode == 'full':
                     self._run_calculation_mode_full(i)
