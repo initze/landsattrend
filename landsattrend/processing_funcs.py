@@ -979,7 +979,7 @@ class LocPreProcessorDEM(LocPreProcessor):
         sr2.ImportFromWkt(ds2.crs_wkt)
         ds2.close()
         ds2 = filtered
-
+        #TODO: adapt to reading coords
         self.coords = np.array([ds2[0]['properties'][feat] for feat in ['XMIN', 'YMIN', 'XMAX', 'YMAX']])
 
     def _setup_outpaths(self):
