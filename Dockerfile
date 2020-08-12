@@ -3,8 +3,12 @@ FROM python:3.7-slim
 RUN apt-get -y update
 RUN apt install -y -qq python3-pip
 
-RUN pip3 install numpy==1.18.2
-RUN pip3 install numpydoc==0.9.1
+RUN python3 -m pip install --upgrade pip
+
+RUN pip3 install Bottleneck
+
+RUN pip3 install numpy==1.14.5
+RUN pip3 install numpydoc
 
 # Install GDAL dependencies
 RUN apt-get install -y libgdal-dev

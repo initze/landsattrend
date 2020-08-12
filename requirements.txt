@@ -4,3 +4,4 @@ scikit-learn
 rasterio
 joblib
 fiona
+netCDF4
