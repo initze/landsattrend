@@ -1,0 +1,6 @@
+pandas
+geopandas
+scikit-learn
+rasterio
+joblib
+fiona
