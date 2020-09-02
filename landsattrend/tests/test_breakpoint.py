@@ -22,3 +22,9 @@ class DataStackTest(TestCase):
 
     def tearDown(self):
         pass
+
+def main():
+    print('testing DataStackTest')
+
+if __name__ == '__main__':
+    main()
