@@ -13,6 +13,11 @@ RESULT_DIR = os.path.join(BASE_DIR, 'data')
 # load study sites from configuration file
 csvdir = os.path.join(os.getcwd(),'config')
 csvpath = os.path.join(csvdir, 'config_study_sites.csv')
-study_sites = pd.DataFrame.from_csv(csvpath).T.to_dict()
+study_sites_df = pd.DataFrame.from_csv(csvpath)
+#adapt paths
+study_sites_df['fishnet_file'] = study_sites_df.apply(lambda x: os.path.join(VECTOR_DIR, os.path.basename(x['fishnet_file'])), axis=1)
+study_sites_df['dem_dir'] = study_sites_df.apply(lambda x: os.path.join(DEM_DIR, os.path.basename(x['dem_dir'])), axis=1)
+study_sites_df['result_dir'] = study_sites_df.apply(lambda x: os.path.join(RESULT_DIR, os.path.basename(x['result_dir'])), axis=1)
 
+study_sites = study_sites_df.T.to_dict()
 wrs2_path = os.path.join(VECTOR_DIR, 'wrs2_descending.shp')
