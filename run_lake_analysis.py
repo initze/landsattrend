@@ -2,6 +2,7 @@ from landsattrend.lake_analysis import LakeMaker
 import os
 
 os.environ['GDAL_PATH'] = r'C:\Users\initze\AppData\Local\Continuum\anaconda3\envs\landsattrend2\Scripts'
+os.environ['GDAL_BIN'] = r'C:\Users\initze\AppData\Local\Continuum\anaconda3\envs\landsattrend2\Library\bin'
 PROCESSING_DIR = os.getcwd()
 DEM_LOCATION = os.path.join(PROCESSING_DIR, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESSING_DIR, r'aux_data', 'forestfire', 'forestfire.vrt')
