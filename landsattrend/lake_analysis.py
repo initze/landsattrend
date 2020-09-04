@@ -230,7 +230,8 @@ class LakeMaker(object):
         for fi in files:
             f.write(fi + '\n')
         f.close()
-        os.system('gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(txtfile=txtfile, vrtfile=vrtfile))
+        os.system(r'python {gdal_path}\gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_PATH'],
+                                                                              txtfile=txtfile, vrtfile=vrtfile))
 
     def _setup_class_vrt_paths(self):
         self.class_vrt_path_ = os.path.join(self.directory, r'01_Classification_Raster', 'class.vrt')
@@ -319,7 +320,8 @@ class LakeMaker(object):
             epsg = (list(ds.crs.values())[0]).split(':')[-1]
 
         # create firemap/mask
-        s = r'python gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(epsg=epsg,
+        s = r'python {gdal_path}\gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(gdal_path=os.environ['GDAL_PATH'],
+                                                                                                                      epsg=epsg,
                                                                                                                xmin=bnd.left,
                                                                                                                ymin=bnd.bottom,
                                                                                                                xmax=bnd.right,
@@ -328,7 +330,8 @@ class LakeMaker(object):
                                                                                                                outfile=self.firemask_path_)
         os.system(s)
         # create elevation model
-        s = r'python gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(epsg=epsg,
+        s = r'python {gdal_path}\gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(gdal_path=os.environ['GDAL_PATH'],
+                                                                                                                               epsg=epsg,
                                                                                                                         xmin=bnd.left,
                                                                                                                         ymin=bnd.bottom,
                                                                                                                         xmax=bnd.right,
@@ -337,7 +340,8 @@ class LakeMaker(object):
                                                                                                                         outfile=self.dem_path_)
         os.system(s)
         # create slope from created DEM
-        s_slope = r'python gdaldem slope -alg ZevenbergenThorne {infile} {slopefile}'.format(infile=self.dem_path_, slopefile=self.slope_path_)
+        s_slope = r'python {gdal_path}\gdaldem slope -alg ZevenbergenThorne {infile} {slopefile}'.format(gdal_path=os.environ['GDAL_PATH'],
+                                                                                             infile=self.dem_path_, slopefile=self.slope_path_)
         os.system(s_slope)
 
     def _load_classdata(self):
@@ -609,7 +613,8 @@ class LakeMaker(object):
         self.load_masks()
         self.label_Cfilter = self._filter_labelled_mask(self.label_C, self.df_filter.index)
         array_to_file(self.label_Cfilter, self.label_Cfilter_path_, self.class_vrt_path_, dtype=gdal.GDT_UInt32)
-        s = 'python gdal_polygonize.py -q -8 -f "ESRI Shapefile" -mask {raster} {raster} {vector} label_id label_id'.format(
+        s = r'python {gdal_path}\gdal_polygonize.py -q -8 -f "ESRI Shapefile" -mask {raster} {raster} {vector} label_id label_id'.format(
+                gdal_path=os.environ['GDAL_PATH'],
                 raster=self.label_Cfilter_path_,
                 vector=self.label_CfilterVector_path_)
         os.system(s)
@@ -1004,7 +1009,8 @@ class SlumpMaker(LakeMaker):
 
     def _export_segment_files(self):
         array_to_file(self.segment_raster, self.segment_raster_path_, self.probafile_path_, noData=True, noDataVal=-1)
-        s = 'python gdal_polygonize.py -q -8 -f "GeoJSON" -mask {raster} {raster} {vector} label label'.format(
+        s = r'python {gdal_path}\gdal_polygonize.py -q -8 -f "GeoJSON" -mask {raster} {raster} {vector} label label'.format(
+                        gdal_path=os.environ['GDAL_PATH'],
                         raster=self.segment_raster_path_,
                         vector=self.segment_vector_path_)
         os.system(s)
@@ -1048,7 +1054,9 @@ class SlumpMaker(LakeMaker):
                     fi = (os.path.join(study_sites[self.zone]['dem_dir'], '{zone}_{pr}_{idx}.tif'.format(zone=self.zone, pr=pr, idx=ctype)))
                     f.write(fi + '\n')
 
-            os.system('python gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(txtfile=txtfile, vrtfile=vrtfile))
+            os.system(r'python {gdal_path}\gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_PATH'],
+                                                                                                    txtfile=txtfile,
+                                                                                                    vrtfile=vrtfile))
 
     def _load_classdata(self, pr_index=4):
         """
