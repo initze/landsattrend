@@ -16,6 +16,8 @@ LAKE_FILTER_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180820_lakefilter_
 
 
 def main():
+    print(os.path.isdir(CLASS_MODEL), os.path.isfile(CLASS_MODEL))
+    print(os.path.isdir(LAKE_FILTER_MODEL), os.path.isfile(LAKE_FILTER_MODEL))
     l = LakeMaker(zone, os.path.join(directory_location, site_name), classperiod='1999-2019')
     print("\nStart Classification")
     l.classify(CLASS_MODEL, tiles)

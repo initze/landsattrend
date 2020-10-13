@@ -1,7 +1,7 @@
 affine==2.3.0
 # attrs @ file:///home/conda/feedstock_root/build_artifacts/attrs_1597959372343/work
 attrs
-# Bottleneck==1.3.2
+Bottleneck==1.3.2
 certifi==2020.6.20
 # cftime @ file:///D:/bld/cftime_1595215865792/work
 cftime
