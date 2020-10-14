@@ -90,7 +90,7 @@ class Classify(object):
         if not all([self.all_exists_, ~self.overwrite]):
             data_full = []
             for e in self.indexlist:
-                f = self.imagefolder + r'\trendimage_{zone}_{0}_{1}.tif'.format(self.tile, e, zone=self.zone)
+                f = self.imagefolder + r'/trendimage_{zone}_{0}_{1}.tif'.format(self.tile, e, zone=self.zone)
                 self.prototype_ = f
                 # FIX
                 data = ga.LoadFile(f, xsize=1000, ysize=1000)

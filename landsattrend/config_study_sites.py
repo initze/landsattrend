@@ -34,6 +34,8 @@ csvpath = os.path.join(csvdir, 'config_study_sites.csv')
 study_sites_df = pd.read_csv(csvpath)
 #adapt paths
 
+result_DIR = study_sites_df["result_dir"]
+
 study_sites_df['fishnet_file'] = study_sites_df.apply(lambda x: os.path.join(VECTOR_DIR, os.path.basename(x['fishnet_file'])), axis=1)
 study_sites_df['dem_dir'] = study_sites_df.apply(lambda x: os.path.join(DEM_DIR, os.path.basename(x['dem_dir'])), axis=1)
 study_sites_df['result_dir'] = study_sites_df.apply(lambda x: os.path.join(RESULT_DIR, os.path.basename(x['result_dir'])), axis=1)

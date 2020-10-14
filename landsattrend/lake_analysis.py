@@ -265,8 +265,17 @@ class LakeMaker(object):
         # Loop classification
         model = joblib.load(class_model)
         outdir = os.path.join(self.directory, '01_Classification_Raster')
-        imagefolder = os.path.join(study_sites[self.zone]['result_dir'], self.classperiod, 'tiles')
-
+        print('self.zone', self.zone)
+        print('keys of study sites')
+        print(list(study_sites.keys()))
+        key_of_study_sites = list(study_sites.keys())[0]
+        study_sites_content = study_sites[key_of_study_sites]
+        print('type of content', type(study_sites_content))
+        result_dir = study_sites_content['result_dir']
+        imagefolder = os.path.join('landsattrend',study_sites_content['result_dir'], self.classperiod, 'tiles')
+        print("does image folder exist?")
+        current_working_dir = os.getcwd()
+        image_folder_exists = os.path.isdir(imagefolder)
         # run Classification
         for t in tiles:
             print(t)
