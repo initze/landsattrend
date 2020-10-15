@@ -73,9 +73,9 @@ class Classify(object):
         #self.outdir_ = r'{p}\{z}'.format(p=self.outputfolder, z=self.zone)
         self.outdir_ = r'{p}'.format(p=self.outputfolder)
 
-        self.outfile_class_ = r'{p}\{z}_class_{t}_class.tif'.format(p=self.outdir_, t=self.tile, z=self.zone)
-        self.outfile_proba_ = r'{p}\{z}_class_{t}_proba.tif'.format(p=self.outputfolder, t=self.tile, z=self.zone)
-        self.outfile_confidence_ = r'{p}\{z}_class_{t}_confidence.tif'.format(p=self.outputfolder, t=self.tile, z=self.zone)
+        self.outfile_class_ = r'{p}/{z}_class_{t}_class.tif'.format(p=self.outdir_, t=self.tile, z=self.zone)
+        self.outfile_proba_ = r'{p}/{z}_class_{t}_proba.tif'.format(p=self.outputfolder, t=self.tile, z=self.zone)
+        self.outfile_confidence_ = r'{p}/{z}_class_{t}_confidence.tif'.format(p=self.outputfolder, t=self.tile, z=self.zone)
 
     def _check_outpath(self):
         self.outfile_class_exists_ = os.path.exists(self.outfile_class_)
@@ -148,7 +148,7 @@ class ClassifyDEM(Classify):
         """
         data_full = []
         for e in self.indexlist:
-            f = self.imagefolder + r'\trendimage_{zone}_{0}_{1}.tif'.format(self.tile, e, zone=self.zone)
+            f = self.imagefolder + r'/trendimage_{zone}_{0}_{1}.tif'.format(self.tile, e, zone=self.zone)
             self.prototype_=f
             # FIX
             data = ga.LoadFile(f, xsize=1000, ysize=1000)
@@ -186,7 +186,7 @@ class GroundTruth(object):
                  image_dir,
                  cirange=True,
                  indexlist=None,
-                 image_dir_style=r'1999-2014\tiles'):
+                 image_dir_style=r'1999-2014/tiles'):
 
         if indexlist is None:
             indexlist = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi']
@@ -284,7 +284,7 @@ class GroundTruth(object):
                 # create list of feature/column names
                 feat_name = [idx + ext for ext in ('_slp', '_ict', '_cil', '_ciu')]
                 # find tile and index specific trend image
-                f = glob.glob(r'{idir}\trendimage_*{pr}*{index}*'.format(pr=pr,
+                f = glob.glob(r'{idir}/trendimage_*{pr}*{index}*'.format(pr=pr,
                                                                          idir=self.in_dir_,
                                                                          index=idx))
 

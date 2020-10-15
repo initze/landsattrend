@@ -279,6 +279,7 @@ class LakeMaker(object):
         # run Classification
         for t in tiles:
             print(t)
+            print('OUTDIR: ' + outdir)
             cl = Classify(model, zone=self.zone, tile=t,
                           imagefolder=imagefolder,
                           outputfolder=outdir)
