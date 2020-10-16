@@ -359,7 +359,7 @@ def get_datafolder_old(study_site, coords):
             if geom_bbox.Intersects(geom_pt):
                 row, path = (s['properties']['row'], s['properties']['path'])
                 break
-    pdir = study_sites[study_site]['processing_dir'] + r'\{0}_{1}_{2}'.format(study_site, row, path)
+    pdir = study_sites[study_site]['processing_dir'] + r'/{0}_{1}_{2}'.format(study_site, row, path)
     return pdir
 
 def global_to_local_coords(datadir, coordinates, force_inside=True):

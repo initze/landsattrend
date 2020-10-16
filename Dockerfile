@@ -22,6 +22,11 @@ RUN apt-get install -y build-essential python3-dev python3-setuptools \
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
 ENV C_INCLUDE_PATH=/usr/include/gdal
 
+ENV CPLUS_INCLUDE_PATH=/usr/include/gdal/bin
+ENV C_INCLUDE_PATH=/usr/include/gdal/bin
+
+ENV PATH=/usr/bin/gdal:$PATH
+
 # This will install GDAL
 RUN pip3 install GDAL==2.4.4
 
