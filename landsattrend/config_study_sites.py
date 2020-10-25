@@ -8,8 +8,10 @@ def check_director(path_to_dir):
         print(path_to_dir, 'is a directory')
         print('contents')
         print(os.listdir(path_to_dir))
+        return True
     else:
         print(path_to_dir, 'not a directory')
+        return False
 
 DIRS = []
 
@@ -26,7 +28,8 @@ DIRS.append(VECTOR_DIR)
 RESULT_DIR = os.path.join(BASE_DIR, 'data')
 
 for each in DIRS:
-    check_director(each)
+    exists = check_director(each)
+    print('checked')
 
 # load study sites from configuration file
 csvdir = os.path.join(os.getcwd(),'config')
