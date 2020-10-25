@@ -16,12 +16,9 @@ LAKE_FILTER_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180820_lakefilter_
 CURRENT_WORKING_DIR = '/Users/helium/ncsa/pdg/landsattrend/'
 
 def main():
-    class_model_exists = os.path.isdir(CLASS_MODEL)
-    class_model_file_exists = os.path.isfile(CLASS_MODEL)
-    print(os.path.isdir(CLASS_MODEL), os.path.isfile(CLASS_MODEL))
-    print(os.path.isdir(LAKE_FILTER_MODEL), os.path.isfile(LAKE_FILTER_MODEL))
-    lake_filder_model_exists = os.path.isdir(LAKE_FILTER_MODEL)
-    lake_filder_model_file_exists = os.path.isfile(LAKE_FILTER_MODEL)
+
+    
+
     l = LakeMaker(zone, os.path.join(directory_location, site_name), classperiod='1999-2019')
     print("\nStart Classification")
     l.classify(CLASS_MODEL, tiles)
