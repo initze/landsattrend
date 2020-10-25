@@ -6,7 +6,7 @@ RUN apt install -y -qq python3-pip
 
 RUN python3 -m pip install --upgrade pip
 
-RUN python3 -m pip install numpy==1.16.1
+RUN python3 -m pip install numpy==1.19.1
 
 RUN python3 -m pip install Bottleneck
 
