@@ -43,7 +43,7 @@ RUN pip3 install --upgrade pip
 
 COPY aux_data/dem/DEM.vrt /aux_data/dem/DEM.vrt
 
-COPY aux_data/forestfire/forestfire.vrt /aux_data/forestfire.vrt
+COPY aux_data/forestfire/forestfire.vrt /aux_data/forestfire/forestfire.vrt
 
 COPY config /config
 

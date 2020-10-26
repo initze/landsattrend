@@ -14,6 +14,7 @@ from landsattrend.classify import Classify, ClassifyDEM
 from landsattrend.config_study_sites import study_sites
 from landsattrend.utils import array_to_file
 os.environ['GDAL_BIN'] = ''
+os.environ['GDAL_PATH'] = ''
 import logging
 
 logging.getLogger('pyclowder').setLevel(logging.DEBUG)
@@ -334,6 +335,10 @@ class LakeMaker(object):
         return np.all([os.path.exists(p) for p in paths])
 
     def prepare_aux_data(self, demfile, firefile):
+        print("in prepare_aux_data")
+        print("demfile : " + str(demfile))
+        print("firefile : " + str(firefile))
+
         """
         Function to create auxiliary data - DEM data and firemask
         :param demfile: path to master DEM image (Panarctic DEM)
@@ -355,6 +360,8 @@ class LakeMaker(object):
                                                                                                                ymax=bnd.top,
                                                                                                                infile=firefile,
                                                                                                                outfile=self.firemask_path_)
+        print('first command in prepare aux data')
+        print(s)
         os.system(s)
         # create elevation model
         s = r'{gdal_path} gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(gdal_path=os.environ['GDAL_BIN'],
@@ -365,10 +372,14 @@ class LakeMaker(object):
                                                                                                                         ymax=bnd.top,
                                                                                                                         infile=demfile,
                                                                                                                         outfile=self.dem_path_)
+        print("second command in prepare aux data")
+        print(s)
         os.system(s)
         # create slope from created DEM
         s_slope = r'{gdal_path} gdaldem slope -alg ZevenbergenThorne {infile} {slopefile}'.format(gdal_path=os.environ['GDAL_BIN'],
                                                                                              infile=self.dem_path_, slopefile=self.slope_path_)
+        print("s_slope command")
+        print(s_slope)
         os.system(s_slope)
 
     def _load_classdata(self):
@@ -641,7 +652,6 @@ class LakeMaker(object):
         :return:
         """
         self.load_masks()
-        current_GDAL_PATH = os.environ['GDAL_PATH']
         self.label_Cfilter = self._filter_labelled_mask(self.label_C, self.df_filter.index)
         array_to_file(self.label_Cfilter, self.label_Cfilter_path_, self.class_vrt_path_, dtype=gdal.GDT_UInt32)
         s = r'{gdal_path} gdal_polygonize.py -q -8 -f "ESRI Shapefile" -mask {raster} {raster} {vector} label_id label_id'.format(
