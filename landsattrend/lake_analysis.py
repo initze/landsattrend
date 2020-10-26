@@ -13,7 +13,7 @@ from sklearn import cluster
 from landsattrend.classify import Classify, ClassifyDEM
 from landsattrend.config_study_sites import study_sites
 from landsattrend.utils import array_to_file
-os.environ['GDAL_BIN'] = '/usr/bin'
+os.environ['GDAL_BIN'] = ''
 import logging
 
 logging.getLogger('pyclowder').setLevel(logging.DEBUG)
@@ -228,13 +228,25 @@ class LakeMaker(object):
     @staticmethod
     def _make_classification_vrt(directory, ctype, nodata=0):
         #TODO: Docstring
+        logging.info("in _make_classification_vrt method")
+        print("in _make_classification_vrt method")
         txtfile = os.path.join(directory, '{ctype}.txt'.format(ctype=ctype))
         vrtfile = os.path.join(directory, '{ctype}.vrt'.format(ctype=ctype))
         files = glob.glob(os.path.join(directory, '*{ctype}.tif'.format(ctype=ctype)))
+        logging.info("txtfile: " + str(txtfile))
+        logging.info("vrtfile: " + str(vrtfile))
+        print("txtfile: " + str(txtfile))
+        print("vrtfile: " + str(vrtfile))
         f = open(txtfile, 'w')
         for fi in files:
             f.write(fi + '\n')
         f.close()
+        command = (r'{gdal_path}  gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_BIN'],
+                                                                              txtfile=txtfile, vrtfile=vrtfile))
+        logging.info("The command below in _make_classification_vrt")
+        logging.info(command)
+        print("The command below in _make_classification_vrt")
+        print(command)
         os.system(r'{gdal_path} gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_BIN'],
                                                                               txtfile=txtfile, vrtfile=vrtfile))
 
