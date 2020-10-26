@@ -14,6 +14,11 @@ from landsattrend.classify import Classify, ClassifyDEM
 from landsattrend.config_study_sites import study_sites
 from landsattrend.utils import array_to_file
 
+import logging
+
+logging.getLogger('pyclowder').setLevel(logging.DEBUG)
+logging.getLogger('__main__').setLevel(logging.DEBUG)
+
 
 # remove from landsattrend !!!
 
@@ -519,6 +524,9 @@ class LakeMaker(object):
         return df
 
     def _make_stats_auxData(self):
+        firemask_path_exists = os.path.isfile(self.firemask_path_)
+        print('firemask path_ exists? ' + str(firemask_path_exists))
+        logging.info('firemask path exists? ' + str(firemask_path_exists))
         fire_array = ga.LoadFile(self.firemask_path_)
         f2 = morphology.remove_small_objects(fire_array, min_size=49)
         df_fire = improps_to_df(self.label_C, f2,

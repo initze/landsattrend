@@ -1,7 +1,8 @@
 from landsattrend.lake_analysis import LakeMaker
 import os
 import logging
-
+import shutil
+import time
 os.environ['GDAL_PATH'] = r'C:\Users\initze\AppData\Local\Continuum\anaconda3\envs\landsattrend2\Scripts'
 os.environ['GDAL_BIN'] = r'C:\Users\initze\AppData\Local\Continuum\anaconda3\envs\landsattrend2\Library\bin'
 PROCESSING_DIR = os.getcwd()
@@ -17,6 +18,8 @@ LAKE_FILTER_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180820_lakefilter_
 CURRENT_WORKING_DIR = '/Users/helium/ncsa/pdg/landsattrend/'
 
 def process_tiles():
+
+
     logging.getLogger('pyclowder').setLevel(logging.DEBUG)
     logging.getLogger('__main__').setLevel(logging.DEBUG)
 
@@ -26,7 +29,9 @@ def process_tiles():
     l = LakeMaker(zone, os.path.join(directory_location, site_name), classperiod='1999-2019')
     logging.info("\nStart Classification")
     print("\nStart Classification")
+    logging.info("a brief pause")
     l.classify(CLASS_MODEL, tiles)
+
     # TODO: continue here
     logging.info("\nPreparing additional Data")
     print("\nPreparing additional Data")

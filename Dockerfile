@@ -41,12 +41,28 @@ RUN pip3 install --upgrade pip setuptools wheel
 
 RUN pip3 install --upgrade pip
 
-COPY requirements.txt /home/requirements.txt
+COPY aux_data/dem/DEM.vrt /aux_data/dem/DEM.vrt
 
-COPY test.py /home/test.py
+COPY aux_data/forestfire/forestfire.vrt /aux_data/forestfire.vrt
+
+COPY config /config
+
+COPY landsattrend /landsattrend
+
+COPY models /models
+
+COPY vector /vector
+
+COPY landsattrend_extractor.py /landsattrend_extractor.py
+
+COPY run_lake_analysis.py /run_lake_analysis.py
+
+COPY requirements.txt /requirements.txt
+
+COPY test.py /test.py
 
 # RUN pip3 install scipy
 
-RUN pip3 install -r /home/requirements.txt
+RUN pip3 install -r /requirements.txt
 
-CMD ["python3", "/home/test.py"]
+CMD ["python3", "/test.py"]

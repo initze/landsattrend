@@ -1,8 +1,13 @@
 __author__ = 'initze'
 import os
 import pandas as pd
+import logging
+
+logging.getLogger('pyclowder').setLevel(logging.DEBUG)
+logging.getLogger('__main__').setLevel(logging.DEBUG)
 
 def check_director(path_to_dir):
+
     is_dir = os.path.isdir(path_to_dir)
     if is_dir:
         print(path_to_dir, 'is a directory')
@@ -25,10 +30,16 @@ PROCESSING_DIR_01 = os.path.join(BASE_DIR, 'processing')
 PROCESSING_DIR_02 = os.path.join(BASE_DIR, 'processing')
 VECTOR_DIR = os.path.join(BASE_DIR, 'vector')
 DIRS.append(VECTOR_DIR)
-RESULT_DIR = os.path.join(BASE_DIR, 'data')
+# TODO changes if we use docker, then in home
+RESULT_DIR = os.path.join(BASE_DIR,'home', 'data')
+
 
 for each in DIRS:
     exists = check_director(each)
+    logging.info(str(each))
+    logging.info("Exists? : " + str(exists))
+    print(str(each))
+    print("Exists? : " + str(exists))
     print('checked')
 
 # load study sites from configuration file
