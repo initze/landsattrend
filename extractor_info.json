@@ -1,0 +1,27 @@
+{
+  "@context": "http://clowder.ncsa.illinois.edu/contexts/extractors.jsonld",
+  "name": "pdg.landsattrend",
+  "version": "1.0",
+  "description": "landsattrend extractor.",
+  "author": "Todd Nicholson <tcnichol@illinois.edu>",
+  "contributors": ["Ingmar Nitze <ingmar.nitze@awi.de>"],
+  "contexts": [
+    {
+      "rabbitmq": "http://clowder.ncsa.illinois.edu/metadata/ncsa.echo#rabbitmq"
+    }
+  ],
+  "repository": [
+    {
+      "repType": "git",
+      "repUrl": "https://github.com/initze/landsattrend"
+    }
+  ],
+  "process": {
+    "dataset": [
+      "*"
+    ]
+  },
+  "external_services": [],
+  "dependencies": [],
+  "bibtex": []
+}
