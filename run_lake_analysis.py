@@ -70,5 +70,5 @@ def process_tiles():
     l.export_gridded_results([100, 250, 500])
 
 
-if __name__ == "__main__":
-    process_tiles()
+# if __name__ == "__main__":
+#     process_tiles()

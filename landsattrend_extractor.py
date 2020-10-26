@@ -50,6 +50,12 @@ class LandsattrendExtractor(Extractor):
         download = pyclowder.datasets.download(connector, host, secret_key, dataset_id)
         with zipfile.ZipFile(download, 'r') as zip:
             zip.extractall(dataset_download_location)
+
+        path_to_landsattrend_data = os.path.join(dataset_download_location, 'data', 'data', 'Z056_Kolyma')
+
+        if os.path.isdir(path_to_landsattrend_data):
+            logger.info("We have landsattrend data")
+
         logger.info('downloaded it')
         time.sleep(60*2)
         logger.info('nothing yet')
