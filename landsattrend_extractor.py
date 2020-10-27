@@ -6,6 +6,7 @@ import zipfile
 from pyclowder.extractors import Extractor
 import pyclowder.files
 import pyclowder.datasets
+from pathlib import Path
 import os
 import platform
 import os
@@ -18,6 +19,22 @@ import json
 import run_lake_analysis
 import distutils
 
+def find(s, ch):
+    return [i for i, ltr in enumerate(s) if ltr == ch]
+
+def get_tiles_from_files(path_to_files):
+    tile_values = []
+
+    all_files = os.listdir(path_to_files)
+    for each in all_files:
+        base_filename = Path(each).stem
+        logging.info("base_filename")
+        logging.info(str(base_filename))
+        index_of_underscores = find(base_filename, '_')
+        tile_value = base_filename[index_of_underscores[1]+1: index_of_underscores[3]]
+        if tile_value not in tile_values:
+            tile_values.append(tile_value)
+    return tile_values
 
 class LandsattrendExtractor(Extractor):
     def __init__(self):
@@ -65,10 +82,17 @@ class LandsattrendExtractor(Extractor):
         contents_of_tiles = os.listdir('/home/data/Z056-Kolyma/1999-2019/tiles')
         logger.info("contents of tiles")
         logger.info(str(contents_of_tiles))
-        run_lake_analysis.process_tiles()
+        tiles_in_folder = get_tiles_from_files('/home/data/Z056-Kolyma/1999-2019/tiles')
+        logger.info('tiles_in_folder')
+        logger.info(str(tiles_in_folder))
+        if len(tiles_in_folder) > 1:
+            run_lake_analysis.process_tiles(tiles_in_folder)
+        else:
+            logger.info("Not enough tiles to run extractor")
 
 
 if __name__ == "__main__":
+
 
     extractor = LandsattrendExtractor()
     extractor.start()

@@ -8,8 +8,7 @@ import time
 PROCESSING_DIR = os.getcwd()
 DEM_LOCATION = os.path.join(PROCESSING_DIR, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESSING_DIR, r'aux_data', 'forestfire', 'forestfire.vrt')
-# tiles = ['32_8', '32_9', '32_10', '32_11']
-tiles = ['32_8']
+tiles = ['32_8', '32_9', '32_10', '32_11']
 zone = 'Z056-Kolyma'
 directory_location = os.path.join(PROCESSING_DIR, 'process')
 site_name = 'Z056-Kolyma'
@@ -18,7 +17,15 @@ CLASS_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180831_RF_4class_noDEM_9
 LAKE_FILTER_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180820_lakefilter_12039samples_py3.z')
 CURRENT_WORKING_DIR = '/Users/helium/ncsa/pdg/landsattrend/'
 
-def process_tiles():
+def process_tiles(current_tiles=None):
+
+    logging.info('current tiles are : ' + str(current_tiles))
+    print('current tiles are : ' + str(current_tiles))
+
+    if current_tiles:
+        tiles = current_tiles
+    logging.info("we changed the tiles to : " + str(tiles))
+    print("we changed the tiles to : " + str(tiles))
 
 
     logging.getLogger('pyclowder').setLevel(logging.DEBUG)
@@ -71,5 +78,5 @@ def process_tiles():
     l.export_gridded_results([100, 250, 500])
 
 
-# if __name__ == "__main__":
-#     process_tiles()
+if __name__ == "__main__":
+    process_tiles()
