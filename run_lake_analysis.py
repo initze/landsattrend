@@ -8,7 +8,8 @@ import time
 PROCESSING_DIR = os.getcwd()
 DEM_LOCATION = os.path.join(PROCESSING_DIR, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESSING_DIR, r'aux_data', 'forestfire', 'forestfire.vrt')
-tiles = ['32_8', '32_9', '32_10', '32_11']
+# tiles = ['32_8', '32_9', '32_10', '32_11']
+tiles = ['32_8']
 zone = 'Z056-Kolyma'
 directory_location = os.path.join(PROCESSING_DIR, 'process')
 site_name = 'Z056-Kolyma'

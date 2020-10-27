@@ -59,6 +59,10 @@ COPY run_lake_analysis.py /run_lake_analysis.py
 
 COPY requirements.txt /requirements.txt
 
+COPY extractor_info.json /extractor_info.json
+
+COPY extractor_info.json /home/extractor_info.json
+
 COPY test.py /test.py
 
 # RUN pip3 install scipy

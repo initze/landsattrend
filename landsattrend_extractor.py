@@ -51,14 +51,21 @@ class LandsattrendExtractor(Extractor):
         with zipfile.ZipFile(download, 'r') as zip:
             zip.extractall(dataset_download_location)
 
-        path_to_landsattrend_data = os.path.join(dataset_download_location, 'data', 'data', 'Z056_Kolyma')
-
+        path_to_landsattrend_data = os.path.join(dataset_download_location, 'data', 'data', 'Z056-Kolyma')
+        path_to_data_folder_in_dataset = os.path.join(dataset_download_location, 'data', 'data')
+        logger.info("path to landsattrend data")
+        logger.info(str(path_to_landsattrend_data))
         if os.path.isdir(path_to_landsattrend_data):
             logger.info("We have landsattrend data")
-
-        logger.info('downloaded it')
-        time.sleep(60*2)
-        logger.info('nothing yet')
+            if os.path.isdir('/home/data'):
+                logger.info("we have old data, leaving for now")
+            else:
+                shutil.move(path_to_data_folder_in_dataset, '/home/data')
+        logger.info("run_lake_analysis now")
+        contents_of_tiles = os.listdir('/home/data/Z056-Kolyma/1999-2019/tiles')
+        logger.info("contents of tiles")
+        logger.info(str(contents_of_tiles))
+        run_lake_analysis.process_tiles()
 
 
 if __name__ == "__main__":

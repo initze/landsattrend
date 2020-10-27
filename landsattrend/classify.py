@@ -91,6 +91,8 @@ class Classify(object):
             data_full = []
             for e in self.indexlist:
                 f = self.imagefolder + r'/trendimage_{zone}_{0}_{1}.tif'.format(self.tile, e, zone=self.zone)
+                print(str(f))
+                print("f in classify load_raster_for_classify")
                 self.prototype_ = f
                 # FIX
                 data = ga.LoadFile(f, xsize=1000, ysize=1000)
