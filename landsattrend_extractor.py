@@ -75,7 +75,8 @@ class LandsattrendExtractor(Extractor):
         if os.path.isdir(path_to_landsattrend_data):
             logger.info("We have landsattrend data")
             if os.path.isdir('/home/data'):
-                logger.info("we have old data, leaving for now")
+                logger.info("we have old data, removing")
+                shutil.rmtree('/home/data')
             else:
                 shutil.move(path_to_data_folder_in_dataset, '/home/data')
         logger.info("run_lake_analysis now")
@@ -86,9 +87,21 @@ class LandsattrendExtractor(Extractor):
         logger.info('tiles_in_folder')
         logger.info(str(tiles_in_folder))
         if len(tiles_in_folder) > 1:
-            run_lake_analysis.process_tiles(tiles_in_folder)
+            location_of_final_dataset = run_lake_analysis.process_tiles(tiles_in_folder)
+            logger.info("final dataset location")
+            logger.info(str(location_of_final_dataset))
+
+             # TODO upload to dataset as files, then move to new folder
         else:
             logger.info("Not enough tiles to run extractor")
+
+        try:
+            if os.path.isdir('/home/data'):
+                shutil.rmtree('/home/data')
+        except Exception as e:
+            logger.info("Could not delete /home/data")
+
+
 
 
 if __name__ == "__main__":

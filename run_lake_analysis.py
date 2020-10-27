@@ -78,5 +78,11 @@ def process_tiles(current_tiles=None):
     l.export_gridded_results([100, 250, 500])
 
 
+    result = os.path.join(l.directory, r'05_Lake_Dataset_Raster_02_final')
+
+
+    return result
+
+
 if __name__ == "__main__":
     process_tiles()
