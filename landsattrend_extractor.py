@@ -91,7 +91,55 @@ class LandsattrendExtractor(Extractor):
             logger.info("final dataset location")
             logger.info(str(location_of_final_dataset))
 
+            upload_ids = []
+
+            contents_of_final_dataset = os.listdir(str(location_of_final_dataset))
+            for each_file in contents_of_final_dataset:
+                try:
+                    current_file_path = os.path.join(location_of_final_dataset, each_file)
+                    current_id = pyclowder.files.upload_to_dataset(connector, host, secret_key, dataset_id, filepath=current_file_path)
+                    upload_ids.append(current_id)
+                except Exception as e:
+                    logger.info("Could not upload : " + str(current_file_path))
+
+            logger.info("We have uploaded : " + str(len(upload_ids)))
+            logger.info("These files have ids : " + str(upload_ids))
              # TODO upload to dataset as files, then move to new folder
+
+            params = dict()
+            headers = {'content-type': 'application/json'}
+            params['key'] = secret_key
+            params['parentId'] = dataset_id
+            params['parentType'] = 'dataset'
+            params['name'] = 'process'
+
+            # creating folder
+
+            url = host+'api/datasets/'+dataset_id+'/newFolder'
+
+            response = requests.post(url, data=json.dumps(params), headers=headers, params=params,
+                                     auth=None, timeout=1000, verify=False)
+            response.raise_for_status()
+
+
+
+            as_json = response.json()
+            folder_id = as_json["id"]
+            for each_id in upload_ids:
+                try:
+                    logger.info("trying to move " + str(each_id))
+                    current_id = each_id
+                    url = host+'api/datasets/'+dataset_id+'/moveFile/'+folder_id+'/'+current_id
+                    requests.post(url, data=json.dumps(params), headers=headers, params=params,
+                                  auth=None, timeout=1000, verify=False)
+                except Exception as e:
+                    logger.info("Could not move file to folder : " + str(current_id))
+            logger.info("Finished moving files to folder")
+
+            result = {"ran landsattrend extractor": "true", "tiles": str(tiles_in_folder)}
+            metadata = self.get_metadata(result, 'dataset', dataset_id, host)
+            pyclowder.datasets.upload_metadata(connector, host, secret_key, dataset_id, metadata)
+
         else:
             logger.info("Not enough tiles to run extractor")
 
