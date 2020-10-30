@@ -25,16 +25,41 @@ def find(s, ch):
 def get_tiles_from_files(path_to_files):
     tile_values = []
 
+    tile_file_map = {}
+
     all_files = os.listdir(path_to_files)
     for each in all_files:
         base_filename = Path(each).stem
-        logging.info("base_filename")
-        logging.info(str(base_filename))
+        print("base_filename")
+        print(str(base_filename))
         index_of_underscores = find(base_filename, '_')
-        tile_value = base_filename[index_of_underscores[1]+1: index_of_underscores[3]]
+        tile_value = base_filename[index_of_underscores[1] + 1: index_of_underscores[3]]
+        file_ending = each[index_of_underscores[1] + 1:]
+
         if tile_value not in tile_values:
             tile_values.append(tile_value)
+
+        if tile_value in tile_file_map:
+            current_map_entry = tile_file_map[tile_value]
+            current_map_entry.append(file_ending)
+            tile_file_map[tile_value] = current_map_entry
+        else:
+            tile_file_map[tile_value] = [file_ending]
+
+    # TODO check for each index list
+    indexlist = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi']
+    tiles = list(tile_file_map.keys())
+
+    for tile in tiles:
+        for each in indexlist:
+            entry = tile+'_'+each+'.tif'
+            if entry not in tile_file_map[tile]:
+                tile_values.remove(tile)
+
     return tile_values
+
+
+
 
 class LandsattrendExtractor(Extractor):
     def __init__(self):
