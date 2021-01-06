@@ -34,13 +34,13 @@ DIRS.append(VECTOR_DIR)
 RESULT_DIR = os.path.join(BASE_DIR,'home', 'data')
 
 
-for each in DIRS:
-    exists = check_director(each)
-    logging.info(str(each))
-    logging.info("Exists? : " + str(exists))
-    print(str(each))
-    print("Exists? : " + str(exists))
-    print('checked')
+# for each in DIRS:
+#     exists = check_director(each)
+#     logging.info(str(each))
+#     logging.info("Exists? : " + str(exists))
+#     print(str(each))
+#     print("Exists? : " + str(exists))
+#     print('checked')
 
 # load study sites from configuration file
 csvdir = os.path.join(os.getcwd(),'config')

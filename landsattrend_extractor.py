@@ -93,6 +93,8 @@ class LandsattrendExtractor(Extractor):
         with zipfile.ZipFile(download, 'r') as zip:
             zip.extractall(dataset_download_location)
 
+        print('dataset is unzipped')
+        print(os.listdir('/home'))
         path_to_landsattrend_data = os.path.join(dataset_download_location, 'data', 'data', 'Z056-Kolyma')
         path_to_data_folder_in_dataset = os.path.join(dataset_download_location, 'data', 'data')
         logger.info("path to landsattrend data")
@@ -104,7 +106,7 @@ class LandsattrendExtractor(Extractor):
                 shutil.rmtree('/home/data')
             else:
                 shutil.move(path_to_data_folder_in_dataset, '/home/data')
-        logger.info("run_lake_analysis now")
+        logger.info("run_lake_analysis now, after pause")
         contents_of_tiles = os.listdir('/home/data/Z056-Kolyma/1999-2019/tiles')
         logger.info("contents of tiles")
         logger.info(str(contents_of_tiles))
@@ -169,16 +171,23 @@ class LandsattrendExtractor(Extractor):
             logger.info("Not enough tiles to run extractor")
 
         try:
-            if os.path.isdir('/home/data'):
-                shutil.rmtree('/home/data')
+            path_to_dataset_download = os.path.join('home', dataset_name)
+            path_to_data = os.path.join('home', 'data')
+            logger.info('contents of home')
+            logger.info(str(os.listdir('/home')))
+            if os.path.isdir(path_to_dataset_download):
+                logger.info('removing dataset download : ' + path_to_dataset_download)
+                shutil.rmtree(path_to_dataset_download)
+                shutil.rmtree(path_to_data)
         except Exception as e:
-            logger.info("Could not delete /home/data")
+            logger.info("Could not delete dataset download")
 
 
 
 
 if __name__ == "__main__":
 
-
+    print('before extractor starts, contents of home')
+    print(os.listdir('/home'))
     extractor = LandsattrendExtractor()
     extractor.start()

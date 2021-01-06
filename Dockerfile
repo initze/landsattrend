@@ -37,6 +37,8 @@ RUN apt-get install -y libspatialindex-dev
 
 RUN pip3 install pyclowder
 
+RUN pip3 install pika==1.0.0
+
 RUN pip3 install --upgrade pip setuptools wheel
 
 RUN pip3 install --upgrade pip
