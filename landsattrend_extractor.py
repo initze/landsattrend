@@ -110,6 +110,8 @@ class LandsattrendExtractor(Extractor):
         contents_of_tiles = os.listdir('/home/data/Z056-Kolyma/1999-2019/tiles')
         logger.info("contents of tiles")
         logger.info(str(contents_of_tiles))
+        time.sleep(60*6)
+        return 0
         tiles_in_folder = get_tiles_from_files('/home/data/Z056-Kolyma/1999-2019/tiles')
         logger.info('tiles_in_folder')
         logger.info(str(tiles_in_folder))

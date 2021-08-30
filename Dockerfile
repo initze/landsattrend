@@ -13,7 +13,7 @@ RUN python3 -m pip install Bottleneck
 # Install GDAL dependencies
 RUN apt-get install -y libgdal-dev
 
-RUN sudo apt-get install gdal-bin
+RUN sudo apt-get -y install gdal-bin
 
 RUN apt-get install -y build-essential python3-dev python3-setuptools \
                      python3-numpy python3-scipy
