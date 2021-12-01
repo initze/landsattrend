@@ -93,7 +93,11 @@ class Classify(object):
                 f = self.imagefolder + r'\trendimage_{zone}_{0}_{1}.tif'.format(self.tile, e, zone=self.zone)
                 self.prototype_ = f
                 # FIX
-                data = ga.LoadFile(f, xsize=1000, ysize=1000)
+                with rasterio.open(f) as src:
+                    self.xsize = src.height
+                    self.ysize = src.width
+                    data = src.read()
+                #data = ga.LoadFile(f, xsize=1000, ysize=1000)
                 if self.cirange:
                     dt = data[-1] - data[-2]
                     data = np.vstack((data, np.expand_dims(dt, 0)))
@@ -110,7 +114,7 @@ class Classify(object):
 
         # FIX
         if not all([self.all_exists_, ~self.overwrite]):
-            shp = [0, 0, 1000, 1000]
+            shp = [0, 0, self.xsize, self.ysize]
             self.prediction_class_ = self.model.predict(self.data).reshape(shp[2],shp[3])
             self.prediction_proba_ = self.model.predict_proba(self.data).T.reshape(len(self.model.classes_),shp[2],shp[3])
             self.prediction_confidence_ = self.prediction_proba_.max(axis=0)
@@ -151,7 +155,11 @@ class ClassifyDEM(Classify):
             f = self.imagefolder + r'\trendimage_{zone}_{0}_{1}.tif'.format(self.tile, e, zone=self.zone)
             self.prototype_=f
             # FIX
-            data = ga.LoadFile(f, xsize=1000, ysize=1000)
+            with rasterio.open(f) as src:
+                self.xsize = src.height
+                self.ysize = src.width
+                data = src.read()
+            #data = ga.LoadFile(f, xsize=1000, ysize=1000)
             if self.cirange:
                 dt = data[-1] - data[-2]
                 data = np.vstack((data, np.expand_dims(dt, 0)))
