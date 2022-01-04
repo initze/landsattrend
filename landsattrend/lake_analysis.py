@@ -592,6 +592,7 @@ class LakeMaker(object):
         :param query: SQL/pandas query for filtering
         :return:
         """
+        """
         # load model
         model = joblib.load(model_path)
         # setup data
@@ -604,6 +605,9 @@ class LakeMaker(object):
         df['class'] = pr
         df['proba'] = proba[:, 1]
         self.df_filter = df[np.all([df['proba'] <= 0.5, df['max'] > 0.95], axis=0)]
+        """
+        self.df_filter = self.df_start
+
 
     def save_filtered_data(self):
         """
