@@ -19,6 +19,7 @@ def combine_idxlist(idxlist, extlist):
             outlist.append(idx + ext)
     return outlist
 
+
 class Classify(object):
     """
     This is a class to classify trend data and write output to raster files
@@ -26,8 +27,6 @@ class Classify(object):
     :param zone: project specific location identifier
     :param zone: location specific tile identifier
     :param imagefolder: path of trendimages to load for classification
-    :param cirange: Boolean to set if confidence ranges should be included (upper CI minus lower CI)
-    :param indexlist: list of used indices
     :param outputfolder: path to save output files (files will be saved into subfolder named after zone identifier)
     """
     def __init__(self,
@@ -35,43 +34,24 @@ class Classify(object):
                  zone='Z004',
                  tile='27_11',
                  imagefolder=r'F:\06_Trendimages\Z004_2016_2mths\1999-2014\tiles',
-                 cirange=True,
-                 indexlist=None,
                  outputfolder=r'F:\08_Classification\test',
                  coords=True,
                  overwrite=False):
 
-        # TODO: remove this part
-        if indexlist is None:
-            indexlist = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi']
         self.model = model
         self.zone = zone
         self.tile = tile
         self.imagefolder = imagefolder
-        self.cirange = cirange
-        self.indexlist = indexlist
         self.outputfolder = outputfolder
         self.coords = coords
         self.overwrite = overwrite
-        self._make_extlist()
         self._make_outpath()
         self._check_outpath()
-
-    def _make_extlist(self):
-        """
-        function to create list of dataframe columns
-        """
-        if self.cirange:
-            extlist = ['_slp', '_ict', '_cil', '_ciu', '_cirange']
-        else:
-            extlist = ['_slp', '_ict', '_cil', '_ciu']
-        self.columns_ = combine_idxlist(self.indexlist, extlist)
 
     def _make_outpath(self):
         """
         create output file names
         """
-        #self.outdir_ = r'{p}\{z}'.format(p=self.outputfolder, z=self.zone)
         self.outdir_ = r'{p}'.format(p=self.outputfolder)
 
         self.outfile_class_ = r'{p}\{z}_class_{t}_class.tif'.format(p=self.outdir_, t=self.tile, z=self.zone)
@@ -89,29 +69,16 @@ class Classify(object):
         function to load raster data (trends) into dataframe
         """
         if not all([self.all_exists_, ~self.overwrite]):
-            #data_full = []
-            # TODO: solve index and load from one file
-            #for e in self.indexlist:
             f = os.path.join(self.imagefolder, f'trendimage_{self.zone}_{self.tile}.tif')
             self.prototype_ = f
-            # FIX
             with rasterio.open(f) as src:
                 self.xsize = src.height
                 self.ysize = src.width
                 data = src.read()
-            #data = ga.LoadFile(f, xsize=1000, ysize=1000)
-            """
-            if self.cirange:
-                dt = data[-1] - data[-2]
-                data = np.vstack((data, np.expand_dims(dt, 0)))
-                #data_full.append(data)
-            """
-            #data_full = np.array(data_full)
+
             data_full = data
             shp = data_full.shape
-            #data_full = data_full.reshape(shp[0]*shp[1],-1).T
-            data_full = data_full.reshape(shp[0],-1).T
-            #self.data = pd.DataFrame(columns=self.columns_, data=data_full)
+            data_full = data_full.reshape(shp[0], -1).T
             self.data = pd.DataFrame(data=data_full).fillna(0)
 
 
@@ -119,8 +86,6 @@ class Classify(object):
         """
         function to classify loaded raster based on pre-trained classification model
         """
-
-        # FIX
         if not all([self.all_exists_, ~self.overwrite]):
             shp = [0, 0, self.xsize, self.ysize]
             self.prediction_class_ = self.model.predict(self.data).reshape(shp[2],shp[3])
@@ -132,7 +97,6 @@ class Classify(object):
         function to write output to GeoTiff raster files
         """
         if not all([self.all_exists_, ~self.overwrite]):
-            # TODO: FIX - does not check proper path
             if not os.path.exists(self.outdir_):
                 os.mkdir(self.outdir_)
             array_to_file(self.prediction_class_, self.outfile_class_,
@@ -174,7 +138,7 @@ class ClassifyDEM(Classify):
             data_full.append(data)
         data_full = np.array(data_full)
         shp_trends = data_full.shape
-        data_full = data_full.reshape(shp_trends[0]*shp_trends[1],-1).T
+        data_full = data_full.reshape(shp_trends[0]*shp_trends[1], -1).T
         self.data = pd.DataFrame(columns=self.columns_, data=data_full)
 
         dem_dir = study_sites[self.zone]['dem_dir']
@@ -222,7 +186,6 @@ class GroundTruth(object):
         self._add_empty_value_columns()
         self._add_empty_value_columns()
         self._add_zone_id()
-
 
     def _make_extlist(self):
         """
