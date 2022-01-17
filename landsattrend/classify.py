@@ -41,6 +41,7 @@ class Classify(object):
                  coords=True,
                  overwrite=False):
 
+        # TODO: remove this part
         if indexlist is None:
             indexlist = ['tcb', 'tcg', 'tcw', 'ndvi', 'ndwi', 'ndmi']
         self.model = model
@@ -88,24 +89,31 @@ class Classify(object):
         function to load raster data (trends) into dataframe
         """
         if not all([self.all_exists_, ~self.overwrite]):
-            data_full = []
-            for e in self.indexlist:
-                f = self.imagefolder + r'\trendimage_{zone}_{0}_{1}.tif'.format(self.tile, e, zone=self.zone)
-                self.prototype_ = f
-                # FIX
-                with rasterio.open(f) as src:
-                    self.xsize = src.height
-                    self.ysize = src.width
-                    data = src.read()
-                #data = ga.LoadFile(f, xsize=1000, ysize=1000)
-                if self.cirange:
-                    dt = data[-1] - data[-2]
-                    data = np.vstack((data, np.expand_dims(dt, 0)))
-                data_full.append(data)
-            data_full = np.array(data_full)
+            #data_full = []
+            # TODO: solve index and load from one file
+            #for e in self.indexlist:
+            f = os.path.join(self.imagefolder, f'trendimage_{self.zone}_{self.tile}.tif')
+            self.prototype_ = f
+            # FIX
+            with rasterio.open(f) as src:
+                self.xsize = src.height
+                self.ysize = src.width
+                data = src.read()
+            #data = ga.LoadFile(f, xsize=1000, ysize=1000)
+            """
+            if self.cirange:
+                dt = data[-1] - data[-2]
+                data = np.vstack((data, np.expand_dims(dt, 0)))
+                #data_full.append(data)
+            """
+            #data_full = np.array(data_full)
+            data_full = data
             shp = data_full.shape
-            data_full = data_full.reshape(shp[0]*shp[1],-1).T
-            self.data = pd.DataFrame(columns=self.columns_, data=data_full)
+            #data_full = data_full.reshape(shp[0]*shp[1],-1).T
+            data_full = data_full.reshape(shp[0],-1).T
+            #self.data = pd.DataFrame(columns=self.columns_, data=data_full)
+            self.data = pd.DataFrame(data=data_full).fillna(0)
+
 
     def classify(self):
         """
@@ -383,20 +391,3 @@ class GroundTruthDEM(GroundTruth):
                 return xx
         except:
             pass
-
-
-    # TODO: Gaussian smoother over DEM (spatial elevation properties
-    """
-    def _load_aux_data_gauss(self, pr, crds, index, local_df):
-        filepath_ = os.path.join(self.in_dir_, '{zone}_{pr}_{idx}.tif'.format(zone=self.zone, pr=pr, idx=index))
-        try:
-            with rasterio.open(filepath_) as src:
-                src - filters.gaussian(src, sigma=2, preserve_range=True))
-                v = [smp for smp in src.sample(crds)]
-
-                # create temporary data frame and update record in parent file for the zone
-                xx = pd.DataFrame(data=v, columns=[index], index=local_df.index)
-        except:
-            pass
-        return xx
-    """

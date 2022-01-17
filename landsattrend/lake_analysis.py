@@ -27,9 +27,9 @@ def get_stats(labelid, L_1, L_all, pr_array, factor=1., selem=np.ones((3,3))):
     :param labelid:
     """
     # erode lake polygon by one
-    L_1_erode = morphology.erosion(L_1==labelid, selem=selem)
+    L_1_erode = morphology.erosion(L_1==labelid, footprint=selem)
     # dilate full polygon by one
-    L_all_dilate = morphology.dilation(L_all==labelid, selem=selem)
+    L_all_dilate = morphology.dilation(L_all==labelid, footprint=selem)
     # get transition area between outer boundary of dilated full polygon and eroded lake polygon
     L_margin = np.logical_and(L_all_dilate, ~L_1_erode)
 
@@ -265,7 +265,9 @@ class LakeMaker(object):
         # Loop classification
         model = joblib.load(class_model)
         outdir = os.path.join(self.directory, '01_Classification_Raster')
-        imagefolder = os.path.join(study_sites[self.zone]['result_dir'], self.classperiod, 'tiles')
+        #imagefolder = os.path.join(study_sites[self.zone]['result_dir'], self.classperiod, 'tiles')
+        # TODO quick fix - make more sophisticated solution
+        imagefolder = os.path.join(study_sites[0]['result_dir'], self.classperiod, 'tiles')
 
         # run Classification
         for t in tiles:
@@ -388,11 +390,11 @@ class LakeMaker(object):
         #TODO: can be improved (incorporate to object/class?)
         L_all = remove_edge_polygons2(L_all, cl_array)
 
-        M_1_erode = morphology.erosion(M_1, selem=selem)
+        M_1_erode = morphology.erosion(M_1, footprint=selem)
 
         # dilate full polygon by one
-        M_all_dilate = morphology.dilation(M_all, selem=selem)
-        L_all_dilate = morphology.dilation(L_all, selem=selem)
+        M_all_dilate = morphology.dilation(M_all, footprint=selem)
+        L_all_dilate = morphology.dilation(L_all, footprint=selem)
         # get transition area between outer boundary of dilated full polygon and eroded lake polygon
         M_margin = np.logical_and(M_all_dilate, ~M_1_erode)
         L_margin = M_margin * L_all_dilate
@@ -538,6 +540,8 @@ class LakeMaker(object):
         df['perc_water'] = df.area_water / df.area_total
         df['perc_wloss'] = df.area_wloss / df.area_total
         df['perc_wgain'] = df.area_wgain / df.area_total
+        # calculate rate_change
+
         return df
 
     def make_stats(self):
@@ -661,6 +665,7 @@ class LakeMaker(object):
         self._transform_area_to_ha(df_geom)
         self._transform_len_to_meter(df_geom)
         self._transform_radians_to_degree(df_geom)
+        # TODO calculate change rates
         self._calculate_statistics(self.df_metric)
 
     def _transform_area_to_ha(self, px_df, factor_px_to_ha=0.09):
@@ -718,6 +723,14 @@ class LakeMaker(object):
         self.df_final['Orientation_degree'] = df['orientation']
         self.df_final['Solidity_ratio'] = df['solidity']
         self.df_final['Eccentricity_ratio'] = df['eccentricity']
+
+        # Calculate change rates replace with years
+        start = int(self.classperiod.split('-')[0])
+        end = int(self.classperiod.split('-')[1])
+        n_years = end-start
+
+        self.df_final['ChangeRateNet_myr-1'] = (self.df_final['NetChange_ha'] * 1e4) / self.df_final['Perimeter_meter'] / n_years
+        self.df_final['ChangeRateGrowth_myr-1'] = (self.df_final['GrossIncrease_ha'] * 1e4) / self.df_final['Perimeter_meter'] / n_years
 
     def save_results(self):
         """
@@ -785,8 +798,6 @@ class LakeMaker(object):
         except AttributeError:
             print("Loading Masks")
             self.load_masks()
-        # setup path for file export
-
 
         # create mask of filtered edge zones or stable water zone
         label_Bfilter = self._filter_labelled_mask(self.label_B, self.df_final.id)
