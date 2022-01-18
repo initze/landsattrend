@@ -218,7 +218,7 @@ class LakeMaker(object):
         print("Masks calculated:", self._check_masks_exist())
         print("Dataset CSV calculated:", os.path.exists(self.lake_dataset_path_))
         print("Filtered Mask and Vectors calculated:", os.path.exists(self.label_CfilterVector_path_))
-        print("Final Output Dataset calculated:", os.path.exists(self.final_dataset_path_))
+        print("Final Output Dataset calculated:", os.path.exists(self.final_dataset_path_json_))
 
     @staticmethod
     def _make_classification_vrt(directory, ctype, nodata=0):
@@ -261,11 +261,9 @@ class LakeMaker(object):
         :param class_model:
         :return:
         """
-        #TODO: make quiet option/verbosity
-        # Loop classification
         model = joblib.load(class_model)
+        model.n_jobs=-1
         outdir = os.path.join(self.directory, '01_Classification_Raster')
-        #imagefolder = os.path.join(study_sites[self.zone]['result_dir'], self.classperiod, 'tiles')
         # TODO quick fix - make more sophisticated solution
         imagefolder = os.path.join(study_sites[0]['result_dir'], self.classperiod, 'tiles')
 
@@ -596,7 +594,7 @@ class LakeMaker(object):
         :param query: SQL/pandas query for filtering
         :return:
         """
-        """
+        #"""
         # load model
         model = joblib.load(model_path)
         # setup data
@@ -609,8 +607,8 @@ class LakeMaker(object):
         df['class'] = pr
         df['proba'] = proba[:, 1]
         self.df_filter = df[np.all([df['proba'] <= 0.5, df['max'] > 0.95], axis=0)]
-        """
-        self.df_filter = self.df_start
+        #"""
+        #self.df_filter = self.df_start
 
 
     def save_filtered_data(self):
@@ -738,30 +736,37 @@ class LakeMaker(object):
         :return:
         """
         # save polygons
-        if not os.path.exists(self.final_dataset_path_):
-            self.df_final.to_file(self.final_dataset_path_, driver='GeoJSON')
+        if not os.path.exists(self.final_dataset_path_json_):
+            self.df_final.to_file(self.final_dataset_path_json_, driver='GeoJSON')
+        if not os.path.exists(self.final_dataset_path_gpkg_):
+            self.df_final.to_file(self.final_dataset_path_gpkg_, driver='GPKG')
         # save centroids
-        if not os.path.exists(self.final_dataset_ctr_path_):
+        if not os.path.exists(self.final_dataset_ctr_path_json_):
             df_centroid = self.df_final.copy()
             df_centroid['geometry'] = self.df_final.convex_hull.centroid
-            df_centroid.to_file(self.final_dataset_ctr_path_, driver='GeoJSON')
+            df_centroid.to_file(self.final_dataset_ctr_path_json_, driver='GeoJSON')
+            df_centroid.to_file(self.final_dataset_ctr_path_gpkg_, driver='GPKG')
 
     def load_results(self):
         """
         Function to load final dataset
         :return:
         """
-        self.df_final = gpd.read_file(self.final_dataset_path_)
+        self.df_final = gpd.read_file(self.final_dataset_path_json_)
 
     def _setup_final_dataset_path(self):
         """
         Function to setup path for dataset output
         :return:
         """
-        self.final_dataset_path_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
+        self.final_dataset_path_json_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
                                                 'lake_change.geojson')
-        self.final_dataset_ctr_path_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
+        self.final_dataset_path_gpkg_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
+                                                'lake_change.gpkg')
+        self.final_dataset_ctr_path_json_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
                                                     'lake_change_centroid.geojson')
+        self.final_dataset_ctr_path_gpkg_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
+                                                    'lake_change_centroid.gpkg')
 
     def print_regional_statistics(self):
         pass

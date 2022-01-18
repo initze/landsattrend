@@ -89,7 +89,7 @@ class Classify(object):
         if not all([self.all_exists_, ~self.overwrite]):
             shp = [0, 0, self.xsize, self.ysize]
             self.prediction_class_ = self.model.predict(self.data).reshape(shp[2],shp[3])
-            self.prediction_proba_ = self.model.predict_proba(self.data).T.reshape(len(self.model.classes_),shp[2],shp[3])
+            self.prediction_proba_ = self.model.predict_proba(self.data).T.reshape(len(self.model.classes_), shp[2], shp[3])
             self.prediction_confidence_ = self.prediction_proba_.max(axis=0)
 
     def write_output(self):
@@ -131,10 +131,6 @@ class ClassifyDEM(Classify):
                 self.xsize = src.height
                 self.ysize = src.width
                 data = src.read()
-            #data = ga.LoadFile(f, xsize=1000, ysize=1000)
-            if self.cirange:
-                dt = data[-1] - data[-2]
-                data = np.vstack((data, np.expand_dims(dt, 0)))
             data_full.append(data)
         data_full = np.array(data_full)
         shp_trends = data_full.shape
