@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import geopandas as gpd
 
 PROCESSING_DIR = os.getcwd()
-tiles = ['150_62', '150_63']
+tiles = [ '150_62']
 zone = 'Z056-Kolyma'
 directory_location = os.path.join(PROCESSING_DIR, 'process')
 site_name = 'Z056-Kolyma'
@@ -15,6 +15,12 @@ CLASS_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180831_RF_4class_noDEM_9
 LAKE_FILTER_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180820_lakefilter_12039samples_py3.z')
 
 def main():
+
+    tiles_directory = os.path.join(os.getcwd(), 'data', 'Z056-Kolyma', '1999-2018', 'tiles')
+    tif_files = os.listdir(tiles_directory)
+    for t in tif_files:
+        print(t)
+
     l = LakeMaker(zone, os.path.join(directory_location, site_name), classperiod='1999-2018')
     print("\nStart Classification")
     l.classify(CLASS_MODEL, tiles)
