@@ -19,5 +19,10 @@ study_sites_df['fishnet_file'] = study_sites_df.apply(lambda x: os.path.join(VEC
 study_sites_df['dem_dir'] = study_sites_df.apply(lambda x: os.path.join(DEM_DIR, os.path.basename(x['dem_dir'])), axis=1)
 study_sites_df['result_dir'] = study_sites_df.apply(lambda x: os.path.join(RESULT_DIR, os.path.basename(x['result_dir'])), axis=1)
 
+fishnet_file_DIR = study_sites_df['fishnet_file'][0]
+dem_dir_DIR = study_sites_df['dem_dir'][0]
+results_DIR = study_sites_df['result_dir'][0]
+
 study_sites = study_sites_df.T.to_dict()
 wrs2_path = os.path.join(VECTOR_DIR, 'wrs2_descending.shp')
+print('done')
