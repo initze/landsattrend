@@ -11,17 +11,18 @@ zone = 'Z056-Kolyma'
 directory_location = os.path.join(PROCESSING_DIR, 'process')
 site_name = 'Z056-Kolyma'
 
-CLASS_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180831_RF_4class_noDEM_973samples_py3_v0.z')
+CLASS_PERIOD = '2000-2020'
+CLASS_MODEL = os.path.join(PROCESSING_DIR, 'models', 'PDG_6idx2feat_elslope_model_py38_sklearn0232_v04.z')
 LAKE_FILTER_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180820_lakefilter_12039samples_py3.z')
 
 def main():
 
-    tiles_directory = os.path.join(os.getcwd(), 'data', 'Z056-Kolyma', '1999-2018', 'tiles')
+    tiles_directory = os.path.join(os.getcwd(), 'data', site_name, CLASS_PERIOD, 'tiles')
     tif_files = os.listdir(tiles_directory)
     for t in tif_files:
         print(t)
 
-    l = LakeMaker(zone, os.path.join(directory_location, site_name), classperiod='1999-2018')
+    l = LakeMaker(zone, os.path.join(directory_location, site_name), classperiod=CLASS_PERIOD)
     print("\nStart Classification")
     l.classify(CLASS_MODEL, tiles)
     """
