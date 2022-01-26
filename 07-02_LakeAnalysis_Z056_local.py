@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import geopandas as gpd
 
 PROCESSING_DIR = os.getcwd()
-tiles = [ '150_62']
+tiles = ['150_62']
 zone = 'Z056-Kolyma'
 directory_location = os.path.join(PROCESSING_DIR, 'process')
 site_name = 'Z056-Kolyma'

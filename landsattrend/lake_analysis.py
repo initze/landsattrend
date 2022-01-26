@@ -230,7 +230,7 @@ class LakeMaker(object):
         for fi in files:
             f.write(fi + '\n')
         f.close()
-        os.system(r'{gdal_path}\gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_BIN'],
+        os.system(r'gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_BIN'],
                                                                               txtfile=txtfile, vrtfile=vrtfile))
 
     def _setup_class_vrt_paths(self):
