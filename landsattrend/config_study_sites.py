@@ -25,4 +25,3 @@ results_DIR = study_sites_df['result_dir'][0]
 
 study_sites = study_sites_df.T.to_dict()
 wrs2_path = os.path.join(VECTOR_DIR, 'wrs2_descending.shp')
-print('done')

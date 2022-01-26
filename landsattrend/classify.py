@@ -86,6 +86,7 @@ class Classify(object):
         """
         function to classify loaded raster based on pre-trained classification model
         """
+        condition = all([self.all_exists_,~self.overwrite])
         if not all([self.all_exists_, ~self.overwrite]):
             shp = [0, 0, self.xsize, self.ysize]
             self.prediction_class_ = self.model.predict(self.data).reshape(shp[2],shp[3])
