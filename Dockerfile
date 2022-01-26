@@ -20,7 +20,10 @@ ENV C_INCLUDE_PATH=/usr/include/gdal
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal/bin
 ENV C_INCLUDE_PATH=/usr/include/gdal/bin
 
+
 ENV PATH=/usr/bin/gdal:$PATH
+
+ENV GDAL_BIN=/usr/include/gdal/bin
 
 RUN gdal-config --version
 

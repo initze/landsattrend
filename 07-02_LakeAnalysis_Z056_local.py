@@ -15,6 +15,9 @@ CLASS_PERIOD = '2000-2020'
 CLASS_MODEL = os.path.join(PROCESSING_DIR, 'models', 'PDG_6idx2feat_elslope_model_py38_sklearn0232_v04.z')
 LAKE_FILTER_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180820_lakefilter_12039samples_py3.z')
 
+os.environ['GDAL_BIN'] = ''
+os.environ['GDAL_PATH'] = ''
+
 def main():
 
     tiles_directory = os.path.join(os.getcwd(), 'data', site_name, CLASS_PERIOD, 'tiles')
