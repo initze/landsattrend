@@ -17,26 +17,35 @@ LAKE_FILTER_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180820_lakefilter_
 
 os.environ['GDAL_BIN'] = ''
 os.environ['GDAL_PATH'] = ''
+#os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_Prefix'], 'Library','bin')
+#os.environ['GDAL_PATH'] = os.path.join(os.environ['CONDA_Prefix'], 'Scripts') #in linux its the same as $GDAL_BIN
 
 def main():
 
     tiles_directory = os.path.join(os.getcwd(), 'data', site_name, CLASS_PERIOD, 'tiles')
     tif_files = os.listdir(tiles_directory)
+    
+    print('Available Images:\n')
     for t in tif_files:
         print(t)
 
-    l = LakeMaker(zone, os.path.join(directory_location, site_name), classperiod=CLASS_PERIOD)
+    l = LakeMaker(zone, os.path.join(directory_location, site_name), classperiod='2000-2020')
     print("\nStart Classification")
     l.classify(CLASS_MODEL, tiles)
-    """
-	print("\nPreparing additional Data")
+    
+    print("\nPreparing additional Data")
     l.prepare_aux_data(r'E:\18_Paper02_LakeAnalysis\02_AuxData\04_DEM\DEM.vrt',r'E:\18_Paper02_LakeAnalysis\02_AuxData\01_ForestLoss\forestfire.vrt')
+    
     print("\nCreating Masks")
     l.make_masks()
+
     print("\nCalculating Stats")
     l.make_stats()
+
     print("\nSaving DataFrame to Disk")
     l.save_df()
+    
+    # errors come somewhere here
     print("\nFiltering non-lake objects")
     l.filter_data(LAKE_FILTER_MODEL)
     print("\nSaving DataFrame to Disk")
@@ -47,9 +56,6 @@ def main():
     l.save_results()
     print("\nSaving ResultGrid at 3km resolution")
     l.export_gridded_results([100, 250])
-    #print("\nSaving ResultGrid at 7.5km resolution")
-    #l.export_gridded_results(250)
-	"""
 
 
 if __name__ == "__main__":
