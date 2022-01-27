@@ -230,6 +230,9 @@ class LakeMaker(object):
         for fi in files:
             f.write(fi + '\n')
         f.close()
+        # TODO the text file is empty!!!
+        command = r'gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_BIN'],
+                                                                              txtfile=txtfile, vrtfile=vrtfile)
         os.system(r'gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_BIN'],
                                                                               txtfile=txtfile, vrtfile=vrtfile))
 
@@ -320,7 +323,7 @@ class LakeMaker(object):
             epsg = (list(ds.crs.values())[0]).split(':')[-1]
 
         # create firemap/mask
-        s = r'{gdal_path}\gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(gdal_path=os.environ['GDAL_BIN'],
+        s = r'gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(gdal_path=os.environ['GDAL_BIN'],
                                                                                                                       epsg=epsg,
                                                                                                                xmin=bnd.left,
                                                                                                                ymin=bnd.bottom,
@@ -330,7 +333,7 @@ class LakeMaker(object):
                                                                                                                outfile=self.firemask_path_)
         os.system(s)
         # create elevation model
-        s = r'{gdal_path}\gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(gdal_path=os.environ['GDAL_BIN'],
+        s = r'gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(gdal_path=os.environ['GDAL_BIN'],
                                                                                                                                epsg=epsg,
                                                                                                                         xmin=bnd.left,
                                                                                                                         ymin=bnd.bottom,
@@ -340,7 +343,7 @@ class LakeMaker(object):
                                                                                                                         outfile=self.dem_path_)
         os.system(s)
         # create slope from created DEM
-        s_slope = r'{gdal_path}\gdaldem slope -alg ZevenbergenThorne {infile} {slopefile}'.format(gdal_path=os.environ['GDAL_BIN'],
+        s_slope = r'gdaldem slope -alg ZevenbergenThorne {infile} {slopefile}'.format(gdal_path=os.environ['GDAL_BIN'],
                                                                                              infile=self.dem_path_, slopefile=self.slope_path_)
         os.system(s_slope)
 

@@ -52,11 +52,12 @@ class Classify(object):
         """
         create output file names
         """
+
         self.outdir_ = r'{p}'.format(p=self.outputfolder)
 
-        self.outfile_class_ = r'{p}\{z}_class_{t}_class.tif'.format(p=self.outdir_, t=self.tile, z=self.zone)
-        self.outfile_proba_ = r'{p}\{z}_class_{t}_proba.tif'.format(p=self.outputfolder, t=self.tile, z=self.zone)
-        self.outfile_confidence_ = r'{p}\{z}_class_{t}_confidence.tif'.format(p=self.outputfolder, t=self.tile, z=self.zone)
+        self.outfile_class_ = r'{p}/{z}_class_{t}_class.tif'.format(p=self.outdir_, t=self.tile, z=self.zone)
+        self.outfile_proba_ = r'{p}/{z}_class_{t}_proba.tif'.format(p=self.outputfolder, t=self.tile, z=self.zone)
+        self.outfile_confidence_ = r'{p}/{z}_class_{t}_confidence.tif'.format(p=self.outputfolder, t=self.tile, z=self.zone)
 
     def _check_outpath(self):
         self.outfile_class_exists_ = os.path.exists(self.outfile_class_)
