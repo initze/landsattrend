@@ -5,15 +5,15 @@ import os
 from matplotlib import pyplot as plt
 import geopandas as gpd
 
-PROCESSING_DIR = os.getcwd()
+PROCESS_ROOT = os.getcwd()
+
 tiles = ['150_62']
-zone = 'Z056-Kolyma'
-directory_location = os.path.join(PROCESSING_DIR, 'process')
+process_dir = os.path.join(PROCESS_ROOT, 'process')
 site_name = 'Z056-Kolyma'
 
 CLASS_PERIOD = '2000-2020'
-CLASS_MODEL = os.path.join(PROCESSING_DIR, 'models', 'PDG_6idx2feat_elslope_model_py38_sklearn0232_v04.z')
-LAKE_FILTER_MODEL = os.path.join(PROCESSING_DIR, 'models', '20180820_lakefilter_12039samples_py3.z')
+CLASS_MODEL = os.path.join(PROCESS_ROOT, 'models', 'PDG_6idx2feat_elslope_model_py38_sklearn0232_v04.z')
+LAKE_FILTER_MODEL = os.path.join(PROCESS_ROOT, 'models', '20180820_lakefilter_12039samples_py3.z')
 
 os.environ['GDAL_BIN'] = ''
 os.environ['GDAL_PATH'] = ''
@@ -22,14 +22,14 @@ os.environ['GDAL_PATH'] = ''
 
 def main():
 
-    tiles_directory = os.path.join(os.getcwd(), 'data', site_name, CLASS_PERIOD, 'tiles')
+    tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
     tif_files = os.listdir(tiles_directory)
     
     print('Available Images:\n')
     for t in tif_files:
         print(t)
 
-    l = LakeMaker(zone, os.path.join(directory_location, site_name), classperiod='2000-2020')
+    l = LakeMaker(site_name, os.path.join(process_dir, site_name), classperiod='2000-2020')
     print("\nStart Classification")
     l.classify(CLASS_MODEL, tiles)
     
