@@ -1,7 +1,7 @@
 from landsattrend.lake_analysis import LakeMaker
 import numpy as np
 import pandas as pd
-import os
+import os, platform
 from matplotlib import pyplot as plt
 import geopandas as gpd
 from pathlib import Path
@@ -16,10 +16,12 @@ CLASS_PERIOD = '2000-2020'
 CLASS_MODEL = os.path.join(PROCESS_ROOT, 'models', 'PDG_6idx2feat_elslope_model_py38_sklearn0232_v04.z')
 LAKE_FILTER_MODEL = os.path.join(PROCESS_ROOT, 'models', '20180820_lakefilter_12039samples_py3.z')
 
-os.environ['GDAL_BIN'] = ''
-os.environ['GDAL_PATH'] = ''
-#os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_Prefix'], 'Library','bin')
-#os.environ['GDAL_PATH'] = os.path.join(os.environ['CONDA_Prefix'], 'Scripts') #in linux its the same as $GDAL_BIN
+if platform.system() == 'Windows':
+    os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'Library','bin')
+    os.environ['GDAL_PATH'] = os.path.join(os.environ['CONDA_PREFIX'], 'Scripts')
+else:
+    os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'bin')
+    os.environ['GDAL_PATH'] = os.environ['GDAL_BIN']
 
 DEM_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'forestfire', 'forestfire.vrt')
