@@ -622,8 +622,9 @@ class LakeMaker(object):
         self.load_masks()
         self.label_Cfilter = self._filter_labelled_mask(self.label_C, self.df_filter.index)
         array_to_file(self.label_Cfilter, self.label_Cfilter_path_, self.class_vrt_path_, dtype=gdal.GDT_UInt32)
-        s = r'python {gdal_path}\gdal_polygonize.py -q -8 -f "ESRI Shapefile" -mask {raster} {raster} {vector} label_id label_id'.format(
-                gdal_path=os.environ['GDAL_PATH'],
+        gdal_call = os.path.join(os.environ['GDAL_PATH'],'gdal_polygonize.py')
+        s = r'python {gdal_call} -q -8 -f "ESRI Shapefile" -mask {raster} {raster} {vector} label_id label_id'.format(
+                gdal_call=gdal_call,
                 raster=self.label_Cfilter_path_,
                 vector=self.label_CfilterVector_path_)
         os.system(s)
@@ -1032,8 +1033,10 @@ class SlumpMaker(LakeMaker):
 
     def _export_segment_files(self):
         array_to_file(self.segment_raster, self.segment_raster_path_, self.probafile_path_, noData=True, noDataVal=-1)
-        s = r'python {gdal_path}\gdal_polygonize.py -q -8 -f "GeoJSON" -mask {raster} {raster} {vector} label label'.format(
-                        gdal_path=os.environ['GDAL_PATH'],
+        gdal_call = os.path.join(os.environ['GDAL_PATH'],'gdal_polygonize.py')
+        #s = r'python {gdal_call}
+        s = r'python {gdal_call} -q -8 -f "GeoJSON" -mask {raster} {raster} {vector} label label'.format(
+                        gdal_call=gdal_call,
                         raster=self.segment_raster_path_,
                         vector=self.segment_vector_path_)
         os.system(s)
@@ -1076,8 +1079,8 @@ class SlumpMaker(LakeMaker):
                 for pr in tiles:
                     fi = (os.path.join(study_sites[self.zone]['dem_dir'], '{zone}_{pr}_{idx}.tif'.format(zone=self.zone, pr=pr, idx=ctype)))
                     f.write(fi + '\n')
-
-            os.system(r'{gdal_path}\gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_BIN'],
+            gdal_call = os.path.join(os.environ['GDAL_PATH'], 'gdal_polygonize.py')
+            os.system(r'{gdal_call} -input_file_list {txtfile} {vrtfile}'.format(gdal_call=gdal_call,
                                                                                                     txtfile=txtfile,
                                                                                                     vrtfile=vrtfile))
 

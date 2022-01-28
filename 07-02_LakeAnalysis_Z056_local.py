@@ -4,10 +4,11 @@ import pandas as pd
 import os
 from matplotlib import pyplot as plt
 import geopandas as gpd
+from pathlib import Path
 
 PROCESS_ROOT = os.getcwd()
 
-tiles = ['150_62']
+tiles = ['150_50']
 process_dir = os.path.join(PROCESS_ROOT, 'process')
 site_name = 'Z056-Kolyma'
 
@@ -37,7 +38,6 @@ def main():
     l.classify(CLASS_MODEL, tiles)
 
     print("\nPreparing additional Data")
-    # l.prepare_aux_data(r'E:\18_Paper02_LakeAnalysis\02_AuxData\04_DEM\DEM.vrt',r'E:\18_Paper02_LakeAnalysis\02_AuxData\01_ForestLoss\forestfire.vrt')
     l.prepare_aux_data(DEM_LOCATION, FOREST_LOCATION)
 
     print("\nCreating Masks")
