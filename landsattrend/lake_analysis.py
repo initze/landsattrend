@@ -193,9 +193,10 @@ def improps_to_df(label_image, intensity_image,
 class LakeMaker(object):
     """This is a Class to run the lake extraction and characterization workflow
     """
-    def __init__(self, zone, directory, suffix='', classperiod='1999-2014'):
+    def __init__(self, zone, directory, tiles_directory, suffix='', classperiod='1999-2014'):
         self.zone = zone
         self.directory = directory
+        self.tiles_directory = tiles_directory
         self.classperiod = classperiod
         self._setup_class_vrt_paths()
         self._setup_aux_paths()
@@ -268,7 +269,8 @@ class LakeMaker(object):
         model.n_jobs=-1
         outdir = os.path.join(self.directory, '01_Classification_Raster')
         # TODO quick fix - make more sophisticated solution
-        imagefolder = os.path.join(study_sites[0]['result_dir'], self.classperiod, 'tiles')
+        imagefolder = self.tiles_directory
+        #imagefolder = os.path.join(study_sites[0]['result_dir'], self.classperiod, 'tiles')
 
         # run Classification
         for t in tiles:

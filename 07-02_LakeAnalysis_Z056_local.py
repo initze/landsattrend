@@ -35,7 +35,7 @@ def main():
     for t in tif_files:
         print(t)
 
-    l = LakeMaker(site_name, os.path.join(process_dir, site_name), classperiod='2000-2020')
+    l = LakeMaker(site_name, os.path.join(process_dir, site_name), tiles_directory, classperiod='2000-2020')
     print("\nStart Classification")
     l.classify(CLASS_MODEL, tiles)
 
