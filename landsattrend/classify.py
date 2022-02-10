@@ -31,6 +31,7 @@ class Classify(object):
     """
     def __init__(self,
                  model,
+                 image,
                  zone='Z004',
                  tile='27_11',
                  imagefolder=r'F:\06_Trendimages\Z004_2016_2mths\1999-2014\tiles',
@@ -39,6 +40,7 @@ class Classify(object):
                  overwrite=False):
 
         self.model = model
+        self.image = image
         self.zone = zone
         self.tile = tile
         self.imagefolder = imagefolder
@@ -55,9 +57,9 @@ class Classify(object):
 
         self.outdir_ = r'{p}'.format(p=self.outputfolder)
 
-        self.outfile_class_ = r'{p}/{z}_class_{t}_class.tif'.format(p=self.outdir_, t=self.tile, z=self.zone)
-        self.outfile_proba_ = r'{p}/{z}_class_{t}_proba.tif'.format(p=self.outputfolder, t=self.tile, z=self.zone)
-        self.outfile_confidence_ = r'{p}/{z}_class_{t}_confidence.tif'.format(p=self.outputfolder, t=self.tile, z=self.zone)
+        self.outfile_class_ = f'{self.outdir_}/class_{os.path.basename(self.image)}'
+        self.outfile_proba_ = f'{self.outdir_}/proba_{os.path.basename(self.image)}'
+        self.outfile_confidence_ = f'{self.outdir_}/confidence_{os.path.basename(self.image)}'
 
     def _check_outpath(self):
         self.outfile_class_exists_ = os.path.exists(self.outfile_class_)
@@ -70,9 +72,8 @@ class Classify(object):
         function to load raster data (trends) into dataframe
         """
         if not all([self.all_exists_, ~self.overwrite]):
-            f = os.path.join(self.imagefolder, f'trendimage_{self.zone}_{self.tile}.tif')
-            self.prototype_ = f
-            with rasterio.open(f) as src:
+            self.prototype_ = self.image
+            with rasterio.open(self.image) as src:
                 self.xsize = src.height
                 self.ysize = src.width
                 data = src.read()

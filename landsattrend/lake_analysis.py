@@ -198,6 +198,7 @@ class LakeMaker(object):
         self.directory = directory
         self.tiles_directory = tiles_directory
         self.classperiod = classperiod
+        #self._setup_image_paths()
         self._setup_class_vrt_paths()
         self._setup_aux_paths()
         self._setup_mask_paths()
@@ -226,7 +227,7 @@ class LakeMaker(object):
         #TODO: Docstring
         txtfile = os.path.join(directory, '{ctype}.txt'.format(ctype=ctype))
         vrtfile = os.path.join(directory, '{ctype}.vrt'.format(ctype=ctype))
-        files = glob.glob(os.path.join(directory, '*{ctype}.tif'.format(ctype=ctype)))
+        files = glob.glob(os.path.join(directory, '{ctype}*.tif'.format(ctype=ctype)))
         f = open(txtfile, 'w')
         for fi in files:
             f.write(fi + '\n')
@@ -257,7 +258,7 @@ class LakeMaker(object):
                        '05_Lake_Dataset_Raster_02_final']
             [os.makedirs(os.path.join(self.directory, s)) for s in subdirs]
 
-    def classify(self, class_model, tiles):
+    def classify(self, class_model):
         """
         Function to classify the data with the defined scikit-learn classification model. tile structure needs to be
         indicated as a list
@@ -269,14 +270,14 @@ class LakeMaker(object):
         model.n_jobs=-1
         outdir = os.path.join(self.directory, '01_Classification_Raster')
         # TODO quick fix - make more sophisticated solution
-        imagefolder = self.tiles_directory
+        #imagefolder = self.tiles_directory
         #imagefolder = os.path.join(study_sites[0]['result_dir'], self.classperiod, 'tiles')
 
+        image_list = glob.glob(os.path.join(self.tiles_directory, '*.tif'))
         # run Classification
-        for t in tiles:
-            print(t)
-            cl = Classify(model, zone=self.zone, tile=t,
-                          imagefolder=imagefolder,
+        for image in image_list:
+            #print(t)
+            cl = Classify(model, image=image,
                           outputfolder=outdir)
 
             # Skip if there are no data available

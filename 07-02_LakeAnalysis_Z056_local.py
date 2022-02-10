@@ -1,33 +1,27 @@
 from landsattrend.lake_analysis import LakeMaker
-import numpy as np
-import pandas as pd
 import os, platform
-from matplotlib import pyplot as plt
-import geopandas as gpd
-from pathlib import Path
 
 PROCESS_ROOT = os.getcwd()
 
-tiles = ['150_50']
-process_dir = os.path.join(PROCESS_ROOT, 'process')
-site_name = 'Z056-Kolyma'
+def set_conda_gdal_paths():
+    if platform.system() == 'Windows':
+        os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'bin')
+        os.environ['GDAL_PATH'] = os.path.join(os.environ['CONDA_PREFIX'], 'Scripts')
+    else:
+        os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'bin')
+        os.environ['GDAL_PATH'] = os.environ['GDAL_BIN']
 
+process_dir = os.path.join(PROCESS_ROOT, 'process')
+site_name = '32604'
 CLASS_PERIOD = '2000-2020'
 CLASS_MODEL = os.path.join(PROCESS_ROOT, 'models', 'PDG_6idx2feat_elslope_model_py38_sklearn0232_v04.z')
 LAKE_FILTER_MODEL = os.path.join(PROCESS_ROOT, 'models', '20180820_lakefilter_12039samples_py3.z')
-
-if platform.system() == 'Windows':
-    os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'Library','bin')
-    os.environ['GDAL_PATH'] = os.path.join(os.environ['CONDA_PREFIX'], 'Scripts')
-else:
-    os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'bin')
-    os.environ['GDAL_PATH'] = os.environ['GDAL_BIN']
 
 DEM_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'forestfire', 'forestfire.vrt')
 
 def main():
-
+    set_conda_gdal_paths()
     tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
     tif_files = os.listdir(tiles_directory)
 
@@ -35,9 +29,9 @@ def main():
     for t in tif_files:
         print(t)
 
-    l = LakeMaker(site_name, os.path.join(process_dir, site_name), tiles_directory, classperiod='2000-2020')
+    l = LakeMaker(site_name, os.path.join(process_dir, site_name), tiles_directory, classperiod=CLASS_PERIOD)
     print("\nStart Classification")
-    l.classify(CLASS_MODEL, tiles)
+    l.classify(CLASS_MODEL)
 
     print("\nPreparing additional Data")
     l.prepare_aux_data(DEM_LOCATION, FOREST_LOCATION)
