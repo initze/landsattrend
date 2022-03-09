@@ -21,16 +21,16 @@ LAKE_FILTER_MODEL = os.path.join(PROCESS_ROOT, 'models', '20180820_lakefilter_12
 DEM_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'forestfire', 'forestfire.vrt')
 
-def main():
+def run_lake_analysis(path_to_tiles, current_class_period, current_site_name):
     set_conda_gdal_paths()
-    tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
+    tiles_directory = path_to_tiles
     tif_files = os.listdir(tiles_directory)
 
     print('Available Images:\n')
     for t in tif_files:
         print(t)
 
-    l = LakeMaker(site_name, os.path.join(process_dir, site_name), tiles_directory, classperiod=CLASS_PERIOD)
+    l = LakeMaker(site_name, os.path.join(process_dir, current_site_name), tiles_directory, classperiod=current_class_period)
     print("\nStart Classification")
     l.classify(CLASS_MODEL)
 
@@ -57,7 +57,3 @@ def main():
     l.save_results()
     print("\nSaving ResultGrid at 3km resolution")
     l.export_gridded_results([100, 250])
-
-
-if __name__ == "__main__":
-    main()
