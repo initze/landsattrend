@@ -1,42 +1,53 @@
-FROM python:3.8-slim
+FROM ubuntu:18.04
+ENV PATH="/root/miniconda3/bin:${PATH}"
+ARG PATH="/root/miniconda3/bin:${PATH}"
+RUN apt-get update
 
-RUN apt-get -y update
-RUN apt install -y -qq python3-pip
+RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --upgrade pip
+RUN wget \
+    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && mkdir /root/.conda \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
+RUN conda --version
 
-RUN pip3 install Bottleneck==1.3.2
+RUN conda clean -a
 
-RUN pip3 install numpy==1.22.0
+RUN echo $CONDA_PREFIX
 
-# Install GDAL dependencies
-RUN apt-get install gdal-bin -y
-RUN apt-get install -y libgdal-dev -y
-
-# Update C env vars so compiler can find gdal
-ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
-ENV C_INCLUDE_PATH=/usr/include/gdal
-
-ENV CPLUS_INCLUDE_PATH=/usr/include/gdal/bin
-ENV C_INCLUDE_PATH=/usr/include/gdal/bin
+COPY extractor_info.json .
 
 
-ENV PATH=/usr/bin/gdal:$PATH
+COPY aux_data ./aux_data
 
-ENV GDAL_BIN=/usr/include/gdal/bin
+COPY config ./config
 
-RUN gdal-config --version
+COPY landsattrend ./landsattrend
 
-## This will install GDAL
-RUN pip3 install GDAL==3.2.2
-#
-# Install libspatialindex for Rtree, a ctypes Python wrapper of libspatialindex
-RUN apt-get install -y libspatialindex-dev
-# create and install the pyincore package
+COPY models ./models
+
+COPY environment.yml environment.yml
+
+COPY extractor_info.json extractor_info.json
+
+COPY landsattrend_extractor.py landsattrend_extractor.py
+
+COPY requirements.txt requirements.txt
+
+COPY run_lake_analysis.py run_lake_analysis.py
+
+COPY setup.py setup.py
+
+COPY test.py test.py
+
+RUN ls
+
+RUN conda env create -f environment.yml
+
+SHELL ["conda", "run", "-n", "landsattrend2", "/bin/bash", "-c"]
+
+RUN python -m pip install --ignore-installed pyclowder
 
 
-RUN pip3 install pyclowder
-
-COPY requirements.txt /home/requirements.txt
-
-RUN pip3 install -r /home/requirements.txt
+CMD ["conda", "run", "--no-capture-output", "-n", "landsattrend2", "python","-u", "/landsattrend_extractor.py"]
