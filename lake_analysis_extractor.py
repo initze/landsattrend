@@ -67,94 +67,94 @@ class LandsattrendExtractor(Extractor):
         print('dataset is unzipped')
         print(os.listdir('/home'))
         return 0
-        path_to_landsattrend_data = os.path.join(dataset_download_location, 'data', 'data', 'Z056-Kolyma')
-        path_to_data_folder_in_dataset = os.path.join(dataset_download_location, 'data', 'data')
-        logger.info("path to landsattrend data")
-        logger.info(str(path_to_landsattrend_data))
-        if os.path.isdir(path_to_landsattrend_data):
-            logger.info("We have landsattrend data")
-            if os.path.isdir('/home/data'):
-                logger.info("we have old data, removing")
-                shutil.rmtree('/home/data')
-            else:
-                shutil.move(path_to_data_folder_in_dataset, '/home/data')
-        logger.info("run_lake_analysis now, after pause")
-        contents_of_tiles = os.listdir('/home/data/Z056-Kolyma/1999-2019/tiles')
-        logger.info("contents of tiles")
-        logger.info(str(contents_of_tiles))
-        time.sleep(60*6)
-        return 0
-        tiles_in_folder = get_tiles_from_files('/home/data/Z056-Kolyma/1999-2019/tiles')
-        logger.info('tiles_in_folder')
-        logger.info(str(tiles_in_folder))
-        if len(tiles_in_folder) > 1:
-            location_of_final_dataset = run_lake_analysis.process_tiles(tiles_in_folder)
-            logger.info("final dataset location")
-            logger.info(str(location_of_final_dataset))
-
-            upload_ids = []
-
-            contents_of_final_dataset = os.listdir(str(location_of_final_dataset))
-            for each_file in contents_of_final_dataset:
-                try:
-                    current_file_path = os.path.join(location_of_final_dataset, each_file)
-                    current_id = pyclowder.files.upload_to_dataset(connector, host, secret_key, dataset_id, filepath=current_file_path)
-                    upload_ids.append(current_id)
-                except Exception as e:
-                    logger.info("Could not upload : " + str(current_file_path))
-
-            logger.info("We have uploaded : " + str(len(upload_ids)))
-            logger.info("These files have ids : " + str(upload_ids))
-             # TODO upload to dataset as files, then move to new folder
-
-            params = dict()
-            headers = {'content-type': 'application/json'}
-            params['key'] = secret_key
-            params['parentId'] = dataset_id
-            params['parentType'] = 'dataset'
-            params['name'] = 'process'
-
-            # creating folder
-
-            url = host+'api/datasets/'+dataset_id+'/newFolder'
-
-            response = requests.post(url, data=json.dumps(params), headers=headers, params=params,
-                                     auth=None, timeout=1000, verify=False)
-            response.raise_for_status()
-
-
-
-            as_json = response.json()
-            folder_id = as_json["id"]
-            for each_id in upload_ids:
-                try:
-                    logger.info("trying to move " + str(each_id))
-                    current_id = each_id
-                    url = host+'api/datasets/'+dataset_id+'/moveFile/'+folder_id+'/'+current_id
-                    requests.post(url, data=json.dumps(params), headers=headers, params=params,
-                                  auth=None, timeout=1000, verify=False)
-                except Exception as e:
-                    logger.info("Could not move file to folder : " + str(current_id))
-            logger.info("Finished moving files to folder")
-
-            result = {"ran landsattrend extractor": "true", "tiles": str(tiles_in_folder)}
-            metadata = self.get_metadata(result, 'dataset', dataset_id, host)
-            pyclowder.datasets.upload_metadata(connector, host, secret_key, dataset_id, metadata)
-
-        else:
-            logger.info("Not enough tiles to run extractor")
-
-        try:
-            path_to_dataset_download = os.path.join('home', dataset_name)
-            path_to_data = os.path.join('home', 'data')
-            logger.info('contents of home')
-            logger.info(str(os.listdir('/home')))
-            if os.path.isdir(path_to_dataset_download):
-                logger.info('removing dataset download : ' + path_to_dataset_download)
-                shutil.rmtree(path_to_dataset_download)
-                shutil.rmtree(path_to_data)
-        except Exception as e:
-            logger.info("Could not delete dataset download")
+        # path_to_landsattrend_data = os.path.join(dataset_download_location, 'data', 'data', 'Z056-Kolyma')
+        # path_to_data_folder_in_dataset = os.path.join(dataset_download_location, 'data', 'data')
+        # logger.info("path to landsattrend data")
+        # logger.info(str(path_to_landsattrend_data))
+        # if os.path.isdir(path_to_landsattrend_data):
+        #     logger.info("We have landsattrend data")
+        #     if os.path.isdir('/home/data'):
+        #         logger.info("we have old data, removing")
+        #         shutil.rmtree('/home/data')
+        #     else:
+        #         shutil.move(path_to_data_folder_in_dataset, '/home/data')
+        # logger.info("run_lake_analysis now, after pause")
+        # contents_of_tiles = os.listdir('/home/data/Z056-Kolyma/1999-2019/tiles')
+        # logger.info("contents of tiles")
+        # logger.info(str(contents_of_tiles))
+        # time.sleep(60*6)
+        # return 0
+        # tiles_in_folder = get_tiles_from_files('/home/data/Z056-Kolyma/1999-2019/tiles')
+        # logger.info('tiles_in_folder')
+        # logger.info(str(tiles_in_folder))
+        # if len(tiles_in_folder) > 1:
+        #     location_of_final_dataset = run_lake_analysis.process_tiles(tiles_in_folder)
+        #     logger.info("final dataset location")
+        #     logger.info(str(location_of_final_dataset))
+        #
+        #     upload_ids = []
+        #
+        #     contents_of_final_dataset = os.listdir(str(location_of_final_dataset))
+        #     for each_file in contents_of_final_dataset:
+        #         try:
+        #             current_file_path = os.path.join(location_of_final_dataset, each_file)
+        #             current_id = pyclowder.files.upload_to_dataset(connector, host, secret_key, dataset_id, filepath=current_file_path)
+        #             upload_ids.append(current_id)
+        #         except Exception as e:
+        #             logger.info("Could not upload : " + str(current_file_path))
+        #
+        #     logger.info("We have uploaded : " + str(len(upload_ids)))
+        #     logger.info("These files have ids : " + str(upload_ids))
+        #      # TODO upload to dataset as files, then move to new folder
+        #
+        #     params = dict()
+        #     headers = {'content-type': 'application/json'}
+        #     params['key'] = secret_key
+        #     params['parentId'] = dataset_id
+        #     params['parentType'] = 'dataset'
+        #     params['name'] = 'process'
+        #
+        #     # creating folder
+        #
+        #     url = host+'api/datasets/'+dataset_id+'/newFolder'
+        #
+        #     response = requests.post(url, data=json.dumps(params), headers=headers, params=params,
+        #                              auth=None, timeout=1000, verify=False)
+        #     response.raise_for_status()
+        #
+        #
+        #
+        #     as_json = response.json()
+        #     folder_id = as_json["id"]
+        #     for each_id in upload_ids:
+        #         try:
+        #             logger.info("trying to move " + str(each_id))
+        #             current_id = each_id
+        #             url = host+'api/datasets/'+dataset_id+'/moveFile/'+folder_id+'/'+current_id
+        #             requests.post(url, data=json.dumps(params), headers=headers, params=params,
+        #                           auth=None, timeout=1000, verify=False)
+        #         except Exception as e:
+        #             logger.info("Could not move file to folder : " + str(current_id))
+        #     logger.info("Finished moving files to folder")
+        #
+        #     result = {"ran landsattrend extractor": "true", "tiles": str(tiles_in_folder)}
+        #     metadata = self.get_metadata(result, 'dataset', dataset_id, host)
+        #     pyclowder.datasets.upload_metadata(connector, host, secret_key, dataset_id, metadata)
+        #
+        # else:
+        #     logger.info("Not enough tiles to run extractor")
+        #
+        # try:
+        #     path_to_dataset_download = os.path.join('home', dataset_name)
+        #     path_to_data = os.path.join('home', 'data')
+        #     logger.info('contents of home')
+        #     logger.info(str(os.listdir('/home')))
+        #     if os.path.isdir(path_to_dataset_download):
+        #         logger.info('removing dataset download : ' + path_to_dataset_download)
+        #         shutil.rmtree(path_to_dataset_download)
+        #         shutil.rmtree(path_to_data)
+        # except Exception as e:
+        #     logger.info("Could not delete dataset download")
 
 
 
