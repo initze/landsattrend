@@ -19,6 +19,8 @@ import distutils
 
 PROCESS_ROOT = os.getcwd()
 
+HOME_DIR = os.path.join(os.getcwd(), 'home')
+
 def add_file_to_tiles(path_to_file):
     filename = path_to_file.split('/')[-1]
     filename_parts = filename.split('_')
@@ -27,10 +29,54 @@ def add_file_to_tiles(path_to_file):
     current_lat = filename_parts[3].lstrip('-')
     current_lon = filename_parts[4].rstrip('.tif')
 
-    current_tiles_directory = os.path.join(PROCESS_ROOT, 'data', current_site_name, current_class_period, 'tiles')
-    new_filename = 'trendimage_'+current_site_name+'_'+current_lat+'_'+current_lon+'.tif'
-    destination = os.path.join(current_tiles_directory, new_filename)
-    shutil.copy(path_to_file, destination)
+    current_tiles_directory = os.path.join(PROCESS_ROOT, 'home','data', current_site_name, current_class_period, 'tiles')
+    if not os.path.isdir(current_tiles_directory):
+        try:
+            tiles_path = Path(current_tiles_directory)
+            tiles_path.mkdir(parents=True)
+        except Exception as e:
+            print(e)
+    if os.path.isdir(current_tiles_directory):
+        new_filename = 'trendimage_'+current_site_name+'_'+current_lat+'_'+current_lon+'.tif'
+        destination = os.path.join(current_tiles_directory, new_filename)
+        shutil.copy(path_to_file, destination)
+        try:
+            os.remove(path_to_file)
+        except Exception as e:
+            print(e)
+
+def move_files_in_dataset(path_to_unzipped_dataset):
+    print('here')
+    contents = os.listdir(path_to_unzipped_dataset)
+    for item in contents:
+        if item.endswith('.tif'):
+            try:
+                add_file_to_tiles(os.path.join(path_to_unzipped_dataset, item))
+            except Exception as e:
+                print(e)
+        else:
+            try:
+                os.remove(os.path.join(path_to_unzipped_dataset, item))
+            except Exception as e:
+                print(e)
+
+
+def delete_unnecessary_files(path_to_unzipped_dataset):
+    contents = os.listdir(path_to_unzipped_dataset)
+    for item in contents:
+        if os.path.isdir(os.path.join(path_to_unzipped_dataset, item)):
+            if item == 'metadata':
+                try:
+                    os.rmtree(os.path.join(path_to_unzipped_dataset, item))
+                except Exception as e:
+                    print(e)
+        else:
+            try:
+                os.remove(os.path.join(path_to_unzipped_dataset, item))
+            except Exception as e:
+                print(e)
+
+
 
 class LandsattrendExtractor(Extractor):
     def __init__(self):
@@ -58,14 +104,29 @@ class LandsattrendExtractor(Extractor):
 
         logger.info("in process message")
 
-        dataset_download_location = os.path.join('/home', dataset_name)
+        # dataset_download_location = os.path.join(HOME_DIR, dataset_name)
+        #
+        # download = pyclowder.datasets.download(connector, host, secret_key, dataset_id)
+        # with zipfile.ZipFile(download, 'r') as zip:
+        #     zip.extractall(dataset_download_location)
 
-        download = pyclowder.datasets.download(connector, host, secret_key, dataset_id)
-        with zipfile.ZipFile(download, 'r') as zip:
-            zip.extractall(dataset_download_location)
+        # delete everything except the files
+        path_to_dataset = os.path.join(HOME_DIR, dataset_name)
+        dataset_contents = os.listdir(path_to_dataset)
+        path_to_dataset_data = os.path.join(HOME_DIR, dataset_name, 'data')
+        path_to_dataset_metadata = os.path.join(HOME_DIR, dataset_name, 'metadata')
+
+        delete_unnecessary_files(path_to_dataset)
+
+
+
+
+
+
+        # move files to somewhere else
 
         print('dataset is unzipped')
-        print(os.listdir('/home'))
+        print(os.listdir(HOME_DIR))
         return 0
         # path_to_landsattrend_data = os.path.join(dataset_download_location, 'data', 'data', 'Z056-Kolyma')
         # path_to_data_folder_in_dataset = os.path.join(dataset_download_location, 'data', 'data')
@@ -161,11 +222,14 @@ class LandsattrendExtractor(Extractor):
 
 if __name__ == "__main__":
 
+
+    path_to_dataset = os.path.join(os.getcwd(), 'home', 'landsat test','data')
+    print(os.path.isdir(path_to_dataset))
+    move_files_in_dataset(path_to_dataset)
     print('before extractor starts, contents of home')
-    print(os.listdir('/home'))
+    print(os.listdir(HOME_DIR))
     extractor = LandsattrendExtractor()
     extractor.start()
-
 
 
     print('nothing yet')
