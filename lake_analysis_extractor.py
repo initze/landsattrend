@@ -40,6 +40,7 @@ def add_file_to_tiles(path_to_file):
         new_filename = 'trendimage_'+current_site_name+'_'+current_lat+'_'+current_lon+'.tif'
         destination = os.path.join(current_tiles_directory, new_filename)
         shutil.move(path_to_file, destination)
+    return current_tiles_directory
 
 def move_files_in_dataset(path_to_unzipped_dataset):
     print('here')
@@ -47,7 +48,7 @@ def move_files_in_dataset(path_to_unzipped_dataset):
     for item in contents:
         if item.endswith('.tif'):
             try:
-                add_file_to_tiles(os.path.join(path_to_unzipped_dataset, item))
+                path_to_tiles = add_file_to_tiles(os.path.join(path_to_unzipped_dataset, item))
             except Exception as e:
                 print(e)
         else:
@@ -55,6 +56,7 @@ def move_files_in_dataset(path_to_unzipped_dataset):
                 os.remove(os.path.join(path_to_unzipped_dataset, item))
             except Exception as e:
                 print(e)
+    return path_to_tiles
 
 
 def delete_unnecessary_files(path_to_unzipped_dataset):
@@ -63,7 +65,7 @@ def delete_unnecessary_files(path_to_unzipped_dataset):
         if os.path.isdir(os.path.join(path_to_unzipped_dataset, item)):
             if item == 'metadata':
                 try:
-                    os.rmtree(os.path.join(path_to_unzipped_dataset, item))
+                    shutil.rmtree(os.path.join(path_to_unzipped_dataset, item))
                 except Exception as e:
                     print(e)
         else:
@@ -102,16 +104,20 @@ class LandsattrendExtractor(Extractor):
 
         dataset_download_location = os.path.join(HOME_DIR, dataset_name)
         #
-        # download = pyclowder.datasets.download(connector, host, secret_key, dataset_id)
-        # with zipfile.ZipFile(download, 'r') as zip:
-        #     zip.extractall(dataset_download_location)
+        download = pyclowder.datasets.download(connector, host, secret_key, dataset_id)
+        with zipfile.ZipFile(download, 'r') as zip:
+            zip.extractall(dataset_download_location)
 
         # delete everything except the files
 
         delete_unnecessary_files(dataset_download_location)
-        move_files_in_dataset(os.path.join(dataset_download_location, 'data'))
+        path_to_tiles = move_files_in_dataset(os.path.join(dataset_download_location, 'data'))
         print('here')
 
+        path_to_tiles_components = path_to_tiles.split('/')
+        data_dir_index = path_to_tiles_components.index('data')
+        current_site_name = path_to_tiles_components[data_dir_index + 1]
+        current_class_period = path_to_tiles_components[data_dir_index + 2]
 
 
 
@@ -121,6 +127,30 @@ class LandsattrendExtractor(Extractor):
 
         print('dataset is unzipped')
         print(os.listdir(HOME_DIR))
+        extractor_lake_analysis.run_lake_analysis(path_to_tiles=path_to_tiles, current_class_period=current_class_period, current_site_name=current_site_name)
+
+        RESULT_DIR = os.path.join(os.getcwd(),'process',current_site_name,'05_Lake_Dataset_Raster_02_final')
+        results = os.listdir(RESULT_DIR)
+
+        client = pyclowder.datasets.ClowderClient(host=host, key=secret_key)
+
+
+        # create folder in dataset
+        data = dict()
+        data["name"] = 'process'
+        data["parentId"] = dataset_id
+        data["parentType"] = "dataset"
+        new_folder = client.post('/datasets/' + dataset_id + '/newFolder', content=data, params=data)
+
+        # upload files
+        for result in results:
+            path_to_result = os.path.join(RESULT_DIR, result)
+            file_result = client.post_file("/uploadToDataset/%s" % dataset_id, path_to_result)
+            file_id = file_result['id']
+            data = dict()
+            move_result = client.post('/datasets/' + dataset_id + '/moveFile/' + new_folder['id'] + '/' + file_id, content=data)
+        # TODO delete old files
+         # TODO better name for folder
         return 0
         # path_to_landsattrend_data = os.path.join(dataset_download_location, 'data', 'data', 'Z056-Kolyma')
         # path_to_data_folder_in_dataset = os.path.join(dataset_download_location, 'data', 'data')
