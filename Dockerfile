@@ -27,27 +27,29 @@ COPY landsattrend ./landsattrend
 
 COPY models ./models
 
-COPY environment.yml environment.yml
+COPY environment_py38_v2_extractor.yml environment_py38_v2_extractor.yml
 
 COPY extractor_info.json extractor_info.json
 
-COPY landsattrend_extractor.py landsattrend_extractor.py
-
-COPY requirements.txt requirements.txt
-
-COPY run_lake_analysis.py run_lake_analysis.py
-
-COPY setup.py setup.py
+COPY lake_analysis.py lake_analysis.py
 
 COPY test.py test.py
 
+COPY lake_analysis_extractor.py lake_analysis_extractor.py
+
+COPY requirements.txt requirements.txt
+
+COPY setup.py setup.py
+
 RUN ls
 
-RUN conda env create -f environment.yml
+RUN conda install -c conda-forge mamba
+
+RUN mamba env create -f environment_py38_v2_extractor.yml
 
 SHELL ["conda", "run", "-n", "landsattrend2", "/bin/bash", "-c"]
 
 RUN python -m pip install --ignore-installed pyclowder
 
 
-CMD ["conda", "run", "--no-capture-output", "-n", "landsattrend2", "python","-u", "/landsattrend_extractor.py"]
+CMD ["conda", "run", "--no-capture-output", "-n", "landsattrend2", "python","-u", "/lake_analysis_extractor.py"]

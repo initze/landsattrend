@@ -22,6 +22,14 @@ DEM_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'forestfire', 'forestfire.vrt')
 
 def run_lake_analysis(path_to_tiles, current_class_period, current_site_name):
+    print('CLASS_MODEL', CLASS_MODEL)
+    print(os.path.exists(CLASS_MODEL))
+    print('LAKE_FILTER_MODEL', LAKE_FILTER_MODEL)
+    print(os.path.exists(LAKE_FILTER_MODEL))
+    print('DEM_LOCATION', DEM_LOCATION)
+    print(os.path.exists(DEM_LOCATION))
+    print('FOREST_LOCATION', FOREST_LOCATION)
+    print(os.path.exists(FOREST_LOCATION))
     set_conda_gdal_paths()
     tiles_directory = path_to_tiles
     tif_files = os.listdir(tiles_directory)
