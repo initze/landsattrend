@@ -34,43 +34,6 @@ def clean_out_data_dir(path_to_data):
     print('data dir cleaned out')
     print(os.listdir(path_to_data))
 
-# 500PM
-
-def add_file_to_tiles(path_to_file):
-    print('adding file to tiles')
-    print(path_to_file)
-    filename = path_to_file.split('/')[-1]
-    print("file name is", filename)
-    filename_parts = filename.split('_')
-    print('filename_parts')
-    print(filename_parts)
-    print('how many filename parts?', len(filename_parts))
-    current_site_name = filename_parts[2]
-    print('site name')
-    print(current_site_name)
-    current_class_period = filename_parts[1]
-    print('class period')
-    print(current_class_period)
-    current_lat = filename_parts[3].lstrip('-')
-    print('lat lon')
-    current_lon = filename_parts[4].rstrip('.tif')
-    print(current_lat, current_lon)
-
-    current_tiles_directory = os.path.join(PROCESS_ROOT, 'home','data', current_site_name, current_class_period, 'tiles')
-    print('current tiles directory', current_tiles_directory)
-    if not os.path.isdir(current_tiles_directory):
-        try:
-            tiles_path = Path(current_tiles_directory)
-            tiles_path.mkdir(parents=True)
-        except Exception as e:
-            print(e)
-    if os.path.isdir(current_tiles_directory):
-        new_filename = 'trendimage_'+current_site_name+'_'+current_lat+'_'+current_lon+'.tif'
-        print('new filename is', new_filename)
-        destination = os.path.join(current_tiles_directory, new_filename)
-        print('destination is', destination)
-        shutil.move(path_to_file, destination)
-    return current_tiles_directory
 
 def get_files_to_move(path_to_unzipped_dataset):
     files_to_move = []
@@ -85,61 +48,25 @@ def move_file_to_tiles(path_to_file):
     try:
         path_parts = path_to_file.split('/')
         filename = path_parts[-1]
-        print('filename is', filename)
         file_parts = filename.split('_')
-        print('file parts are', file_parts)
-        for i in range(0, len(file_parts)):
-            print(i, file_parts[i])
         file_class_period = file_parts[1]
-        print('class period', file_class_period)
         file_site_name = file_parts[2]
         file_lat = file_parts[3].lstrip('-')
         file_lon = file_parts[4].rstrip('.tif')
         tile_dir = os.path.join(DATA_DIR, file_site_name, file_class_period, 'tiles' )
-        print('tile dir is', tile_dir)
-        print('trying to make the tile dir')
         try:
             pathlib.Path(tile_dir).mkdir(parents=True, exist_ok=True)
         except Exception as e:
             print('failed to make dir')
             print(e)
-        print('CHECK SOMETHING HERE')
-        print(os.path.exists(tile_dir))
-        print('does the tile dir exist? see above')
         new_filename = 'trendimage_' + file_site_name + '_' + file_lat + '_' + file_lon + '.tif'
         destination = os.path.join(tile_dir, new_filename)
-        print('original', path_to_file)
-        print(os.path.isfile(path_to_file))
-        print('destination', destination)
         shutil.move(path_to_file, destination)
-        print('moved file')
         return tile_dir
     except Exception as e:
         print('error moving file', path_to_file)
         print(e)
     return None
-
-
-
-
-def move_files_in_dataset(path_to_unzipped_dataset):
-
-    contents = os.listdir(path_to_unzipped_dataset)
-    path_to_tiles = ""
-    for item in contents:
-        path_to_item = os.path.join(path_to_unzipped_dataset, item)
-        if item.endswith('.tif'):
-            try:
-                path_to_tiles = add_file_to_tiles(os.path.join(path_to_unzipped_dataset, item))
-            except Exception as e:
-                print(e)
-        else:
-            try:
-                os.remove(os.path.join(path_to_unzipped_dataset, item))
-            except Exception as e:
-                print(e)
-    return path_to_tiles
-
 
 def delete_unnecessary_files(path_to_unzipped_dataset):
     contents = os.listdir(path_to_unzipped_dataset)
