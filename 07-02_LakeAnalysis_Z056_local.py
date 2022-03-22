@@ -26,6 +26,8 @@ def main():
     tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
     tif_files = os.listdir(tiles_directory)
 
+    if '.DS_Store' in tif_files:
+        tif_files.remove('.DS_Store')
     print('Available Images:\n')
     for t in tif_files:
         print(t)

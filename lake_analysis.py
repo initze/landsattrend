@@ -38,6 +38,12 @@ def run_lake_analysis(path_to_tiles, current_class_period, current_site_name):
     for t in tif_files:
         print(t)
 
+    print('process dir is', process_dir)
+    print('current site name', current_site_name)
+    print('current tiles dir', tiles_directory)
+    print('is it really a dir?')
+    print(os.path.isdir(tiles_directory))
+    print('current class period', current_class_period)
     l = LakeMaker(site_name, os.path.join(process_dir, current_site_name), tiles_directory, classperiod=current_class_period)
     print("\nStart Classification")
     l.classify(CLASS_MODEL)
@@ -65,3 +71,7 @@ def run_lake_analysis(path_to_tiles, current_class_period, current_site_name):
     l.save_results()
     print("\nSaving ResultGrid at 3km resolution")
     l.export_gridded_results([100, 250])
+
+if __name__ == "__main__":
+    path_to_tiles = os.path.join(os.getcwd(),'home','data','32604','2000-2020','tiles')
+    run_lake_analysis(path_to_tiles=path_to_tiles, current_class_period='2000-2020',current_site_name='32604')

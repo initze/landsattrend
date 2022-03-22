@@ -152,15 +152,23 @@ class LandsattrendExtractor(Extractor):
         print(path_to_tiles)
         path_to_tiles_components = path_to_tiles.split('/')
         print('we got path to tiles')
-        time.sleep(60*3)
-        current_site_name = path_to_tiles_components[2]
+        print(path_to_tiles_components)
+        current_site_name = path_to_tiles_components[3]
         print('site name', current_site_name)
-        current_class_period = path_to_tiles_components[3]
+        current_class_period = path_to_tiles_components[4]
         print('class period', current_class_period)
         print('taking a rest')
-        time.sleep(60*3)
-        lake_analysis.run_lake_analysis(path_to_tiles=path_to_tiles, current_class_period=current_class_period, current_site_name=current_site_name)
-
+        time.sleep(60*2)
+        try:
+            print('run lake analysys with these args')
+            print('path to tiles', path_to_tiles)
+            print('current class period', current_class_period)
+            print('current site name', current_site_name)
+            lake_analysis.run_lake_analysis(path_to_tiles=path_to_tiles, current_class_period=current_class_period, current_site_name=current_site_name)
+        except Exception as e:
+            print(' an exception occurred in running lake analysis')
+            print(e)
+        print('after but before uploading')
         RESULT_DIR = os.path.join(os.getcwd(),'process',current_site_name,'05_Lake_Dataset_Raster_02_final')
         results = os.listdir(RESULT_DIR)
 
@@ -203,6 +211,17 @@ class LandsattrendExtractor(Extractor):
 
 if __name__ == "__main__":
     DATA_DIR = os.path.join(HOME_DIR, 'data')
+    print('you have 1 minute thirty seconds')
+    time.sleep(90)
+    # print('check if the data is here')
+    # site_name = '32604'
+    # class_period = '2000-2020'
+    # print('sleeping')
+    # print(time.sleep(60*5))
+    # tile_path = os.path.join(os.getcwd(),'home','data',site_name, class_period, 'tiles')
+    # lake_analysis.run_lake_analysis(path_to_tiles=tile_path, current_class_period=class_period,
+    #                                 current_site_name=site_name)
+
     # delete all data
     clean_out_data_dir(path_to_data=DATA_DIR)
     extractor = LandsattrendExtractor()
