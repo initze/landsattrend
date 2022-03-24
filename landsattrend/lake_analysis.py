@@ -266,6 +266,7 @@ class LakeMaker(object):
         :param class_model:
         :return:
         """
+        print('in classify method')
         model = joblib.load(class_model)
         model.n_jobs=-1
         outdir = os.path.join(self.directory, '01_Classification_Raster')
@@ -274,6 +275,7 @@ class LakeMaker(object):
         #imagefolder = os.path.join(study_sites[0]['result_dir'], self.classperiod, 'tiles')
 
         image_list = glob.glob(os.path.join(self.tiles_directory, '*.tif'))
+        print('the image list in classify', image_list)
         # run Classification
         for image in image_list:
             #print(t)

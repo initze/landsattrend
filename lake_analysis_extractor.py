@@ -211,16 +211,10 @@ class LandsattrendExtractor(Extractor):
 
 if __name__ == "__main__":
     DATA_DIR = os.path.join(HOME_DIR, 'data')
-    print('you have 1 minute thirty seconds')
-    time.sleep(90)
-    # print('check if the data is here')
-    # site_name = '32604'
-    # class_period = '2000-2020'
-    # print('sleeping')
-    # print(time.sleep(60*5))
-    # tile_path = os.path.join(os.getcwd(),'home','data',site_name, class_period, 'tiles')
-    # lake_analysis.run_lake_analysis(path_to_tiles=tile_path, current_class_period=class_period,
-    #                                 current_site_name=site_name)
+    if not os.path.isdir(DATA_DIR):
+        os.mkdir(DATA_DIR)
+    print('you have  thirty seconds')
+    time.sleep(30)
 
     # delete all data
     clean_out_data_dir(path_to_data=DATA_DIR)
