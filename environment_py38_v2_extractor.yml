@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - bottleneck
   - python=3.8
   - fiona=1.8.20
   - gdal=3.3.2

@@ -23,6 +23,14 @@ HOME_DIR = os.path.join(os.getcwd(), 'home')
 
 DATA_DIR = os.path.join(HOME_DIR, 'data')
 
+# current_ip = '10.194.199.22'
+#
+# os.environ['RABBITMQ_URI'] = 'amqp://guest:guest@' + current_ip + '/%2f'
+# os.environ['CLOWDER_URL'] = 'http://' + current_ip + ':8000/'
+# os.environ['REGISTRATION_ENDPOINTS'] ='http://' + current_ip + ':8000/api/extractors?key=25e9bcac-f047-4ef7-96b7-e9e56e687748'
+#
+
+
 def clean_out_data_dir(path_to_data):
     contents = os.listdir(path_to_data)
     for entry in contents:
@@ -51,6 +59,8 @@ def move_file_to_tiles(path_to_file):
         file_parts = filename.split('_')
         file_class_period = file_parts[1]
         file_site_name = file_parts[2]
+        if file_site_name.endswith('-'):
+            file_site_name = file_site_name.rstrip('-')
         file_lat = file_parts[3].lstrip('-')
         file_lon = file_parts[4].rstrip('.tif')
         tile_dir = os.path.join(DATA_DIR, file_site_name, file_class_period, 'tiles' )
@@ -109,15 +119,20 @@ class LandsattrendExtractor(Extractor):
         dataset_name = resource["name"]
         files = resource["files"]
 
+        print(resource)
+
         logger.info("in process message")
 
         DATA_DIR = os.path.join(HOME_DIR, 'data')
         dataset_download_location = os.path.join(DATA_DIR, dataset_name)
         print('dataset download location', dataset_download_location)
-        #
         download = pyclowder.datasets.download(connector, host, secret_key, dataset_id)
         with zipfile.ZipFile(download, 'r') as zip:
             zip.extractall(dataset_download_location)
+
+
+        print('contents of dataset download location')
+        print(os.listdir(dataset_download_location))
 
         files_to_move = get_files_to_move(os.path.join(dataset_download_location, 'data'))
         print('got files to move')
@@ -127,7 +142,6 @@ class LandsattrendExtractor(Extractor):
             if tile_dir:
                 if tile_dir not in tile_dirs:
                     tile_dirs.append(tile_dir)
-
 
         # delete everything except the files
         # delete_unnecessary_files(dataset_download_location)
@@ -140,10 +154,6 @@ class LandsattrendExtractor(Extractor):
         # current_site_name = path_to_tiles_components[data_dir_index + 1]
         # current_class_period = path_to_tiles_components[data_dir_index + 2]
 
-
-
-
-
         # move files to somewhere else
         print('stopping to check that things copies')
 
@@ -155,10 +165,11 @@ class LandsattrendExtractor(Extractor):
         print(path_to_tiles_components)
         current_site_name = path_to_tiles_components[3]
         print('site name', current_site_name)
+        if current_site_name.endswith('-'):
+            current_site_name.rstrip('-')
+            print('the site name after removal', current_site_name)
         current_class_period = path_to_tiles_components[4]
         print('class period', current_class_period)
-        print('taking a rest')
-        time.sleep(60*2)
         try:
             print('run lake analysys with these args')
             print('path to tiles', path_to_tiles)
@@ -210,16 +221,18 @@ class LandsattrendExtractor(Extractor):
 
 
 if __name__ == "__main__":
+
+    # path_to_tiles = os.path.join(os.getcwd(),'data', '32604','2000-2020', 'tiles')
+    # current_class_period = '2000-2020'
+    # current_site_name = '32604'
+    # lake_analysis.run_lake_analysis(path_to_tiles=path_to_tiles, current_class_period=current_class_period,
+    #                                 current_site_name=current_site_name)
+
     DATA_DIR = os.path.join(HOME_DIR, 'data')
     if not os.path.isdir(DATA_DIR):
         os.mkdir(DATA_DIR)
-    print('you have  thirty seconds')
-    time.sleep(30)
 
     # delete all data
     clean_out_data_dir(path_to_data=DATA_DIR)
     extractor = LandsattrendExtractor()
     extractor.start()
-
-
-    print('nothing yet')

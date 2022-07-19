@@ -1,7 +1,7 @@
 {
   "@context": "http://clowder.ncsa.illinois.edu/contexts/extractors.jsonld",
   "name": "pdg.landsattrend.lakeanalysis",
-  "version": "1.1",
+  "version": "1.2",
   "description": "lake analysis landsat extractor.",
   "author": "Todd Nicholson <tcnichol@illinois.edu>",
   "contributors": ["Ingmar Nitze <ingmar.nitze@awi.de>"],

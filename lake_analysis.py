@@ -22,6 +22,7 @@ DEM_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'forestfire', 'forestfire.vrt')
 
 def run_lake_analysis(path_to_tiles, current_class_period, current_site_name):
+    print('in run lake analysis method')
     print('CLASS_MODEL', CLASS_MODEL)
     print(os.path.exists(CLASS_MODEL))
     print('LAKE_FILTER_MODEL', LAKE_FILTER_MODEL)
@@ -36,7 +37,12 @@ def run_lake_analysis(path_to_tiles, current_class_period, current_site_name):
 
     print('Available Images:\n')
     for t in tif_files:
-        print(t)
+        if t == '.DS_Store':
+            path_to_ds_store = os.path.join(tiles_directory, t)
+            os.remove(path_to_ds_store)
+            print(t)
+
+    tif_files = os.listdir(tiles_directory)
 
     print('process dir is', process_dir)
     print('current site name', current_site_name)
@@ -72,6 +78,6 @@ def run_lake_analysis(path_to_tiles, current_class_period, current_site_name):
     print("\nSaving ResultGrid at 3km resolution")
     l.export_gridded_results([100, 250])
 
-if __name__ == "__main__":
-    path_to_tiles = os.path.join(os.getcwd(),'home','data','32604','2000-2020','tiles')
-    run_lake_analysis(path_to_tiles=path_to_tiles, current_class_period='2000-2020',current_site_name='32604')
+# if __name__ == "__main__":
+#     path_to_tiles = os.path.join(os.getcwd(),'home','data','32604','2000-2020','tiles')
+#     run_lake_analysis(path_to_tiles=path_to_tiles, current_class_period='2000-2020',current_site_name='32604')
