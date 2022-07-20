@@ -136,6 +136,12 @@ class LandsattrendExtractor(Extractor):
 
         files_to_move = get_files_to_move(os.path.join(dataset_download_location, 'data'))
         print('got files to move')
+        for f in files_to_move:
+            print(f)
+        print('sorting the files to move')
+        files_to_move.sort()
+        for f in files_to_move:
+            print(f)
         tile_dirs = []
         for f in files_to_move:
             tile_dir = move_file_to_tiles(f)
