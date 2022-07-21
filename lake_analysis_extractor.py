@@ -30,6 +30,16 @@ DATA_DIR = os.path.join(HOME_DIR, 'data')
 # os.environ['REGISTRATION_ENDPOINTS'] ='http://' + current_ip + ':8000/api/extractors?key=25e9bcac-f047-4ef7-96b7-e9e56e687748'
 #
 
+def clean_out_process_dir(path_to_process):
+    contents = os.listdir(path_to_process)
+    for entry in contents:
+        path_to_entry = os.path.join(path_to_process, entry)
+        if os.path.isfile(path_to_entry):
+            os.remove(path_to_entry)
+        elif os.path.isdir(path_to_entry):
+            shutil.rmtree(path_to_entry)
+    print('process dir cleaned out')
+    print(os.listdir(path_to_process))
 
 def clean_out_data_dir(path_to_data):
     contents = os.listdir(path_to_data)
@@ -119,22 +129,31 @@ class LandsattrendExtractor(Extractor):
         dataset_name = resource["name"]
         files = resource["files"]
 
+        print('the resource')
         print(resource)
+        local_paths = resource['local_paths']
+
+        files_to_move = []
+        for lp in local_paths:
+            print(lp)
+            if lp.endswith('.tif'):
+                if 'grid' not in lp:
+                    files_to_move.append(lp)
 
         logger.info("in process message")
 
         DATA_DIR = os.path.join(HOME_DIR, 'data')
-        dataset_download_location = os.path.join(DATA_DIR, dataset_name)
-        print('dataset download location', dataset_download_location)
-        download = pyclowder.datasets.download(connector, host, secret_key, dataset_id)
-        with zipfile.ZipFile(download, 'r') as zip:
-            zip.extractall(dataset_download_location)
+        # dataset_download_location = os.path.join(DATA_DIR, dataset_name)
+        # print('dataset download location', dataset_download_location)
+        # download = pyclowder.datasets.download(connector, host, secret_key, dataset_id)
+        # with zipfile.ZipFile(download, 'r') as zip:
+        #     zip.extractall(dataset_download_location)
 
 
-        print('contents of dataset download location')
-        print(os.listdir(dataset_download_location))
+        # print('contents of dataset download location')
+        # print(os.listdir(dataset_download_location))
 
-        files_to_move = get_files_to_move(os.path.join(dataset_download_location, 'data'))
+        # files_to_move = get_files_to_move(os.path.join(dataset_download_location, 'data'))
         print('got files to move')
         for f in files_to_move:
             print(f)
@@ -144,7 +163,9 @@ class LandsattrendExtractor(Extractor):
             print(f)
         tile_dirs = []
         for f in files_to_move:
+            print('moving file', f)
             tile_dir = move_file_to_tiles(f)
+            print('file is moved', tile_dir)
             if tile_dir:
                 if tile_dir not in tile_dirs:
                     tile_dirs.append(tile_dir)
@@ -181,6 +202,9 @@ class LandsattrendExtractor(Extractor):
             print('path to tiles', path_to_tiles)
             print('current class period', current_class_period)
             print('current site name', current_site_name)
+            print('the tiles')
+            print(os.listdir(path_to_tiles))
+            print('we are going to sleep now')
             lake_analysis.run_lake_analysis(path_to_tiles=path_to_tiles, current_class_period=current_class_period, current_site_name=current_site_name)
         except Exception as e:
             print(' an exception occurred in running lake analysis')
@@ -206,7 +230,7 @@ class LandsattrendExtractor(Extractor):
             file_id = file_result['id']
             data = dict()
             move_result = client.post('/datasets/' + dataset_id + '/moveFile/' + new_folder['id'] + '/' + file_id, content=data)
-        path_to_home = os.path.join(os.getcwd(),'home')
+        path_to_home = os.path.join(os.getcwd(), 'home')
         home_contents = os.listdir(path_to_home)
         for each in home_contents:
             current_path = os.path.join(path_to_home, each)
@@ -222,6 +246,21 @@ class LandsattrendExtractor(Extractor):
                 except Exception as e:
                     logger.info('could not delete,' + str(current_path))
                     logger.info(e)
+        print('cleaning out process dir')
+        process_dir = os.path.join(os.getcwd(), 'process')
+        size = 0
+        for path, dirs, files in os.walk(process_dir):
+            for f in files:
+                fp = os.path.join(path, f)
+                size += os.path.getsize(fp)
+
+        print("process dir size: " + str(size))
+        print('clean out process now')
+        try:
+            clean_out_process_dir(process_dir)
+        except Exception as e:
+            print(e)
+            print('could not clean out process dir', process_dir)
 
 
 

@@ -278,7 +278,7 @@ class LakeMaker(object):
         print('the image list in classify', image_list)
         # run Classification
         for image in image_list:
-            #print(t)
+            print(image)
             cl = Classify(model, image=image,
                           outputfolder=outdir)
 
