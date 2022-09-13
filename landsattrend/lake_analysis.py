@@ -98,19 +98,18 @@ def load_data(zone, query='proba <= 0.5', model_path = r'F:\18_Paper02_LakeAnaly
     classfile = os.path.join(working_dir, zone, r'class.vrt')
     probafile = os.path.join(working_dir, zone, r'proba.vrt')
 
-    cl = rasterio.open(classfile)
-    cl_array = cl.read(1)
-    cl.close()
+    # make with!
+    # load mask and filter to only valid data
+    with rasterio.open(classfile) as cl:
+        cl_array = cl.read(1)
 
     array_shp = cl_array.shape
 
-    ds = rasterio.open(probafile)
-    pr_array = ds.read()
-    ds.close()
+    with rasterio.open(probafile) as ds:
+        pr_array = ds.read()
 
-    ds = rasterio.open(label_raster)
-    L_all = ds.read()
-    ds.close()
+    with rasterio.open(label_raster) as ds:
+        L_all = ds.read()
     L_all = np.array(L_all, dtype=np.int)
 
     # get basic region properties + with intensity
@@ -193,11 +192,12 @@ def improps_to_df(label_image, intensity_image,
 class LakeMaker(object):
     """This is a Class to run the lake extraction and characterization workflow
     """
-    def __init__(self, zone, directory, tiles_directory, suffix='', classperiod='1999-2014'):
+    def __init__(self, zone, directory, tiles_directory, suffix='', classperiod='1999-2014', filter_lakes=True):
         self.zone = zone
         self.directory = directory
         self.tiles_directory = tiles_directory
         self.classperiod = classperiod
+        self.filter_lakes = filter_lakes
         #self._setup_image_paths()
         self._setup_class_vrt_paths()
         self._setup_aux_paths()
@@ -266,7 +266,6 @@ class LakeMaker(object):
         :param class_model:
         :return:
         """
-        print('in classify method')
         model = joblib.load(class_model)
         model.n_jobs=-1
         outdir = os.path.join(self.directory, '01_Classification_Raster')
@@ -275,10 +274,9 @@ class LakeMaker(object):
         #imagefolder = os.path.join(study_sites[0]['result_dir'], self.classperiod, 'tiles')
 
         image_list = glob.glob(os.path.join(self.tiles_directory, '*.tif'))
-        print('the image list in classify', image_list)
         # run Classification
         for image in image_list:
-            print(image)
+            #print(t)
             cl = Classify(model, image=image,
                           outputfolder=outdir)
 
@@ -388,13 +386,17 @@ class LakeMaker(object):
         # combined objects: Lake + drain + erode
         M_all = np.in1d(cl_array, [1,12,21]).reshape(array_shp)
         # remove small objects
-        M_all = morphology.remove_small_objects(M_all, min_size=11, connectivity=1)
+        #M_all = morphology.remove_small_objects(M_all, min_size=11, connectivity=1)
+        M_all = morphology.remove_small_objects(M_all, min_size=5, connectivity=2)
 
         # make label for all full objects
         L_all = measure.label(M_all, background=0, connectivity=1)
         # remove objects that touch the edge of the image
+        mall_path = os.path.join(self.directory, '03_Lake_Masks', 'mALL.tif')
+        array_to_file(M_all, mall_path, self.classfile, dtype=gdal.GDT_Byte)
+
         #TODO: can be improved (incorporate to object/class?)
-        L_all = remove_edge_polygons2(L_all, cl_array)
+        #L_all = remove_edge_polygons2(L_all, cl_array)
 
         M_1_erode = morphology.erosion(M_1, footprint=selem)
 
@@ -558,6 +560,8 @@ class LakeMaker(object):
         # load probability layer
         _, pr_array = self._load_classdata()
         # get unique labels
+        if not hasattr(self, 'label_C'):
+            self.load_masks()
         self._get_unique_labels()
         # get specific statistics for each Zone
         df_shape = self._make_stats_shape(pr_array)
@@ -603,20 +607,31 @@ class LakeMaker(object):
         :return:
         """
         #"""
-        # load model
-        model = joblib.load(model_path)
-        # setup data
-        X = self.df_start.drop(['id', 'coords'], axis=1).dropna()
-        # apply classifcation model
-        pr = model.predict(X)
-        proba = model.predict_proba(X)
-        # insert result to DataFrame
-        df = self.df_start.copy()
-        df['class'] = pr
-        df['proba'] = proba[:, 1]
-        self.df_filter = df[np.all([df['proba'] <= 0.5, df['max'] > 0.95], axis=0)]
-        #"""
-        #self.df_filter = self.df_start
+        if self.filter_lakes:
+            # load model
+            model = joblib.load(model_path)
+            # setup data
+            X = self.df_start.drop(['id', 'coords'], axis=1).dropna()
+            # apply classifcation model
+            pr = model.predict(X)
+            proba = model.predict_proba(X)
+            # insert result to DataFrame
+            df = self.df_start.copy()
+
+            #df['class'] = pr
+            #df['proba'] = proba[:, 1]
+            df['proba'] = None
+            df['class'] = None
+            #df.loc[X.index]['class'] = pr
+            #df.loc[X.index]['proba'] = proba[:, 1]
+            df.loc[X.index,'class'] = pr
+            df.loc[X.index,'proba'] = proba[:, 1]
+
+            self.df_filter = df[np.all([df['proba'] <= 0.5, df['max'] > 0.95], axis=0)]
+            #"""
+        else:
+            print("Skipped filtering!")
+            self.df_filter = self.df_start
 
 
     def save_filtered_data(self):
@@ -624,8 +639,11 @@ class LakeMaker(object):
         Function to save filtered dataset to raster (labelled ids) and polygon Shapefile
         :return:
         """
-        self.load_masks()
-        self.label_Cfilter = self._filter_labelled_mask(self.label_C, self.df_filter.index)
+        if self.filter_lakes:
+            self.load_masks()
+            self.label_Cfilter = self._filter_labelled_mask(self.label_C, self.df_filter.index)
+        else:
+            self.label_Cfilter = self.label_C
         array_to_file(self.label_Cfilter, self.label_Cfilter_path_, self.class_vrt_path_, dtype=gdal.GDT_UInt32)
         gdal_call = os.path.join(os.environ['GDAL_PATH'],'gdal_polygonize.py')
         s = r'python {gdal_call} -q -8 -f "ESRI Shapefile" -mask {raster} {raster} {vector} label_id label_id'.format(
@@ -633,6 +651,7 @@ class LakeMaker(object):
                 raster=self.label_Cfilter_path_,
                 vector=self.label_CfilterVector_path_)
         os.system(s)
+
 
     # TODO:Implementation to read filtered data
     def load_filtered_data(self):
@@ -667,6 +686,7 @@ class LakeMaker(object):
         :return:
         """
         df_geom = gpd.read_file(self.label_CfilterVector_path_).set_index("label_id").join(self.df_filter)
+        #df_geom = gpd.read_file(self.label_C).set_index("label_id").join(self.df_filter)
         df_geom['id'] = df_geom.index
         self.df_metric = df_geom.copy()
         self._transform_area_to_ha(df_geom)
