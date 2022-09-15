@@ -1,31 +1,55 @@
-FROM python:3.7-slim
+FROM ubuntu:18.04
+ENV PATH="/root/miniconda3/bin:${PATH}"
+ARG PATH="/root/miniconda3/bin:${PATH}"
+RUN apt-get update
 
-RUN apt-get -y update
-RUN apt install -y -qq python3-pip
+RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --upgrade pip
+RUN wget \
+    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && mkdir /root/.conda \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
+RUN conda --version
 
-RUN pip3 install Bottleneck==1.2.1
+RUN conda clean -a
 
-RUN pip3 install numpy==1.17.3
+RUN echo $CONDA_PREFIX
 
-# Install GDAL dependencies
-RUN apt-get install -y libgdal-dev
-
-# Update C env vars so compiler can find gdal
-ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
-ENV C_INCLUDE_PATH=/usr/include/gdal
-
-# This will install GDAL
-RUN pip3 install GDAL==2.4.3
-
-# Install libspatialindex for Rtree, a ctypes Python wrapper of libspatialindex
-RUN apt-get install -y libspatialindex-dev
-# create and install the pyincore package
+COPY extractor_info.json .
 
 
-RUN pip3 install pyclowder
+COPY aux_data ./aux_data
 
-COPY requirements.txt /home/requirements.txt
+COPY config ./config
 
-RUN pip3 install -r /home/requirements.txt
+COPY landsattrend ./landsattrend
+
+COPY models ./models
+
+COPY environment_py38_v2_extractor.yml environment_py38_v2_extractor.yml
+
+COPY extractor_info.json extractor_info.json
+
+COPY lake_analysis.py lake_analysis.py
+
+COPY test.py test.py
+
+COPY lake_analysis_extractor.py lake_analysis_extractor.py
+
+COPY requirements.txt requirements.txt
+
+COPY setup.py setup.py
+
+RUN ls
+
+RUN conda install -c conda-forge mamba
+
+RUN mamba env create -f environment_py38_v2_extractor.yml
+
+SHELL ["conda", "run", "-n", "landsattrend2", "/bin/bash", "-c"]
+
+RUN python -m pip install --ignore-installed pyclowder
+
+
+CMD ["conda", "run", "--no-capture-output", "-n", "landsattrend2", "python","-u", "/lake_analysis_extractor.py"]

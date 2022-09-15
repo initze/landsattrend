@@ -1,0 +1,19 @@
+name: landsattrend2
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - bottleneck
+  - python=3.8
+  - fiona=1.8.20
+  - gdal=3.3.2
+  - geopandas=0.9.0
+  - googledrivedownloader=0.4
+  - jupyter
+  - notebook
+  - pycaret
+  - rasterio=1.2
+  - scikit-image=0.19.1
+  - netCDF4
+  - pip:
+    - pyclowder

@@ -7,3 +7,11 @@ This package contains several modules
 * to export the data to raster files
 * to mosaic produced tiles to larger maps
 
+###The type of files processeed
+
+When run as an extractor, the files processed are of this form
+
+trendimage_{year1-year2}_{sitename}_{lat}_{lon}.tif
+
+This extractor runs on the dataset level - all files will be processed
+

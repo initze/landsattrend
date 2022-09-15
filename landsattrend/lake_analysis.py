@@ -27,9 +27,9 @@ def get_stats(labelid, L_1, L_all, pr_array, factor=1., selem=np.ones((3,3))):
     :param labelid:
     """
     # erode lake polygon by one
-    L_1_erode = morphology.erosion(L_1==labelid, selem=selem)
+    L_1_erode = morphology.erosion(L_1==labelid, footprint=selem)
     # dilate full polygon by one
-    L_all_dilate = morphology.dilation(L_all==labelid, selem=selem)
+    L_all_dilate = morphology.dilation(L_all==labelid, footprint=selem)
     # get transition area between outer boundary of dilated full polygon and eroded lake polygon
     L_margin = np.logical_and(L_all_dilate, ~L_1_erode)
 
@@ -98,19 +98,18 @@ def load_data(zone, query='proba <= 0.5', model_path = r'F:\18_Paper02_LakeAnaly
     classfile = os.path.join(working_dir, zone, r'class.vrt')
     probafile = os.path.join(working_dir, zone, r'proba.vrt')
 
-    cl = rasterio.open(classfile)
-    cl_array = cl.read(1)
-    cl.close()
+    # make with!
+    # load mask and filter to only valid data
+    with rasterio.open(classfile) as cl:
+        cl_array = cl.read(1)
 
     array_shp = cl_array.shape
 
-    ds = rasterio.open(probafile)
-    pr_array = ds.read()
-    ds.close()
+    with rasterio.open(probafile) as ds:
+        pr_array = ds.read()
 
-    ds = rasterio.open(label_raster)
-    L_all = ds.read()
-    ds.close()
+    with rasterio.open(label_raster) as ds:
+        L_all = ds.read()
     L_all = np.array(L_all, dtype=np.int)
 
     # get basic region properties + with intensity
@@ -193,10 +192,13 @@ def improps_to_df(label_image, intensity_image,
 class LakeMaker(object):
     """This is a Class to run the lake extraction and characterization workflow
     """
-    def __init__(self, zone, directory, suffix='', classperiod='1999-2014'):
+    def __init__(self, zone, directory, tiles_directory, suffix='', classperiod='1999-2014', filter_lakes=True):
         self.zone = zone
         self.directory = directory
+        self.tiles_directory = tiles_directory
         self.classperiod = classperiod
+        self.filter_lakes = filter_lakes
+        #self._setup_image_paths()
         self._setup_class_vrt_paths()
         self._setup_aux_paths()
         self._setup_mask_paths()
@@ -218,19 +220,23 @@ class LakeMaker(object):
         print("Masks calculated:", self._check_masks_exist())
         print("Dataset CSV calculated:", os.path.exists(self.lake_dataset_path_))
         print("Filtered Mask and Vectors calculated:", os.path.exists(self.label_CfilterVector_path_))
-        print("Final Output Dataset calculated:", os.path.exists(self.final_dataset_path_))
+        print("Final Output Dataset calculated:", os.path.exists(self.final_dataset_path_json_))
 
     @staticmethod
     def _make_classification_vrt(directory, ctype, nodata=0):
         #TODO: Docstring
         txtfile = os.path.join(directory, '{ctype}.txt'.format(ctype=ctype))
         vrtfile = os.path.join(directory, '{ctype}.vrt'.format(ctype=ctype))
-        files = glob.glob(os.path.join(directory, '*{ctype}.tif'.format(ctype=ctype)))
+        files = glob.glob(os.path.join(directory, '{ctype}*.tif'.format(ctype=ctype)))
         f = open(txtfile, 'w')
         for fi in files:
             f.write(fi + '\n')
         f.close()
-        os.system('gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(txtfile=txtfile, vrtfile=vrtfile))
+        # TODO the text file is empty!!!
+        command = r'gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_BIN'],
+                                                                              txtfile=txtfile, vrtfile=vrtfile)
+        os.system(r'gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(gdal_path=os.environ['GDAL_BIN'],
+                                                                              txtfile=txtfile, vrtfile=vrtfile))
 
     def _setup_class_vrt_paths(self):
         self.class_vrt_path_ = os.path.join(self.directory, r'01_Classification_Raster', 'class.vrt')
@@ -252,7 +258,7 @@ class LakeMaker(object):
                        '05_Lake_Dataset_Raster_02_final']
             [os.makedirs(os.path.join(self.directory, s)) for s in subdirs]
 
-    def classify(self, class_model, tiles):
+    def classify(self, class_model):
         """
         Function to classify the data with the defined scikit-learn classification model. tile structure needs to be
         indicated as a list
@@ -260,17 +266,18 @@ class LakeMaker(object):
         :param class_model:
         :return:
         """
-        #TODO: make quiet option/verbosity
-        # Loop classification
         model = joblib.load(class_model)
+        model.n_jobs=-1
         outdir = os.path.join(self.directory, '01_Classification_Raster')
-        imagefolder = os.path.join(study_sites[self.zone]['result_dir'], self.classperiod, 'tiles')
+        # TODO quick fix - make more sophisticated solution
+        #imagefolder = self.tiles_directory
+        #imagefolder = os.path.join(study_sites[0]['result_dir'], self.classperiod, 'tiles')
 
+        image_list = glob.glob(os.path.join(self.tiles_directory, '*.tif'))
         # run Classification
-        for t in tiles:
-            print(t)
-            cl = Classify(model, zone=self.zone, tile=t,
-                          imagefolder=imagefolder,
+        for image in image_list:
+            #print(t)
+            cl = Classify(model, image=image,
                           outputfolder=outdir)
 
             # Skip if there are no data available
@@ -319,7 +326,8 @@ class LakeMaker(object):
             epsg = (list(ds.crs.values())[0]).split(':')[-1]
 
         # create firemap/mask
-        s = r'gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(epsg=epsg,
+        s = r'gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(gdal_path=os.environ['GDAL_BIN'],
+                                                                                                                      epsg=epsg,
                                                                                                                xmin=bnd.left,
                                                                                                                ymin=bnd.bottom,
                                                                                                                xmax=bnd.right,
@@ -328,7 +336,8 @@ class LakeMaker(object):
                                                                                                                outfile=self.firemask_path_)
         os.system(s)
         # create elevation model
-        s = r'gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(epsg=epsg,
+        s = r'gdalwarp -t_srs EPSG:{epsg} -tr 30 30 -r cubic -te {xmin} {ymin} {xmax} {ymax} {infile} {outfile}'.format(gdal_path=os.environ['GDAL_BIN'],
+                                                                                                                               epsg=epsg,
                                                                                                                         xmin=bnd.left,
                                                                                                                         ymin=bnd.bottom,
                                                                                                                         xmax=bnd.right,
@@ -337,7 +346,8 @@ class LakeMaker(object):
                                                                                                                         outfile=self.dem_path_)
         os.system(s)
         # create slope from created DEM
-        s_slope = r'gdaldem slope -alg ZevenbergenThorne {infile} {slopefile}'.format(infile=self.dem_path_, slopefile=self.slope_path_)
+        s_slope = r'gdaldem slope -alg ZevenbergenThorne {infile} {slopefile}'.format(gdal_path=os.environ['GDAL_BIN'],
+                                                                                             infile=self.dem_path_, slopefile=self.slope_path_)
         os.system(s_slope)
 
     def _load_classdata(self):
@@ -376,19 +386,23 @@ class LakeMaker(object):
         # combined objects: Lake + drain + erode
         M_all = np.in1d(cl_array, [1,12,21]).reshape(array_shp)
         # remove small objects
-        M_all = morphology.remove_small_objects(M_all, min_size=11, connectivity=1)
+        #M_all = morphology.remove_small_objects(M_all, min_size=11, connectivity=1)
+        M_all = morphology.remove_small_objects(M_all, min_size=5, connectivity=2)
 
         # make label for all full objects
         L_all = measure.label(M_all, background=0, connectivity=1)
         # remove objects that touch the edge of the image
-        #TODO: can be improved (incorporate to object/class?)
-        L_all = remove_edge_polygons2(L_all, cl_array)
+        mall_path = os.path.join(self.directory, '03_Lake_Masks', 'mALL.tif')
+        array_to_file(M_all, mall_path, self.classfile, dtype=gdal.GDT_Byte)
 
-        M_1_erode = morphology.erosion(M_1, selem=selem)
+        #TODO: can be improved (incorporate to object/class?)
+        #L_all = remove_edge_polygons2(L_all, cl_array)
+
+        M_1_erode = morphology.erosion(M_1, footprint=selem)
 
         # dilate full polygon by one
-        M_all_dilate = morphology.dilation(M_all, selem=selem)
-        L_all_dilate = morphology.dilation(L_all, selem=selem)
+        M_all_dilate = morphology.dilation(M_all, footprint=selem)
+        L_all_dilate = morphology.dilation(L_all, footprint=selem)
         # get transition area between outer boundary of dilated full polygon and eroded lake polygon
         M_margin = np.logical_and(M_all_dilate, ~M_1_erode)
         L_margin = M_margin * L_all_dilate
@@ -534,6 +548,8 @@ class LakeMaker(object):
         df['perc_water'] = df.area_water / df.area_total
         df['perc_wloss'] = df.area_wloss / df.area_total
         df['perc_wgain'] = df.area_wgain / df.area_total
+        # calculate rate_change
+
         return df
 
     def make_stats(self):
@@ -544,6 +560,8 @@ class LakeMaker(object):
         # load probability layer
         _, pr_array = self._load_classdata()
         # get unique labels
+        if not hasattr(self, 'label_C'):
+            self.load_masks()
         self._get_unique_labels()
         # get specific statistics for each Zone
         df_shape = self._make_stats_shape(pr_array)
@@ -588,31 +606,52 @@ class LakeMaker(object):
         :param query: SQL/pandas query for filtering
         :return:
         """
-        # load model
-        model = joblib.load(model_path)
-        # setup data
-        X = self.df_start.drop(['id', 'coords'], axis=1).dropna()
-        # apply classifcation model
-        pr = model.predict(X)
-        proba = model.predict_proba(X)
-        # insert result to DataFrame
-        df = self.df_start.copy()
-        df['class'] = pr
-        df['proba'] = proba[:, 1]
-        self.df_filter = df[np.all([df['proba'] <= 0.5, df['max'] > 0.95], axis=0)]
+        #"""
+        if self.filter_lakes:
+            # load model
+            model = joblib.load(model_path)
+            # setup data
+            X = self.df_start.drop(['id', 'coords'], axis=1).dropna()
+            # apply classifcation model
+            pr = model.predict(X)
+            proba = model.predict_proba(X)
+            # insert result to DataFrame
+            df = self.df_start.copy()
+
+            #df['class'] = pr
+            #df['proba'] = proba[:, 1]
+            df['proba'] = None
+            df['class'] = None
+            #df.loc[X.index]['class'] = pr
+            #df.loc[X.index]['proba'] = proba[:, 1]
+            df.loc[X.index,'class'] = pr
+            df.loc[X.index,'proba'] = proba[:, 1]
+
+            self.df_filter = df[np.all([df['proba'] <= 0.5, df['max'] > 0.95], axis=0)]
+            #"""
+        else:
+            print("Skipped filtering!")
+            self.df_filter = self.df_start
+
 
     def save_filtered_data(self):
         """
         Function to save filtered dataset to raster (labelled ids) and polygon Shapefile
         :return:
         """
-        self.load_masks()
-        self.label_Cfilter = self._filter_labelled_mask(self.label_C, self.df_filter.index)
+        if self.filter_lakes:
+            self.load_masks()
+            self.label_Cfilter = self._filter_labelled_mask(self.label_C, self.df_filter.index)
+        else:
+            self.label_Cfilter = self.label_C
         array_to_file(self.label_Cfilter, self.label_Cfilter_path_, self.class_vrt_path_, dtype=gdal.GDT_UInt32)
-        s = 'gdal_polygonize.py -q -8 -f "ESRI Shapefile" -mask {raster} {raster} {vector} label_id label_id'.format(
+        gdal_call = os.path.join(os.environ['GDAL_PATH'],'gdal_polygonize.py')
+        s = r'python {gdal_call} -q -8 -f "ESRI Shapefile" -mask {raster} {raster} {vector} label_id label_id'.format(
+                gdal_call=gdal_call,
                 raster=self.label_Cfilter_path_,
                 vector=self.label_CfilterVector_path_)
         os.system(s)
+
 
     # TODO:Implementation to read filtered data
     def load_filtered_data(self):
@@ -647,11 +686,13 @@ class LakeMaker(object):
         :return:
         """
         df_geom = gpd.read_file(self.label_CfilterVector_path_).set_index("label_id").join(self.df_filter)
+        #df_geom = gpd.read_file(self.label_C).set_index("label_id").join(self.df_filter)
         df_geom['id'] = df_geom.index
         self.df_metric = df_geom.copy()
         self._transform_area_to_ha(df_geom)
         self._transform_len_to_meter(df_geom)
         self._transform_radians_to_degree(df_geom)
+        # TODO calculate change rates
         self._calculate_statistics(self.df_metric)
 
     def _transform_area_to_ha(self, px_df, factor_px_to_ha=0.09):
@@ -710,36 +751,51 @@ class LakeMaker(object):
         self.df_final['Solidity_ratio'] = df['solidity']
         self.df_final['Eccentricity_ratio'] = df['eccentricity']
 
+        # Calculate change rates replace with years
+        start = int(self.classperiod.split('-')[0])
+        end = int(self.classperiod.split('-')[1])
+        n_years = end-start
+
+        self.df_final['ChangeRateNet_myr-1'] = (self.df_final['NetChange_ha'] * 1e4) / self.df_final['Perimeter_meter'] / n_years
+        self.df_final['ChangeRateGrowth_myr-1'] = (self.df_final['GrossIncrease_ha'] * 1e4) / self.df_final['Perimeter_meter'] / n_years
+
     def save_results(self):
         """
         Function to save final dataset to GeoJSON
         :return:
         """
         # save polygons
-        if not os.path.exists(self.final_dataset_path_):
-            self.df_final.to_file(self.final_dataset_path_, driver='GeoJSON')
+        if not os.path.exists(self.final_dataset_path_json_):
+            self.df_final.to_file(self.final_dataset_path_json_, driver='GeoJSON')
+        if not os.path.exists(self.final_dataset_path_gpkg_):
+            self.df_final.to_file(self.final_dataset_path_gpkg_, driver='GPKG')
         # save centroids
-        if not os.path.exists(self.final_dataset_ctr_path_):
+        if not os.path.exists(self.final_dataset_ctr_path_json_):
             df_centroid = self.df_final.copy()
             df_centroid['geometry'] = self.df_final.convex_hull.centroid
-            df_centroid.to_file(self.final_dataset_ctr_path_, driver='GeoJSON')
+            df_centroid.to_file(self.final_dataset_ctr_path_json_, driver='GeoJSON')
+            df_centroid.to_file(self.final_dataset_ctr_path_gpkg_, driver='GPKG')
 
     def load_results(self):
         """
         Function to load final dataset
         :return:
         """
-        self.df_final = gpd.read_file(self.final_dataset_path_)
+        self.df_final = gpd.read_file(self.final_dataset_path_json_)
 
     def _setup_final_dataset_path(self):
         """
         Function to setup path for dataset output
         :return:
         """
-        self.final_dataset_path_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
+        self.final_dataset_path_json_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
                                                 'lake_change.geojson')
-        self.final_dataset_ctr_path_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
+        self.final_dataset_path_gpkg_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
+                                                'lake_change.gpkg')
+        self.final_dataset_ctr_path_json_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
                                                     'lake_change_centroid.geojson')
+        self.final_dataset_ctr_path_gpkg_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
+                                                    'lake_change_centroid.gpkg')
 
     def print_regional_statistics(self):
         pass
@@ -776,8 +832,6 @@ class LakeMaker(object):
         except AttributeError:
             print("Loading Masks")
             self.load_masks()
-        # setup path for file export
-
 
         # create mask of filtered edge zones or stable water zone
         label_Bfilter = self._filter_labelled_mask(self.label_B, self.df_final.id)
@@ -1004,7 +1058,10 @@ class SlumpMaker(LakeMaker):
 
     def _export_segment_files(self):
         array_to_file(self.segment_raster, self.segment_raster_path_, self.probafile_path_, noData=True, noDataVal=-1)
-        s = 'gdal_polygonize.py -q -8 -f "GeoJSON" -mask {raster} {raster} {vector} label label'.format(
+        gdal_call = os.path.join(os.environ['GDAL_PATH'],'gdal_polygonize.py')
+        #s = r'python {gdal_call}
+        s = r'python {gdal_call} -q -8 -f "GeoJSON" -mask {raster} {raster} {vector} label label'.format(
+                        gdal_call=gdal_call,
                         raster=self.segment_raster_path_,
                         vector=self.segment_vector_path_)
         os.system(s)
@@ -1047,8 +1104,10 @@ class SlumpMaker(LakeMaker):
                 for pr in tiles:
                     fi = (os.path.join(study_sites[self.zone]['dem_dir'], '{zone}_{pr}_{idx}.tif'.format(zone=self.zone, pr=pr, idx=ctype)))
                     f.write(fi + '\n')
-
-            os.system('gdalbuildvrt -input_file_list {txtfile} {vrtfile}'.format(txtfile=txtfile, vrtfile=vrtfile))
+            gdal_call = os.path.join(os.environ['GDAL_PATH'], 'gdal_polygonize.py')
+            os.system(r'{gdal_call} -input_file_list {txtfile} {vrtfile}'.format(gdal_call=gdal_call,
+                                                                                                    txtfile=txtfile,
+                                                                                                    vrtfile=vrtfile))
 
     def _load_classdata(self, pr_index=4):
         """
