@@ -1,5 +1,11 @@
 Changes
 =======
+
+0.2.0
+New Features:
+updated Lake Maker for panArctic analysis
+
+----------
 0.1.2d
 New Features:
 added grouping for DataStack
