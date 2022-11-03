@@ -1,13 +1,13 @@
+numpy
 gdal
 geopandas
 googledrivedownloader==0.4
 joblib
 jupyter
 notebook
-numpy
 pandas
 pycaret
-rasterio1.2
+rasterio
 scikit-image==0.19.1
 scikit-learn==0.23
 fiona
