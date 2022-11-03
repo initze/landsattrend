@@ -572,7 +572,12 @@ class LakeMaker(object):
         df = df_j1.join(df_A.drop(['id'], axis=1))
         df.area_water_inside = df.area_water_inside.fillna(value=0.)
         # merge all data to one DataFrame
-        self.df_start = pd.concat([self._calc_stats(df), self._make_stats_auxData()], axis=1)
+        try:
+            self._make_stats_auxData()
+            self.df_start = pd.concat([self._calc_stats(df), self._make_stats_auxData()], axis=1)
+        except:
+            print('Only df')
+            self.df_start = self._calc_stats(df)
 
     def save_df(self):
         """
@@ -1137,8 +1142,8 @@ class SlumpMaker(LakeMaker):
 
         # read data content
         pr_array = ga.LoadFile(self.probafile_path_)[pr_index]
-        dem_array = ga.LoadFile(self.demfile_path_)
-        slope_array = ga.LoadFile(self.slopefile_path_)
+        #dem_array = ga.LoadFile(self.demfile_path_)
+        #slope_array = ga.LoadFile(self.slopefile_path_)
 
         return pr_array, dem_array, slope_array
 
