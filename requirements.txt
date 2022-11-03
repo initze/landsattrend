@@ -1,5 +1,4 @@
 numpy
-gdal
 geopandas
 googledrivedownloader==0.4
 joblib
