@@ -288,65 +288,6 @@ def get_raster_size(path):
     ds = gdal.Open(path)
     return ds.RasterYSize, ds.RasterXSize
 
-def create_fishnet(study_site, step=30000):
-    """
-    :param study_site: string
-    :param step:
-    :return:
-    """
-    # check if study site exists, otherwise pass
-    if study_site not in list(study_sites.keys()):
-        print("Study site is not defined")
-        pass
-
-    # define schema of vectorfile
-    schema = {'geometry': 'Polygon',
-         'properties':{
-            'ID':'int',
-            'XMIN':'int',
-            'XMAX':'int',
-            'YMIN':'int',
-            'YMAX':'int',
-            'row':'int',
-            'path':'int'
-         }}
-
-    # get calculation properties
-    ss = study_sites[study_site]
-    outfile = ss['fishnet_file']
-    epsg = ss['epsg']
-    bbox = ss['bbox']
-    xstart, xstop, ystart, ystop = [align_px_to_ls(crd) for crd in bbox]
-
-    # sort in case bounds are swapped
-    xstart, xstop = np.sort([xstart, xstop])
-    ystart, ystop = np.sort([ystart, ystop])
-
-    # set up coordinates
-    path = np.arange(xstart, xstop, step)
-    p_idx = list(range(len(path)))
-    row = np.arange(ystop-step, ystart-step, -step)
-    r_idx = list(range(len(row)))
-    idx = 0
-
-    with fiona.open(outfile, mode='w', driver='ESRI Shapefile', schema=schema, crs=fiona.crs.from_epsg(epsg)) as source:
-        for r, ri in zip(row, r_idx):
-            for p, pi in zip(path, p_idx):
-                xmin, xmax, ymin, ymax = p, p+step, r, r+step
-                p = Polygon(([xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin]))
-                idx += 1
-
-                source.write({'geometry':mapping(p),
-                        'properties':{
-                        'ID':idx,
-                        'XMIN':xmin,
-                        'XMAX':xmax,
-                        'YMIN':ymin,
-                        'YMAX':ymax,
-                        'row':ri,
-                        'path':pi
-                }})
-    pass
 
 def get_datafolder_old(study_site, coords):
     # TODO: find better method --> spatial select?
