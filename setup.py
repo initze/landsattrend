@@ -10,4 +10,5 @@ setup(
     author_email='ingmar.nitze@awi.de',
     package_dir={'': '.',
                  'landsattrend.utils': 'landsattrend/utils'},
-    packages=['landsattrend', 'landsattrend.utils'],
+    packages=['landsattrend', 'landsattrend.utils']
+)
