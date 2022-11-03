@@ -803,6 +803,15 @@ class LakeMaker(object):
     def plot_regional_statistics(self):
         pass
 
+    @staticmethod
+    def _fill_resampled_grid(blocksize, grid, rr, cc):
+        A = np.zeros((len(rr), len(cc)))
+        for r in rr:
+            for c in cc:
+                A[int(r / blocksize):int(r / blocksize + 1), int(c / blocksize):int(c / blocksize + 1)] = grid[type][r:int(
+                    r + blocksize), c:int(c + blocksize)].sum()
+        return A
+
     # TODO: Add option for feature and different types
     def export_gridded_results(self, blocksize_list=None, type_list=None):
         """
@@ -846,12 +855,19 @@ class LakeMaker(object):
 
             grid = self._calculate_grid(label_Afilter, label_Bfilter, pr_array, blocksize)
             for type in type_list:
+                #A = self._fill_resampled_grid(blocksize, grid, rr, cc)
+                #"""
                 A = np.zeros((len(rr), len(cc)))
                 for r in rr:
                     for c in cc:
                         A[int(r/blocksize):int(r/blocksize+1), int(c/blocksize):int(c/blocksize+1)] = grid[type][r:int(r+blocksize), c:int(c+blocksize)].sum()
-
+                #"""
                 self._setup_gridded_result_paths(blocksize, type=type)
+                # create normed per km²
+                #"""
+                if type in ['netchange', 'grossgain', 'grossloss']:
+                    A = A / (outresolution*0.001)**2
+                #"""
                 array_to_file(A*0.09, self.gridded_result_netchange_path_,
                               self.class_vrt_path_, outresolution=(outresolution, outresolution))
 
