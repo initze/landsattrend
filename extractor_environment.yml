@@ -13,3 +13,6 @@ dependencies:
   - joblib=0.14.0
   - fiona
   - netCDF4=1.5.3
+  - pip:
+    - git+https://github.com/initze/GEE_HotSpot.git@v0.6
+    - git+https://github.com/initze/landsattrend.git@v0.2.1
