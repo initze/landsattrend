@@ -17,3 +17,5 @@ dependencies:
   - netCDF4
   - pip:
     - pyclowder
+    - git+https://github.com/initze/GEE_HotSpot.git@v0.6
+    - git+https://github.com/initze/landsattrend.git@v0.2.1    
