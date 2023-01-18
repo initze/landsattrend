@@ -2,7 +2,7 @@ from landsattrend.lake_analysis import LakeMaker
 import os, platform
 import shutil
 
-PROCESS_ROOT = os.getcwd()
+# PROCESS_ROOT = os.getcwd()
 
 def set_conda_gdal_paths():
     if platform.system() == 'Windows':
@@ -21,9 +21,12 @@ LAKE_FILTER_MODEL = os.path.join(PROCESS_ROOT, 'models', '20180820_lakefilter_12
 DEM_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'forestfire', 'forestfire.vrt')
 
+SCRATCH_DATA_DIR = '/scratch/bbou/toddn/landsat'
+PROCESS_ROOT = SCRATCH_DATA_DIR
+
 def main():
     set_conda_gdal_paths()
-    tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
+    tiles_directory = os.path.join(SCRATCH_DATA_DIR, 'data', site_name, CLASS_PERIOD, 'tiles')
     tif_files = os.listdir(tiles_directory)
 
     if '.DS_Store' in tif_files:
