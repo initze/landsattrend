@@ -15,13 +15,7 @@ from landsattrend.config_study_sites import study_sites
 from landsattrend.utils import array_to_file
 
 
-
 # remove from landsattrend !!!
-
-
-SCRATCH_DATA_DIR = '/scratch/bbou/toddn/landsat'
-PROCESS_ROOT = SCRATCH_DATA_DIR
-process_dir = os.path.join(PROCESS_ROOT, 'process')
 
 def get_stats(labelid, L_1, L_all, pr_array, factor=1., selem=np.ones((3,3))):
     """calculate statistics of objects
@@ -275,7 +269,7 @@ class LakeMaker(object):
         print('in classify method')
         model = joblib.load(class_model)
         model.n_jobs=-1
-        outdir = os.path.join(process_dir, '01_Classification_Raster')
+        outdir = os.path.join(self.directory, '01_Classification_Raster')
         # TODO quick fix - make more sophisticated solution
         #imagefolder = self.tiles_directory
         #imagefolder = os.path.join(study_sites[0]['result_dir'], self.classperiod, 'tiles')
@@ -328,7 +322,7 @@ class LakeMaker(object):
         :return:
         """
         # read classification raster/vrt to get data extent
-        class_vrt = os.path.join(process_dir, '01_Classification_Raster', 'class.vrt')
+        class_vrt = os.path.join(self.directory, '01_Classification_Raster', 'class.vrt')
         with rasterio.open(class_vrt) as ds:
             bnd = ds.bounds
             epsg = (list(ds.crs.values())[0]).split(':')[-1]
@@ -364,8 +358,8 @@ class LakeMaker(object):
         :return:
         """
         # define path to mosaicked VRT of classified data
-        self.classfile = os.path.join(process_dir, '01_Classification_Raster', 'class.vrt')
-        self.probafile = os.path.join(process_dir, '01_Classification_Raster', 'proba.vrt')
+        self.classfile = os.path.join(self.directory, '01_Classification_Raster', 'class.vrt')
+        self.probafile = os.path.join(self.directory, '01_Classification_Raster', 'proba.vrt')
 
         # read data content
         cl = rasterio.open(self.classfile)
@@ -591,7 +585,7 @@ class LakeMaker(object):
         Create path to data output path (csv-file)
         :return:
         """
-        self.lake_dataset_path_ = os.path.join(process_dir, r'04_Lake_Dataset_Table', 'lake_dataset.csv')
+        self.lake_dataset_path_ = os.path.join(self.directory, r'04_Lake_Dataset_Table', 'lake_dataset.csv')
 
     def load_df(self):
         """
@@ -662,8 +656,8 @@ class LakeMaker(object):
         private function to setup file names for saving the output data
         :return:
         """
-        self.label_Cfilter_path_ = os.path.join(process_dir, r'05_Lake_Dataset_Raster_01_raw', 'label_C.tif')
-        self.label_CfilterVector_path_ = os.path.join(process_dir, r'05_Lake_Dataset_Raster_01_raw', 'label_C.shp')
+        self.label_Cfilter_path_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_01_raw', 'label_C.tif')
+        self.label_CfilterVector_path_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_01_raw', 'label_C.shp')
 
 
     # TODO: make more efficient - use temporary dataframes
@@ -774,13 +768,13 @@ class LakeMaker(object):
         Function to setup path for dataset output
         :return:
         """
-        self.final_dataset_path_json_ = os.path.join(process_dir, r'05_Lake_Dataset_Raster_02_final',
+        self.final_dataset_path_json_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
                                                 'lake_change.geojson')
-        self.final_dataset_path_gpkg_ = os.path.join(process_dir, r'05_Lake_Dataset_Raster_02_final',
+        self.final_dataset_path_gpkg_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
                                                 'lake_change.gpkg')
-        self.final_dataset_ctr_path_json_ = os.path.join(process_dir, r'05_Lake_Dataset_Raster_02_final',
+        self.final_dataset_ctr_path_json_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
                                                     'lake_change_centroid.geojson')
-        self.final_dataset_ctr_path_gpkg_ = os.path.join(process_dir, r'05_Lake_Dataset_Raster_02_final',
+        self.final_dataset_ctr_path_gpkg_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
                                                     'lake_change_centroid.gpkg')
 
     def print_regional_statistics(self):
@@ -848,7 +842,7 @@ class LakeMaker(object):
         :return:
         """
         size = blocksize * 30
-        self.gridded_result_netchange_path_ = os.path.join(process_dir, r'05_Lake_Dataset_Raster_02_final',
+        self.gridded_result_netchange_path_ = os.path.join(self.directory, r'05_Lake_Dataset_Raster_02_final',
                                                            'lake_change_grid_{size}_{type}.tif'.format(size=size,
                                                                                                        type=type))
     @staticmethod
