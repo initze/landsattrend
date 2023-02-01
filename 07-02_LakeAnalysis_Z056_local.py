@@ -4,6 +4,8 @@ import shutil
 
 PROCESS_ROOT = os.getcwd()
 
+PROCESS_ROOT = '/scratch/bbou/toddn/landsat-delta/landsattrend'
+
 def set_conda_gdal_paths():
     if platform.system() == 'Windows':
         os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'bin')
