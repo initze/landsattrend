@@ -13,7 +13,7 @@ path_to_results = sys.argv[4]
 client = pyclowder.datasets.ClowderClient(host=clowder_host, key=clowder_key)
 
 def upload_a_file_to_dataset_with_folder(filepath, dataset_id, folder_id):
-    url = '%sapi/uploadToDataset/%s?key=%s&folder_id=%s' % (clowder_host, dataset_id, clowder_key, folder_id)
+    url = '%s/api/uploadToDataset/%s?key=%s&folder_id=%s' % (clowder_host, dataset_id, clowder_key, folder_id)
     print('the url')
     print(url)
     file_exists = os.path.exists(filepath)
@@ -76,22 +76,26 @@ data["name"] = 'process'
 data["parentId"] = dataset_id
 data["parentType"] = "dataset"
 process_folder = client.post('/datasets/' + dataset_id + '/newFolder', content=data, params=data)
-print('created dataset with name process, dataset id is', process_folder)
+print('process folder is', process_folder)
+process_folder_id = process_folder['id']
+print('created dataset with name process, dataset id is', dataset_id)
 
 # create a folder for each dir under process, add files
 for subfolder in subfolders:
+    print('doing subfolder', subfolder)
     subfolder_data = dict()
     subfolder_data["name"] = subfolder
-    subfolder_data["parentId"] = process_folder
+    subfolder_data["parentId"] = process_folder_id
     subfolder_data["parentType"] = "folder"
+    print('subfolder data', str(subfolder_data))
     current_folder = client.post('/datasets/' + dataset_id + '/newFolder', content=subfolder_data, params=subfolder_data)
     # go through each file in the subfolder
     path_to_subfolder = os.path.join(path_to_results, subfolder)
     subfolder_contents = os.listdir(path_to_subfolder)
     for item in subfolder_contents:
         path_to_item = os.path.join(path_to_subfolder, item)
-        print('uploading', path_to_item, 'dataset', dataset_id, 'folder', current_folder)
-        upload_a_file_to_dataset_with_folder(path_to_item, dataset_id, current_folder)
+        print('uploading', path_to_item, 'dataset', dataset_id, 'folder', current_folder['id'])
+        upload_a_file_to_dataset_with_folder(path_to_item, dataset_id, current_folder['id'])
 
 
 
