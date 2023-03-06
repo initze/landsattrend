@@ -15,7 +15,7 @@ def set_conda_gdal_paths():
         os.environ['GDAL_PATH'] = os.environ['GDAL_BIN']
 
 process_dir = os.path.join(PROCESS_ROOT, 'process')
-site_name = '32641'
+site_name = '32602'
 CLASS_PERIOD = '2000-2020'
 CLASS_MODEL = os.path.join(PROCESS_ROOT, 'models', 'PDG_6idx2feat_elslope_model_py38_sklearn0232_v04.z')
 LAKE_FILTER_MODEL = os.path.join(PROCESS_ROOT, 'models', '20180820_lakefilter_12039samples_py3.z')
