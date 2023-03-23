@@ -11,7 +11,7 @@ alaska_collection_id = '63603f14e4b03d731ea3df5'
 
 path_to_process = '/scratch/bbki/toddn/landsat-delta/landsattrend/process'
 
-zones_to_upload = ['32602', '32603', '32605', '32607']
+zones_to_upload = ['32603','32604', '32605', '32607']
 
 clowder_url = 'https://pdg.clowderframework.org'
 key = sys.argv[1]
@@ -147,13 +147,12 @@ if __name__ == "__main__":
         zone_name = zones_to_upload[i]
         # create dataset for that zone in space
         zone_dataset = create_dataset(url=clowder_url, space=landsat_space_id, zone_name=zone_name)
-        path_to_process = os.path.join(path_to_process, zone_name)
-        zone_folders = os.listdir(path_to_process)
+        path_to_zone = os.path.join(path_to_process, zone_name)
+        zone_folders = os.listdir(path_to_zone)
         print('uploading these files for this zone')
         process_folder = search_dataset_folders(dataset_id=zone_dataset, folder_name='process', url=clowder_url)
         print('the process folder id is', process_folder, 'it already existed')
         if process_folder is None:
-            process_folder_id = process_folder['id']
             folder_post_url = f"{clowder_url}/api/datasets/{zone_dataset}/newFolder?key={key}"
             print('folder post URL', folder_post_url)
             payload = json.dumps({'name': 'process',
@@ -166,7 +165,7 @@ if __name__ == "__main__":
         else:
             process_folder_id = process_folder['id']
         for folder in zone_folders:
-            path_to_folder = os.path.join(path_to_process, folder)
+            path_to_folder = os.path.join(path_to_zone, folder)
             folder_post_url = f"{clowder_url}/api/datasets/{zone_dataset}/newFolder?key={key}"
             print('folder post URL', folder_post_url)
             payload = json.dumps({'name': folder,
