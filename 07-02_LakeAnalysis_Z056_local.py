@@ -1,6 +1,7 @@
 from landsattrend.lake_analysis import LakeMaker
 import os, platform
 import shutil
+import sys
 
 PROCESS_ROOT = os.getcwd()
 
@@ -14,8 +15,9 @@ def set_conda_gdal_paths():
         os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'bin')
         os.environ['GDAL_PATH'] = os.environ['GDAL_BIN']
 
+CURRENT_SITE_NAME = sys.argv[1]
 process_dir = os.path.join(PROCESS_ROOT, 'process')
-site_name = '32604'
+site_name = CURRENT_SITE_NAME
 CLASS_PERIOD = '2000-2020'
 CLASS_MODEL = os.path.join(PROCESS_ROOT, 'models', 'PDG_6idx2feat_elslope_model_py38_sklearn0232_v04.z')
 LAKE_FILTER_MODEL = os.path.join(PROCESS_ROOT, 'models', '20180820_lakefilter_12039samples_py3.z')
