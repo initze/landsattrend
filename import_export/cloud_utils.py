@@ -33,7 +33,8 @@ def download_file(bucketName, filename, download_location, check_bucket=False):
             path = Path(path_to_tiles)
             path.mkdir(parents=True)
         path_to_file = os.path.join(path_to_tiles, base_filename)
-        blob.download_to_filename(path_to_file)
+        if not os.path.exists(path_to_file):
+            blob.download_to_filename(path_to_file)
 
 def download_folder(bucketName, folder, download_location):
     bucket = storage_client.get_bucket(bucketName)
