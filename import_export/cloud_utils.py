@@ -1,7 +1,9 @@
 import os
 import ee
+import sys
 from google.cloud import storage
 from pathlib import Path
+folder = sys.argv[1]
 
 service_account = "pdg-landsattrend@uiuc-ncsa-permafrost.iam.gserviceaccount.com"
 path_to_file = os.path.join(os.getcwd(), 'project-keys', 'uiuc-ncsa-permafrost-44d44c10c9c7.json')
@@ -47,5 +49,6 @@ def download_folder(bucketName, folder, download_location):
 if __name__ == "__main__":
     print(download_directory)
     print(data_directory)
-    download_folder('pdg-landsattrend', 'TEST', data_directory)
+    folder_on_cloud = sys.argv[1]
+    download_folder('pdg-landsattrend', folder, data_directory)
 
