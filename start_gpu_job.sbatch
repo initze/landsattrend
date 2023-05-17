@@ -1,3 +1,4 @@
+#!/bin/bash -l
 
 # USAGE INSTRUCTIONS:
 # sbatch <this_filename>

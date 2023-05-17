@@ -5,7 +5,7 @@ import sys
 
 PROCESS_ROOT = os.getcwd()
 
-PROCESS_ROOT = '/scratch/bbki/toddn/landsat-delta/landsattrend'
+PROCESS_ROOT = '/scratch/bbou/toddn/landsat-delta/landsattrend'
 
 def set_conda_gdal_paths():
     if platform.system() == 'Windows':
@@ -26,6 +26,7 @@ DEM_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'forestfire', 'forestfire.vrt')
 
 def main():
+    print('starting here')
     set_conda_gdal_paths()
     tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
     tif_files = os.listdir(tiles_directory)
