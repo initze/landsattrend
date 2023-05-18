@@ -16,7 +16,7 @@ download_directory = os.path.join(os.getcwd())
 
 data_directory = download_directory.replace('import_export', 'data')
 
-def download_file(bucketName, filename, download_location, check_bucket=False):
+def download_file(bucketName, filename, download_location, check_bucket=False, overwrite=False):
     bucket = storage_client.get_bucket(bucketName)
     if check_bucket:
         # TODO this should not happen
@@ -34,14 +34,23 @@ def download_file(bucketName, filename, download_location, check_bucket=False):
             path.mkdir(parents=True)
         path_to_file = os.path.join(path_to_tiles, base_filename)
         if not os.path.exists(path_to_file):
+            print('downloading the file to', path_to_file)
             blob.download_to_filename(path_to_file)
+        else:
+            size_in_bytes = bucket.get_blob(filename).size
+            size_of_file_on_disk = os.path.getsize(path_to_file)
+            if size_in_bytes > size_of_file_on_disk:
+                print('downloading the file to', path_to_file)
+                blob.download_to_filename(path_to_file)
+            else:
+                print('no need to download', filename)
 
 def download_folder(bucketName, folder, download_location):
     bucket = storage_client.get_bucket(bucketName)
     blob_list = bucket.list_blobs()
+    filenames_to_download = []
     for blob in blob_list:
         current_filename = blob.name
-        print(current_filename)
         if '/' in current_filename:
             if current_filename.startswith(folder+'/') and current_filename != folder+'/':
                 download_file(bucketName, current_filename, download_location, check_bucket=False)
