@@ -52,7 +52,7 @@ def upload_a_file_to_dataset(filepath, dataset_id, clowder_url, user_api):
 
 
 def upload_a_file_to_dataset_with_folder(filepath, dataset_id, folder_id, clowder_url, user_api):
-    url = '%sapi/uploadToDataset/%s?key=%s&folder_id=%s' % (clowder_url, dataset_id, user_api, folder_id)
+    url = '%s/api/uploadToDataset/%s?key=%s&folder_id=%s' % (clowder_url, dataset_id, user_api, folder_id)
     print('the url')
     print(url)
     file_exists = os.path.exists(filepath)
@@ -203,6 +203,7 @@ def process_output_dir(site_name, path_to_output):
         files = os.listdir(path_to_folder)
         for f in files:
             path_to_file = os.path.join(path_to_folder, f)
+            print('the path to file is', path_to_file)
             file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=site_dataset_id, folder_id=clowder_folder_id, clowder_url=url, user_api=key)
             print('uploaded file', file_id)
 
