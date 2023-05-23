@@ -180,10 +180,8 @@ def process_input_dir(path_to_input):
         file_id = upload_a_file_to_dataset(filepath=path_to_file, dataset_id=site_dataset_id, clowder_url=url, user_api=key)
         print('uploaded file', file_id)
 
-def process_input_dir(path_to_input):
-    parts = path_to_input.split('/')
-    site = parts[-1]
-    site_dataset = create_or_get_dataset(site, space_id=landsat_space_id)
+def process_input_dir(site_name, path_to_input):
+    site_dataset = create_or_get_dataset(site_name, space_id=landsat_space_id)
     print(site_dataset, 'is the current dataset')
     site_dataset_id = site_dataset['id']
     files = os.listdir(path_to_input)
@@ -193,10 +191,8 @@ def process_input_dir(path_to_input):
                                            user_api=key)
         print('uploaded file', file_id)
 
-def process_output_dir(path_to_output):
-    parts = path_to_output.split('/')
-    site = parts[-1]
-    site_dataset = create_or_get_dataset(site, space_id=landsat_space_id)
+def process_output_dir(site_name, path_to_output):
+    site_dataset = create_or_get_dataset(site_name, space_id=landsat_space_id)
     print(site_dataset, 'is the current dataset')
     site_dataset_id = site_dataset['id']
     folders = os.listdir(path_to_output)
@@ -211,7 +207,7 @@ def process_output_dir(path_to_output):
             print('uploaded file', file_id)
 
 if __name__ == '__main__':
-    process_input_dir(current_input)
-    process_output_dir(current_output)
+    process_input_dir(site_name=current_zone, path_to_input=current_input)
+    process_output_dir(site_name=current_zone, path_to_output=current_output)
 
 
