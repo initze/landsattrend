@@ -3,7 +3,6 @@ import pyclowder
 import pyclowder.datasets
 import os
 import sys
-import datetime
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 
@@ -33,7 +32,6 @@ client = pyclowder.datasets.ClowderClient(host=url, key=key)
 def upload_a_file_to_dataset(filepath, dataset_id, clowder_url, user_api):
     url = '%s/api/uploadToDataset/%s?key=%s' % (clowder_url, dataset_id, user_api)
     file_exists = os.path.exists(filepath)
-    before = datetime.now()
     if os.path.exists(filepath):
             filename = os.path.basename(filepath)
             m = MultipartEncoder(
@@ -59,8 +57,6 @@ def upload_a_file_to_dataset_with_folder(filepath, dataset_id, folder_id, clowde
     print(url)
     file_exists = os.path.exists(filepath)
     print('starting upload')
-    print(str(datetime.now()))
-    before = datetime.now()
     if os.path.exists(filepath):
             filename = os.path.basename(filepath)
             m = MultipartEncoder(
@@ -74,14 +70,9 @@ def upload_a_file_to_dataset_with_folder(filepath, dataset_id, folder_id, clowde
                 print(result)
                 uploadedfileid = result.json()['id']
                 print("uploaded file", uploadedfileid)
-                print(str(datetime.now()))
-                after = datetime.now()
-                duration = after - before
-                print(str(duration))
             except Exception as e:
                 print('failed to upload file, error')
                 print(e)
-                print(str(datetime.now()))
     else:
         print("unable to upload file %s (not found)", filepath)
 
