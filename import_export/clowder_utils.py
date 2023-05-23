@@ -15,7 +15,7 @@ data_dir = current_dir.replace('import_export', 'data')
 process_dir = current_dir.replace('import_export', 'process')
 current_zone = sys.argv[3]
 
-current_input = os.path.join(data_dir, current_zone)
+current_input = os.path.join(data_dir, current_zone, '2000-2020', 'tiles')
 current_output = os.path.join(process_dir, current_zone)
 
 regions = {
