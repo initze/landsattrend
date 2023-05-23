@@ -207,7 +207,7 @@ def process_output_dir(site_name, path_to_output):
             print('uploaded file', file_id)
 
 if __name__ == '__main__':
-    process_input_dir(site_name=current_zone, path_to_input=current_input)
+    # process_input_dir(site_name=current_zone, path_to_input=current_input)
     process_output_dir(site_name=current_zone, path_to_output=current_output)
 
 
