@@ -10,12 +10,12 @@ for content in dir_contents:
     content_path = os.path.join(path_to_landsattrend, content)
     if os.path.isfile(content_path):
         new_path = os.path.join(path_to_projects, 'landsattrend', content)
-        if content is 'setup.py':
+        if content == 'setup.py':
             print('copying')
             print(content_path, new_path)
             shutil.copy(content_path, new_path)
     elif os.path.isdir(content_path):
-        if content is not 'data' and content is not 'process':
+        if content != 'data' and content != 'process':
             new_path = os.path.join(path_to_projects, 'landsattrend', content)
             if content is 'aux_data':
                 print('copying')
