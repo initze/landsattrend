@@ -6,7 +6,7 @@ site_names = site_list.split(',')
 print('generating file for site name', site_names)
 
 for site_name in site_names:
-    old_command = 'python /scratch/bbou/toddn/landsat-delta/landsattrend/07-02_LakeAnalysis_Z056_local.py SITE_NAME'
+    old_command = 'python /projects/bbou/toddn/landsattrend/07-02_LakeAnalysis_Z056_local.py SITE_NAME'
 
     with open('start_gpu_job.sbatch', 'r') as f:
         content = f.read()
