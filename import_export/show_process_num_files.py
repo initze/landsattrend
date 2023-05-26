@@ -82,6 +82,7 @@ print('files uploaded, wrong size', len(files_uploaded_wrong_size))
 if len(files_uploaded_wrong_size) > 0:
     for file in files_uploaded_wrong_size:
         print(file)
+        print('on disk, in clowder')
         basename = os.path.basename(file)
         print(os.path.getsize(file), file_dict[basename])
 print('files not uploaded at all', len(files_not_uploaded))
