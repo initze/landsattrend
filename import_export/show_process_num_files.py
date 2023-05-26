@@ -7,7 +7,6 @@ current_zone = sys.argv[1]
 url = sys.argv[2]
 key = sys.argv[3]
 client = pyclowder.datasets.ClowderClient(host= url, key=key)
-test_dataset_id = '646e8315e4b05d174ca074d6'
 
 landsat_space_id = '646d02d2e4b05d174c9fab1c'
 
@@ -20,13 +19,18 @@ def get_matching_dataset_in_space(space_id, dataset_name):
             return matching_dataset
     return matching_dataset
 
-files_in_dataset = client.get('/datasets/' + test_dataset_id + '/files')
-dataset_folders = client.get('/datasets/' + test_dataset_id + '/folders')
+matching_dataset = get_matching_dataset_in_space(space_id=landsat_space_id, dataset_name=current_zone)
+matching_dataset_id = matching_dataset['id']
+
+files_in_dataset = client.get('/datasets/' + matching_dataset_id + '/files')
+dataset_folders = client.get('/datasets/' + matching_dataset_id + '/folders')
 folder_file_dict = dict()
 file_dict = dict()
 for file in files_in_dataset:
+    print(file)
     file_name = file['filename']
     file_size = int(file['size'])
+    print(file_size)
     file_dict[file_name] = file_size
 
 current_dir = os.path.join(os.getcwd())
@@ -50,6 +54,8 @@ for input_file in input_files:
             files_uploaded_correctly.append(input_file)
         else:
             files_uploaded_wrong_size.append(input_file)
+    else:
+        print('not in the file dict')
 
 
 print('checking each part of the process dir')
