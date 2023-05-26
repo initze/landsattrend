@@ -11,7 +11,11 @@ for content in dir_contents:
     if os.path.isfile(content_path):
         print('file', content_path)
         new_path = os.path.join(path_to_projects, 'landsattrend', content)
-        print(new_path)
+        if content is 'setup.py':
+            shutil.copy(content_path, new_path)
     elif os.path.isdir(content_path):
         print('dir', content_path)
-        new_path = os.path.join(path_to_projects, 'landsattrend', content)
+        if content is not 'data' and content is not 'process':
+            new_path = os.path.join(path_to_projects, 'landsattrend', content)
+            if content is 'aux_data':
+                shutil.copytree(content_path, new_path)
