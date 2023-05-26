@@ -17,7 +17,7 @@ for content in dir_contents:
     elif os.path.isdir(content_path):
         if content != 'data' and content != 'process':
             new_path = os.path.join(path_to_projects, 'landsattrend', content)
-            if content is 'aux_data':
+            if content == 'aux_data':
                 print('copying')
                 print(content_path, new_path)
                 shutil.copytree(content_path, new_path)
