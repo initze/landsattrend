@@ -45,6 +45,7 @@ for input_file in input_files:
     if input_file in file_dict:
         input_file_path = os.path.join(current_input, input_file)
         input_file_size = os.path.getsize(input_file_path)
+        print(input_file, input_file_size, type(input_file_size), print(file_dict[input_file]))
         if input_file_size == file_dict[input_file]:
             files_uploaded_correctly.append(input_file)
         else:
