@@ -72,9 +72,9 @@ for folder in process_folders:
             if output_file_size == file_dict[output_file]:
                 files_uploaded_correctly.append(output_file)
             else:
-                files_uploaded_wrong_size.append(output_file)
+                files_uploaded_wrong_size.append(output_file_path)
         else:
-            files_not_uploaded.append(output_file)
+            files_not_uploaded.append(output_file_path)
 
 print('printing summary')
 print('files uploaded that are the right size', len(files_uploaded_correctly))
