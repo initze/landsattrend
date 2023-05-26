@@ -14,4 +14,4 @@ for content in dir_contents:
         print(new_path)
     elif os.path.isdir(content_path):
         print('dir', content_path)
-        new_path = os.path.join(path_to_landsattrend, 'landsattrend', content_path)
+        new_path = os.path.join(path_to_projects, 'landsattrend', content_path)
