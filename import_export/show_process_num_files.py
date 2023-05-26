@@ -55,7 +55,7 @@ for input_file in input_files:
         else:
             files_uploaded_wrong_size.append(input_file)
     else:
-        print('not in the file dict')
+        files_not_uploaded.append(input_file)
 
 
 print('checking each part of the process dir')
@@ -73,6 +73,8 @@ for folder in process_folders:
                 files_uploaded_correctly.append(output_file)
             else:
                 files_uploaded_wrong_size.append(output_file)
+        else:
+            files_not_uploaded.append(output_file)
 
 print('printing summary')
 print('files uploaded that are the right size', len(files_uploaded_correctly))
