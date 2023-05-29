@@ -7,7 +7,7 @@ url = sys.argv[1]
 key = sys.argv[2]
 current_zone = sys.argv[3]
 client = pyclowder.datasets.ClowderClient(host= url, key=key)
-
+print('starting')
 landsat_space_id = '646d02d2e4b05d174c9fab1c'
 
 def get_matching_dataset_in_space(space_id, dataset_name):
@@ -71,6 +71,8 @@ for folder in process_folders:
     path_to_folder = os.path.join(current_output, folder)
     output_files = os.listdir(path_to_folder)
     for output_file in output_files:
+        print('checking this output file')
+        print(output_file)
         if output_file in file_dict:
             output_file_path = os.path.join(current_output, output_file)
             if os.path.exists(output_file_path):
@@ -94,6 +96,7 @@ for each in files_too_small:
     print(each)
 
 print('the following files were not uploaded')
+print(len(files_not_uploaded))
 for each in files_not_uploaded:
     print(each)
 print('the files not on disk')
