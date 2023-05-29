@@ -3,9 +3,11 @@ import sys
 
 site_one = int(sys.argv[1])
 site_two = int(sys.argv[2])
-print('generating file for site name', site_names)
 
-for site_name in site_names:
+sites_to_run = list(range(site_one, site_two))
+
+for site in sites_to_run:
+    site_name = str(site)
     old_command = 'python /projects/bbou/toddn/landsattrend/07-02_LakeAnalysis_Z056_local.py SITE_NAME'
 
     with open('start_gpu_job.sbatch', 'r') as f:
