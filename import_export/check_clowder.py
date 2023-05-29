@@ -44,16 +44,20 @@ files_uploaded_correctly = []
 files_too_small = []
 files_too_big = []
 files_not_uploaded = []
+files_not_on_disk = []
 for input_file in input_files:
     if input_file in file_dict:
         input_file_path = os.path.join(current_input, input_file)
-        input_file_size = os.path.getsize(input_file_path)
-        if file_dict[input_file] == input_file_size:
-            files_uploaded_correctly.append(input_file)
-        elif file_dict[input_file] < input_file_size:
-            files_too_small.append(input_file_path)
+        if os.path.exist(input_file_path):
+            input_file_size = os.path.getsize(input_file_path)
+            if file_dict[input_file] == input_file_size:
+                files_uploaded_correctly.append(input_file)
+            elif file_dict[input_file] < input_file_size:
+                files_too_small.append(input_file_path)
+            else:
+                files_too_big.append(input_file_path)
         else:
-            files_too_big.append(input_file_path)
+            files_not_on_disk.append(input_file)
 
     else:
         files_not_uploaded.append(input_file)
@@ -69,14 +73,16 @@ for folder in process_folders:
     for output_file in output_files:
         if output_file in file_dict:
             output_file_path = os.path.join(current_output, output_file)
-            output_file_size = os.path.getsize(output_file_path)
-            if file_dict[output_file] == output_file_size:
-                files_uploaded_correctly.append(output_file_path)
-            elif file_dict[output_file] < output_file_size:
-                files_too_small.append(output_file_path)
+            if os.path.exists(output_file_path):
+                output_file_size = os.path.getsize(output_file_path)
+                if file_dict[output_file] == output_file_size:
+                    files_uploaded_correctly.append(output_file_path)
+                elif file_dict[output_file] < output_file_size:
+                    files_too_small.append(output_file_path)
+                else:
+                    files_too_big.append(output_file_path)
             else:
-                files_too_big.append(output_file_path)
-
+                files_not_on_disk.append(output_file)
         else:
             files_not_uploaded.append(output_file_path)
 
