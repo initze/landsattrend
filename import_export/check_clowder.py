@@ -96,5 +96,7 @@ for each in files_too_small:
 print('the following files were not uploaded')
 for each in files_not_uploaded:
     print(each)
-
+print('the files not on disk')
+for f in files_not_on_disk:
+    print(f)
 print('done')
