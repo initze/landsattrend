@@ -48,7 +48,7 @@ files_not_on_disk = []
 for input_file in input_files:
     if input_file in file_dict:
         input_file_path = os.path.join(current_input, input_file)
-        if os.path.exist(input_file_path):
+        if os.path.exists(input_file_path):
             input_file_size = os.path.getsize(input_file_path)
             if file_dict[input_file] == input_file_size:
                 files_uploaded_correctly.append(input_file)
