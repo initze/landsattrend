@@ -26,11 +26,14 @@ files_in_dataset = client.get('/datasets/' + matching_dataset_id + '/files')
 dataset_folders = client.get('/datasets/' + matching_dataset_id + '/folders')
 folder_file_dict = dict()
 file_dict = dict()
+filenames_in_dataset = []
 for file in files_in_dataset:
     file_name = file['filename']
+    filenames_in_dataset.append(file_name)
     file_size = int(file['size'])
     file_dict[file_name] = file_size
 
+print(file_dict.keys())
 current_dir = os.path.join(os.getcwd())
 data_dir = current_dir.replace('import_export', 'data')
 process_dir = current_dir.replace('import_export', 'process')
@@ -39,67 +42,43 @@ current_output = os.path.join(process_dir, current_zone)
 
 print('getting the number of tiles')
 
-input_files = os.listdir(current_input)
+current_files = os.listdir(current_input)
 files_uploaded_correctly = []
 files_too_small = []
 files_too_big = []
 files_not_uploaded = []
 files_not_on_disk = []
-for input_file in input_files:
-    if input_file in file_dict:
-        input_file_path = os.path.join(current_input, input_file)
-        if os.path.exists(input_file_path):
-            input_file_size = os.path.getsize(input_file_path)
-            if file_dict[input_file] == input_file_size:
-                files_uploaded_correctly.append(input_file)
-            elif file_dict[input_file] < input_file_size:
-                files_too_small.append(input_file_path)
-            else:
-                files_too_big.append(input_file_path)
-        else:
-            files_not_on_disk.append(input_file)
 
-    else:
-        files_not_uploaded.append(input_file)
+paths_to_check = []
+
+files_in_input = os.listdir(current_input)
 
 
-print('checking each part of the process dir')
-process_folders = os.listdir(current_output)
+# add the inputs
+for f in files_in_input:
+    path_to_f = os.path.join(current_input, f)
+    paths_to_check.append(path_to_f)
 
-for folder in process_folders:
-    print('current folder is', folder)
+# add the inputs
+output_folders = os.listdir(current_output)
+for folder in output_folders:
     path_to_folder = os.path.join(current_output, folder)
-    output_files = os.listdir(path_to_folder)
-    for output_file in output_files:
-        print('checking this output file')
-        print(output_file)
-        if output_file in file_dict:
-            output_file_path = os.path.join(current_output, output_file)
-            if os.path.exists(output_file_path):
-                output_file_size = os.path.getsize(output_file_path)
-                if file_dict[output_file] == output_file_size:
-                    files_uploaded_correctly.append(output_file_path)
-                elif file_dict[output_file] < output_file_size:
-                    files_too_small.append(output_file_path)
-                else:
-                    files_too_big.append(output_file_path)
-            else:
-                files_not_on_disk.append(output_file)
-        else:
-            files_not_uploaded.append(output_file_path)
+    files_in_folder = os.listdir(path_to_folder)
+    for file in files_in_folder:
+        path_to_f = os.path.join(path_to_folder, file)
+        paths_to_check.append(path_to_f)
 
-print('printing summary')
-print('files uploaded that are the right size', len(files_uploaded_correctly))
-print('files that are larger on clowder', len(files_too_big))
-print('the following files are too small, they cannot have all the bytes')
-for each in files_too_small:
-    print(each)
+files_not_uploaded = []
+files_uploaded = []
 
-print('the following files were not uploaded')
-print(len(files_not_uploaded))
-for each in files_not_uploaded:
-    print(each)
-print('the files not on disk')
-for f in files_not_on_disk:
+# FIRST check just IN or OUT
+for p in paths_to_check:
+    base_filename = os.path.basename(p)
+    if base_filename in filenames_in_dataset:
+        files_uploaded.append(p)
+    else:
+        files_not_uploaded.append(p)
+
+print('these files were not uploaded')
+for f in files_not_uploaded:
     print(f)
-print('done')

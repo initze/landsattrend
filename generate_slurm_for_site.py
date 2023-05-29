@@ -1,8 +1,8 @@
 import os
 import sys
 
-site_list = sys.argv[1]
-site_names = site_list.split(',')
+site_one = int(sys.argv[1])
+site_two = int(sys.argv[2])
 print('generating file for site name', site_names)
 
 for site_name in site_names:
