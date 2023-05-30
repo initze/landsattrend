@@ -74,9 +74,12 @@ files_uploaded = []
 # FIRST check just IN or OUT
 for p in paths_to_check:
     base_filename = os.path.basename(p)
+    print('is this file in?', base_filename)
     if base_filename in filenames_in_dataset:
+        print('it is in')
         files_uploaded.append(p)
     else:
+        print('it is not in')
         files_not_uploaded.append(p)
 
 print('these files were not uploaded')
