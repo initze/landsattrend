@@ -32,19 +32,19 @@ def upload_a_file_to_dataset(filepath, dataset_id, clowder_url, user_api):
     url = '%s/api/uploadToDataset/%s?key=%s' % (clowder_url, dataset_id, user_api)
     file_exists = os.path.exists(filepath)
     if os.path.exists(filepath):
-            filename = os.path.basename(filepath)
-            m = MultipartEncoder(
-                fields={'file': (filename, open(filepath, 'rb'))}
-            )
-            try:
-                result = requests.post(url, data=m, headers={'Content-Type': m.content_type},
-                                        verify=False)
+        filename = os.path.basename(filepath)
+        m = MultipartEncoder(
+            fields={'file': (filename, open(filepath, 'rb'))}
+        )
+        try:
+            result = requests.post(url, data=m, headers={'Content-Type': m.content_type},
+                                    verify=False)
 
-                uploadedfileid = result.json()['id']
-                return uploadedfileid
-            except Exception as e:
-                print('failed to upload file, error')
-                print(e)
+            uploadedfileid = result.json()['id']
+            return uploadedfileid
+        except Exception as e:
+            print('failed to upload file, error')
+            print(e)
     else:
         print(f"unable to upload file %s (not found) {filepath}")
     return None
