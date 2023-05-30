@@ -98,7 +98,7 @@ with open(path_to_file, 'r') as f:
     lines = f.readlines()
 
 index_of_line = lines.index('these files were not uploaded\n')
-start_index = index_of_line + 1
+start_index = index_of_line + 2
 
 paths_to_upload = []
 
