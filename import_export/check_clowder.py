@@ -147,11 +147,3 @@ print('these files were not uploaded')
 print(len(files_not_uploaded))
 for f in files_not_uploaded:
     print(f)
-
-print('we will now upload the files we missed')
-
-for f in files_not_uploaded:
-    print(f)
-    file_parts = f.split('/')
-    foldername = file_parts[-2]
-    folder_id = create_or_get_folder(dataset_id=matching_dataset_id, folder_name=foldername)
