@@ -98,6 +98,15 @@ with open(path_to_file, 'r') as f:
     lines = f.readlines()
 
 index_of_line = lines.index('these files were not uploaded\n')
-print(index_of_line, 'is index')
+start_index = index_of_line + 1
+
+paths_to_upload = []
+
+for i in range(start_index, len(lines)):
+    current_path = lines[i].rstrip('\n')
+    paths_to_upload.append(current_path)
+
+for p in paths_to_upload:
+    print(p)
 
 
