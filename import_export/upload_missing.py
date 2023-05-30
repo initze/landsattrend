@@ -97,13 +97,7 @@ path_to_file = os.path.join(current_dir, missing_file)
 with open(path_to_file, 'r') as f:
     lines = f.readlines()
 
-not_uploaded_paths = []
+index_of_line = lines.index('these files were not uploaded')
+print(index_of_line, 'is index')
 
-found_paths = False
-for i in range(0, len(lines)):
-    if 'these files were not uploaded' in lines[i]:
-        found_paths = True
-    if found_paths:
-        not_uploaded_paths.append(lines[i])
-for p in not_uploaded_paths:
-    print(p)
+
