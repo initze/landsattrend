@@ -33,7 +33,6 @@ for file in files_in_dataset:
     file_size = int(file['size'])
     file_dict[file_name] = file_size
 
-print(file_dict.keys())
 current_dir = os.path.join(os.getcwd())
 data_dir = current_dir.replace('import_export', 'data')
 process_dir = current_dir.replace('import_export', 'process')
@@ -83,5 +82,6 @@ for p in paths_to_check:
         files_not_uploaded.append(p)
 
 print('these files were not uploaded')
+print(len(files_not_uploaded))
 for f in files_not_uploaded:
     print(f)
