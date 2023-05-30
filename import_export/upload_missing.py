@@ -97,7 +97,7 @@ path_to_file = os.path.join(current_dir, missing_file)
 with open(path_to_file, 'r') as f:
     lines = f.readlines()
 
-index_of_line = lines.index('these files were not uploaded')
+index_of_line = lines.index('these files were not uploaded\n')
 print(index_of_line, 'is index')
 
 
