@@ -120,6 +120,7 @@ def upload_path(path_to_file, space_id, dataset_name, url, key):
 
 matching_dataset = get_matching_dataset_in_space(space_id=landsat_space_id, dataset_name=current_zone)
 matching_dataset_id = matching_dataset['id']
+matching_dataset_name = matching_dataset['name']
 
 files_in_dataset = client.get('/datasets/' + matching_dataset_id + '/files')
 dataset_folders = client.get('/datasets/' + matching_dataset_id + '/folders')
@@ -142,6 +143,6 @@ for i in range(start_index, len(lines)):
 print('uploading paths')
 for p in paths_to_upload:
     print(p)
-    file_id = upload_path(path_to_file=p, space_id=landsat_space_id, dataset_name=matching_dataset, url=url, key=key)
+    file_id = upload_path(path_to_file=p, space_id=landsat_space_id, dataset_name=matching_dataset_name, url=url, key=key)
     print(file_id)
 
