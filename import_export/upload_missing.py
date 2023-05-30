@@ -76,6 +76,7 @@ def upload_a_file_to_dataset_with_folder(filepath, dataset_id, folder_id, clowde
 
 
 def get_matching_dataset_in_space(space_id, dataset_name):
+    print('finding dataset with name', dataset_name, 'in space', space_id)
     datasets_in_space = client.get('/spaces/' + space_id + '/datasets')
     matching_dataset = None
     for ds in datasets_in_space:
