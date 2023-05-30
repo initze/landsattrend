@@ -94,7 +94,9 @@ def upload_data_path(path_to_file, space_id, dataset_name, url, key):
 def upload_process_path(path_to_file, space_id, dataset_name, url, key):
     path_parts = path_to_file.split('/')
     foldername = path_parts[-2]
+    print('foldername', foldername)
     dataset_id = get_matching_dataset_in_space(space_id, dataset_name)
+    print(dataset_id, 'datasetid')
     if dataset_id:
         folder_id = create_or_get_folder(dataset_id, folder_name=foldername)
         file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=dataset_id, folder_id=folder_id,clowder_url=url, user_api=key)
