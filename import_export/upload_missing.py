@@ -104,8 +104,10 @@ def upload_process_path(path_to_file, space_id, dataset_name, url, key):
 def upload_path(path_to_file, space_id, dataset_name, url, key):
     file_id = None
     if 'data' in path_to_file:
+        print('data file, uploading this way')
         file_id = upload_data_path(path_to_file=path_to_file, space_id=space_id, dataset_name=dataset_name, url=url, key=key)
     if 'process' in path_to_file:
+        print('process file, uploading the other way')
         file_id = upload_process_path(path_to_file=path_to_file, space_id=space_id, dataset_name=dataset_name, url=url, key=key)
     return file_id
 
