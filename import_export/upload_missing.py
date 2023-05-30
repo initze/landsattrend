@@ -85,7 +85,8 @@ def get_matching_dataset_in_space(space_id, dataset_name):
     return matching_dataset
 
 def upload_data_path(path_to_file, space_id, dataset_name, url, key):
-    dataset_id = get_matching_dataset_in_space(space_id, dataset_name)
+    matching_dataset = get_matching_dataset_in_space(space_id, dataset_name)
+    dataset_id = matching_dataset['id']
     if dataset_id:
         file_id = upload_a_file_to_dataset(filepath=path_to_file, dataset_id=dataset_id,clowder_url=url, user_api=key)
         return file_id
@@ -96,7 +97,8 @@ def upload_process_path(path_to_file, space_id, dataset_name, url, key):
     foldername = path_parts[-2]
     print('foldername', foldername)
     print('datasetname', dataset_name)
-    dataset_id = get_matching_dataset_in_space(space_id, dataset_name)
+    matching_dataset = get_matching_dataset_in_space(space_id, dataset_name)
+    dataset_id = matching_dataset['id']
     print(dataset_id, 'datasetid')
     if dataset_id:
         folder_id = create_or_get_folder(dataset_id, folder_name=foldername)
