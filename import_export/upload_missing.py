@@ -103,7 +103,8 @@ def upload_process_path(path_to_file, space_id, dataset_name, url, key):
     dataset_id = matching_dataset['id']
     print(dataset_id, 'datasetid')
     if dataset_id:
-        folder_id = create_or_get_folder(dataset_id, folder_name=foldername)
+        folder = create_or_get_folder(dataset_id, folder_name=foldername)
+        folder_id = folder['id']
         print('folderid', folder_id)
         file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=dataset_id, folder_id=folder_id,clowder_url=url, user_api=key)
         return file_id
