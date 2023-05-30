@@ -57,21 +57,21 @@ def upload_a_file_to_dataset_with_folder(filepath, dataset_id, folder_id, clowde
     file_exists = os.path.exists(filepath)
     print('starting upload')
     if os.path.exists(filepath):
-            filename = os.path.basename(filepath)
-            m = MultipartEncoder(
-                fields={'file': (filename, open(filepath, 'rb')),
-                        'folder_id':folder_id}
-            )
-            try:
-                result = requests.post(url, data=m, headers={'Content-Type': m.content_type},
-                                        verify=False)
+        filename = os.path.basename(filepath)
+        m = MultipartEncoder(
+            fields={'file': (filename, open(filepath, 'rb')),
+                    'folder_id':folder_id}
+        )
+        try:
+            result = requests.post(url, data=m, headers={'Content-Type': m.content_type},
+                                    verify=False)
 
-                print(result)
-                uploadedfileid = result.json()['id']
-                print("uploaded file", uploadedfileid)
-            except Exception as e:
-                print('failed to upload file, error')
-                print(e)
+            print(result)
+            uploadedfileid = result.json()['id']
+            print("uploaded file", uploadedfileid)
+        except Exception as e:
+            print('failed to upload file, error')
+            print(e)
     else:
         print("unable to upload file %s (not found)", filepath)
 
