@@ -135,4 +135,5 @@ print('uploading paths')
 for p in paths_to_upload:
     print(p)
     file_id = upload_path(path_to_file=p, space_id=landsat_space_id, dataset_name=matching_dataset, url=url, key=key)
+    print(file_id)
 
