@@ -75,7 +75,6 @@ def upload_a_file_to_dataset_with_folder(filepath, dataset_id, folder_id, clowde
         print("unable to upload file %s (not found)", filepath)
 
 
-
 def get_matching_dataset_in_space(space_id, dataset_name):
     datasets_in_space = client.get('/spaces/' + space_id + '/datasets')
     matching_dataset = None
@@ -84,6 +83,32 @@ def get_matching_dataset_in_space(space_id, dataset_name):
             matching_dataset = ds
             return matching_dataset
     return matching_dataset
+
+def upload_data_path(path_to_file, space_id, dataset_name, url, key):
+    dataset_id = get_matching_dataset_in_space(space_id, dataset_name)
+    if dataset_id:
+        file_id = upload_a_file_to_dataset(filepath=path_to_file, dataset_id=dataset_id,clowder_url=url, user_api=key)
+        return file_id
+    return None
+
+def upload_process_path(path_to_file, space_id, dataset_name, url, key):
+    path_parts = path_to_file.split('/')
+    foldername = path_parts[-2]
+    dataset_id = get_matching_dataset_in_space(space_id, dataset_name)
+    if dataset_id:
+        folder_id = create_or_get_folder(dataset_id, folder_name=foldername)
+        file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=dataset_id, folder_id=folder_id,clowder_url=url, user_api=key)
+        return file_id
+    return None
+
+def upload_path(path_to_file, space_id, dataset_name, url, key):
+    file_id = None
+    if 'data' in path_to_file:
+        file_id = upload_data_path(path_to_file=path_to_file, space_id=space_id, dataset_name=dataset_name, url=url, key=key)
+    if 'process' in path_to_file:
+        file_id = upload_process_path(path_to_file=path_to_file, space_id=space_id, dataset_name=dataset_name, url=url, key=key)
+    return file_id
+
 
 matching_dataset = get_matching_dataset_in_space(space_id=landsat_space_id, dataset_name=current_zone)
 matching_dataset_id = matching_dataset['id']
@@ -106,7 +131,8 @@ for i in range(start_index, len(lines)):
     current_path = lines[i].rstrip('\n')
     paths_to_upload.append(current_path)
 
+print('uploading paths')
 for p in paths_to_upload:
     print(p)
-
+    file_id = upload_path(path_to_file=p, space_id=landsat_space_id, dataset_name=matching_dataset, url=url, key=key)
 
