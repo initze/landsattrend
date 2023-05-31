@@ -151,7 +151,7 @@ for f in files_uploaded:
     base_filename = os.path.basename(f)
     size_on_clowder = file_dict[base_filename]
     if size_on_clowder != current_file_size:
-        message = base_filename + ',' + current_file_size + ',' + size_on_clowder
+        message = base_filename + ',' + str(current_file_size) + ',' + str(size_on_clowder)
         if size_on_clowder > current_file_size:
             bigger_on_clowder.append(message)
         else:
