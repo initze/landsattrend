@@ -148,7 +148,7 @@ for f in files_uploaded:
     current_file_size = os.path.getsize(f)
     base_filename = os.path.basename(f)
     size_on_clowder = file_dict[base_filename]
-    print(base_filename, current_file_size, size_on_clowder)
+    print(base_filename, current_file_size, size_on_clowder, print(type(current_file_size)), print(type(size_on_clowder)))
 
 print('these files were not uploaded')
 print(len(files_not_uploaded))
