@@ -149,7 +149,11 @@ for f in files_uploaded:
     base_filename = os.path.basename(f)
     size_on_clowder = file_dict[base_filename]
     if size_on_clowder != current_file_size:
-        print(base_filename, current_file_size, size_on_clowder)
+        if current_file_size < size_on_clowder:
+            message = 'bigger on clowder'
+        else:
+            message = 'smaller on clowder'
+        print(base_filename, current_file_size, size_on_clowder, message)
 
 print('these files were not uploaded')
 print(len(files_not_uploaded))
