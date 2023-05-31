@@ -143,17 +143,26 @@ for p in paths_to_check:
     else:
         files_not_uploaded.append(p)
 
+bigger_on_clowder = []
+smaller_on_clowder = []
 print('print files uploaded that are not same size on clowder')
 for f in files_uploaded:
     current_file_size = os.path.getsize(f)
     base_filename = os.path.basename(f)
     size_on_clowder = file_dict[base_filename]
     if size_on_clowder != current_file_size:
-        if current_file_size < size_on_clowder:
-            message = 'bigger on clowder'
+        message = base_filename + ',' + current_file_size + ',' + size_on_clowder
+        if size_on_clowder > current_file_size:
+            bigger_on_clowder.append(message)
         else:
-            message = 'smaller on clowder'
-        print(base_filename, current_file_size, size_on_clowder, message)
+            smaller_on_clowder.append(message)
+print('files bigger on clowder')
+for b in bigger_on_clowder:
+    print(b)
+
+print('files smaller on clowder')
+for s in smaller_on_clowder:
+    print(s)
 
 print('these files were not uploaded')
 print(len(files_not_uploaded))
