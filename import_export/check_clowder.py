@@ -143,6 +143,13 @@ for p in paths_to_check:
     else:
         files_not_uploaded.append(p)
 
+print('print files uploaded and their sizes on disk, and on clowder')
+for f in files_uploaded:
+    current_file_size = os.path.getsize(f)
+    base_filename = os.path.basename(f)
+    size_on_clowder = file_dict[f]
+    print(base_filename, current_file_size, size_on_clowder)
+
 print('these files were not uploaded')
 print(len(files_not_uploaded))
 for f in files_not_uploaded:
