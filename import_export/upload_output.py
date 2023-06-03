@@ -196,6 +196,7 @@ def process_output_dir(site_name, path_to_output):
     print(site_dataset, 'is the current dataset')
     site_dataset_id = site_dataset['id']
     folders = os.listdir(path_to_output)
+    print('the folders are', folders)
     for folder in folders:
         path_to_folder = os.path.join(path_to_output, folder)
         clowder_folder = create_or_get_folder(dataset_id=site_dataset_id, folder_name=folder)
@@ -209,6 +210,7 @@ def process_output_dir(site_name, path_to_output):
 
 if __name__ == '__main__':
     # process_input_dir(site_name=current_zone, path_to_input=current_input)
+    print('current output is', current_output)
     process_output_dir(site_name=current_zone, path_to_output=current_output)
 
 
