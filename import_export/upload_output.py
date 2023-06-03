@@ -199,14 +199,15 @@ def process_output_dir(site_name, path_to_output):
     print('the folders are', folders)
     for folder in folders:
         path_to_folder = os.path.join(path_to_output, folder)
-        clowder_folder = create_or_get_folder(dataset_id=site_dataset_id, folder_name=folder)
-        clowder_folder_id = clowder_folder['id']
-        files = os.listdir(path_to_folder)
-        for f in files:
-            path_to_file = os.path.join(path_to_folder, f)
-            print('the path to file is', path_to_file)
-            file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=site_dataset_id, folder_id=clowder_folder_id, clowder_url=url, user_api=key)
-            print('uploaded file', file_id)
+        if os.path.isdir(path_to_folder):
+            clowder_folder = create_or_get_folder(dataset_id=site_dataset_id, folder_name=folder)
+            clowder_folder_id = clowder_folder['id']
+            files = os.listdir(path_to_folder)
+            for f in files:
+                path_to_file = os.path.join(path_to_folder, f)
+                print('the path to file is', path_to_file)
+                file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=site_dataset_id, folder_id=clowder_folder_id, clowder_url=url, user_api=key)
+                print('uploaded file', file_id)
 
 if __name__ == '__main__':
     # process_input_dir(site_name=current_zone, path_to_input=current_input)
