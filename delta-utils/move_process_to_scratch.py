@@ -9,5 +9,5 @@ destination = os.path.join('/scratch/bbou/toddn/landsat-delta/landsattrend/proce
 print(path_to_data)
 print('move to')
 print(destination)
-shutil.copytree(path_to_data, destination)
+shutil.move(path_to_data, destination)
 print('done')
