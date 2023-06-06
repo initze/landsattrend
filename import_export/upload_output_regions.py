@@ -18,6 +18,8 @@ path_to_process = sys.argv[4]
 # sample path is
 # /scratch/bbou/toddn/landsat-delta/landsattrend/process
 
+# these are the regions you can get
+
 regions = {
     'TEST': {'Y_MIN_START': 62, 'Y_MIN_END': 64, 'X_MIN_START': 150, 'X_MIN_END': 156},
     'ALASKA': {'Y_MIN_START': 55, 'Y_MIN_END': 72, 'X_MIN_START': -168, 'X_MIN_END': -138},
