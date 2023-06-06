@@ -1,6 +1,6 @@
 import os
 
-current_path = '/projects/bbou/toddn/landsattrend'
+current_path = '/scratch/bbou/toddn/landsat-delta/landsattrend'
 
 contents = os.listdir(current_path)
 for content in contents:
