@@ -28,6 +28,7 @@ FOREST_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'forestfire', 'forestf
 def main():
     print('starting here')
     set_conda_gdal_paths()
+    print('the process root is', PROCESS_ROOT)
     tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
     tif_files = os.listdir(tiles_directory)
 
