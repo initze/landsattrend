@@ -5,7 +5,7 @@ import sys
 
 PROCESS_ROOT = os.getcwd()
 
-PROCESS_ROOT = '/projects/bbou/toddn/landsattrend'
+PROCESS_ROOT = '/scratch/bbou/toddn/landsat-delta/landsattrend'
 
 def set_conda_gdal_paths():
     if platform.system() == 'Windows':
