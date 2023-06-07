@@ -9,11 +9,11 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 url = sys.argv[1]
 key = sys.argv[2]
-landsat_space_id = '646d02d2e4b05d174c9fab1c'
-
 current_region = sys.argv[3]
-
 path_to_process = sys.argv[4]
+landsat_space_id = sys.argv[5]
+
+
 
 # sample path is
 # /scratch/bbou/toddn/landsat-delta/landsattrend/process
