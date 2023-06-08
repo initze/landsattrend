@@ -239,9 +239,9 @@ def process_output_dir(site_name, path_to_output):
 if __name__ == '__main__':
     region_zones = get_zones_for_region(region_name=current_region)
     print(region_zones)
-    # for zone in region_zones:
-    #     current_output = os.path.join(path_to_process, zone)
-    #     if os.path.exists(current_output):
-    #         process_output_dir(site_name=zone, path_to_output=current_output)
+    for zone in region_zones:
+        current_output = os.path.join(path_to_process, zone)
+        if os.path.exists(current_output):
+            process_output_dir(site_name=zone, path_to_output=current_output)
 
 
