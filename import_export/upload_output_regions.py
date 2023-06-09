@@ -45,10 +45,10 @@ def get_zone(lon):
 
 def get_zones_for_region(region_name):
     region_boundaries = regions[region_name]
-    Y_START = region_boundaries['Y_MIN_START']
-    Y_END = region_boundaries['Y_MIN_END']
-    start_zone = get_zone(Y_START)
-    end_zone = get_zone(Y_END)
+    X_START = region_boundaries['X_MIN_START']
+    X_END = region_boundaries['X_MIN_END']
+    start_zone = get_zone(X_START)
+    end_zone = get_zone(X_END)
     region_zones = []
     for i in range(int(start_zone), int(end_zone)+1):
         current_zone = str(i)
