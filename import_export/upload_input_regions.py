@@ -42,12 +42,13 @@ def get_zone(lon):
     zone = epsg_from_utmzone(utm)
     return zone
 
-def get_zones_for_region(region_name):
-    region_boundaries = regions[region_name]
-    Y_START = region_boundaries['Y_MIN_START']
-    Y_END = region_boundaries['Y_MIN_END']
-    start_zone = get_zone(Y_START)
-    end_zone = get_zone(Y_END)
+def get_zones_for_region(region_name, region_map):
+    print(regions)
+    region_boundaries = region_map[region_name]
+    X_START = region_boundaries['X_MIN_START']
+    X_END = region_boundaries['X_MIN_END']
+    start_zone = get_zone(X_START)
+    end_zone = get_zone(X_END)
     region_zones = []
     for i in range(int(start_zone), int(end_zone)+1):
         current_zone = str(i)
@@ -236,7 +237,7 @@ def process_output_dir(site_name, path_to_output):
             print('uploaded file', file_id)
 
 if __name__ == '__main__':
-    region_zones = get_zones_for_region(region_name=current_region)
+    region_zones = get_zones_for_region(region_name=current_region, region_map=regions)
     print(region_zones)
     # for zone in region_zones:
     #     current_input = os.path.join(path_to_data, zone)
