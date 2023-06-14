@@ -240,6 +240,7 @@ def process_output_dir(site_name, path_to_output):
             for ds_file in dataset_files:
                 if ds_file['filename'] == f:
                     already_uploaded = True
+                    print(f, 'is already uploaded')
             if not already_uploaded:
                 path_to_file = os.path.join(path_to_folder, f)
                 print('the path to file is', path_to_file)
