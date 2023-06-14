@@ -58,6 +58,10 @@ def get_zones_for_region(region_name):
 
 client = pyclowder.datasets.ClowderClient(host=url, key=key)
 
+def get_files_in_dataset(dataset_id):
+    dataset_files = client.get('/datasets/' + dataset_id + '/files')
+    return dataset_files
+
 def upload_a_file_to_dataset(filepath, dataset_id, clowder_url, user_api):
     url = '%s/api/uploadToDataset/%s?key=%s' % (clowder_url, dataset_id, user_api)
     file_exists = os.path.exists(filepath)
@@ -231,10 +235,16 @@ def process_output_dir(site_name, path_to_output):
         clowder_folder_id = clowder_folder['id']
         files = os.listdir(path_to_folder)
         for f in files:
-            path_to_file = os.path.join(path_to_folder, f)
-            print('the path to file is', path_to_file)
-            file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=site_dataset_id, folder_id=clowder_folder_id, clowder_url=url, user_api=key)
-            print('uploaded file', file_id)
+            dataset_files = get_files_in_dataset(dataset_id=site_dataset_id)
+            already_uploaded = False
+            for ds_file in dataset_files:
+                if ds_file['filename'] == f:
+                    already_uploaded = True
+            if not already_uploaded:
+                path_to_file = os.path.join(path_to_folder, f)
+                print('the path to file is', path_to_file)
+                file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=site_dataset_id, folder_id=clowder_folder_id, clowder_url=url, user_api=key)
+                print('uploaded file', file_id)
 
 if __name__ == '__main__':
     region_zones = get_zones_for_region(region_name=current_region)
