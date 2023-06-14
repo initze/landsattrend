@@ -230,22 +230,28 @@ def process_output_dir(site_name, path_to_output):
     site_dataset_id = site_dataset['id']
     folders = os.listdir(path_to_output)
     for folder in folders:
-        path_to_folder = os.path.join(path_to_output, folder)
-        clowder_folder = create_or_get_folder(dataset_id=site_dataset_id, folder_name=folder)
-        clowder_folder_id = clowder_folder['id']
-        files = os.listdir(path_to_folder)
-        for f in files:
-            dataset_files = get_files_in_dataset(dataset_id=site_dataset_id)
-            already_uploaded = False
-            for ds_file in dataset_files:
-                if ds_file['filename'] == f:
-                    already_uploaded = True
-                    print(f, 'is already uploaded')
-            if not already_uploaded:
-                path_to_file = os.path.join(path_to_folder, f)
-                print('the path to file is', path_to_file)
-                file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=site_dataset_id, folder_id=clowder_folder_id, clowder_url=url, user_api=key)
-                print('uploaded file', file_id)
+        try:
+            path_to_folder = os.path.join(path_to_output, folder)
+            clowder_folder = create_or_get_folder(dataset_id=site_dataset_id, folder_name=folder)
+            clowder_folder_id = clowder_folder['id']
+            files = os.listdir(path_to_folder)
+            for f in files:
+                try:
+                    dataset_files = get_files_in_dataset(dataset_id=site_dataset_id)
+                    already_uploaded = False
+                    for ds_file in dataset_files:
+                        if ds_file['filename'] == f:
+                            already_uploaded = True
+                            print(f, 'is already uploaded')
+                    if not already_uploaded:
+                        path_to_file = os.path.join(path_to_folder, f)
+                        print('the path to file is', path_to_file)
+                        file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=site_dataset_id, folder_id=clowder_folder_id, clowder_url=url, user_api=key)
+                        print('uploaded file', file_id)
+                except Exception as e:
+                    print('error in file', e)
+        except Exception as e:
+            print("error in folder", e)
 
 if __name__ == '__main__':
     region_zones = get_zones_for_region(region_name=current_region)
