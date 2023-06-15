@@ -9,4 +9,4 @@ clowderSpaceId=$5
 eval "$(conda shell.bash hook)"
 conda activate landsattrend2
 
-python /scratch/bbou/toddn/landsat-delta/landsattrend/import_export/upload_output_regions.py $clowderUrl $key $zone $pathToProcessDelta $clowderSpaceId
+python /scratch/bbou/toddn/landsat-delta/landsattrend/import_export/upload_output_zone.py $clowderUrl $key $zone $pathToProcessDelta $clowderSpaceId
