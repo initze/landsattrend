@@ -7,6 +7,9 @@ import sys
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 
+print(sys.argv[:])
+for i in range(0, len(sys.argv)):
+    print(i, sys.argv[i])
 url = sys.argv[1]
 key = sys.argv[2]
 current_zone = sys.argv[3]
