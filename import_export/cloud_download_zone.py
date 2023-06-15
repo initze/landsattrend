@@ -61,11 +61,16 @@ def download_zone(bucketName, zone, download_location):
     blob_list = bucket.list_blobs()
     filenames_to_download = []
     for blob in blob_list:
-        current_filename = blob.name
-        filename_parts = current_filename.split('_')
-        current_file_zone = filename_parts[2]
-        if zone == current_file_zone:
-            download_file(bucketName, current_filename, download_location, check_bucket=False)
+        try:
+            current_filename = blob.name
+            print('checking filename', current_filename)
+            filename_parts = current_filename.split('_')
+            current_file_zone = filename_parts[2]
+            if zone == current_file_zone:
+                print('donwloading', current_filename)
+                download_file(bucketName, current_filename, download_location, check_bucket=False)
+        except Exception as e:
+            print(e)
     return blob_list
 
 if __name__ == "__main__":
