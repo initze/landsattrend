@@ -12,9 +12,9 @@ for i in range(0, len(sys.argv)):
     print(i, sys.argv[i])
 url = sys.argv[1]
 key = sys.argv[2]
-current_zone = sys.argv[3]
-path_to_process = sys.argv[4]
-landsat_space_id = sys.argv[5]
+path_to_process = sys.argv[3]
+landsat_space_id = sys.argv[4]
+current_zone = sys.argv[5]
 print('arguments are', sys.argv[:])
 
 
