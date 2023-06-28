@@ -182,20 +182,6 @@ def get_region_for_filename(filename, regions=regions):
                 return region_name
     return None
 
-def get_region_for_filename(filename, regions=regions):
-    filename_parts = filename.split('_')
-    X_coord = int(filename_parts[3])
-    Y_coord = int(filename_parts[4].rstrip('.tif'))
-    region_names = regions.keys()
-    for region_name in region_names:
-        Y_MIN_START = regions[region_name]['Y_MIN_START']
-        Y_MIN_END = regions[region_name]['Y_MIN_END']
-        X_MIN_START = regions[region_name]['X_MIN_START']
-        X_MIN_END = regions[region_name]['X_MIN_END']
-        if X_MIN_START <= X_coord <= X_MIN_END:
-            if Y_MIN_START <= Y_coord <= Y_MIN_END:
-                return region_name
-    return None
 
 def process_input_dir(path_to_input):
     parts = path_to_input.split('/')
@@ -232,7 +218,7 @@ def process_output_dir(site_name, path_to_output):
         files = os.listdir(path_to_folder)
         for f in files:
             path_to_file = os.path.join(path_to_folder, f)
-            print('the path to file is', path_to_file)
+            print('the path to file is', path_to_file)ncsa
             file_id = upload_a_file_to_dataset_with_folder(filepath=path_to_file, dataset_id=site_dataset_id, folder_id=clowder_folder_id, clowder_url=url, user_api=key)
             print('uploaded file', file_id)
 

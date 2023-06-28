@@ -22,7 +22,10 @@ def check_data(site_name):
 
 def check_process(site_name):
     scratch_process_path = os.path.join(path_to_scratch, 'process', site_name)
-    scratch_process_files = os.listdir(scratch_process_path)
+    if os.path.exists(scratch_process_path):
+        scratch_process_files = os.listdir(scratch_process_path)
+    else:
+        scratch_process_pa
     projects_process_path = os.path.join(path_to_projects, 'process', site_name)
     projects_process_files = os.listdir(projects_process_path)
 
