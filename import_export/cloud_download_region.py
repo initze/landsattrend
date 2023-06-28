@@ -4,6 +4,7 @@ import sys
 from google.cloud import storage
 from pathlib import Path
 folder = sys.argv[1]
+data_directory = sys.argv[2]
 
 service_account = "pdg-landsattrend@uiuc-ncsa-permafrost.iam.gserviceaccount.com"
 path_to_file = os.path.join(os.getcwd(), 'project-keys', 'uiuc-ncsa-permafrost-44d44c10c9c7.json')
@@ -13,8 +14,6 @@ storage_client = storage.Client.from_service_account_json(
 ee.Initialize(credentials)
 
 download_directory = os.path.join(os.getcwd())
-
-data_directory = download_directory.replace('import_export', 'data')
 
 def download_file(bucketName, filename, download_location, check_bucket=False, overwrite=False):
     bucket = storage_client.get_bucket(bucketName)
