@@ -7,11 +7,14 @@ import sys
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 
+print(sys.argv[:])
+for i in range(0, len(sys.argv)):
+    print(i, sys.argv[i])
 url = sys.argv[1]
 key = sys.argv[2]
-current_region = sys.argv[3]
-path_to_process = sys.argv[4]
-landsat_space_id = sys.argv[5]
+path_to_process = sys.argv[3]
+landsat_space_id = sys.argv[4]
+current_zone = sys.argv[5]
 print('arguments are', sys.argv[:])
 
 
@@ -254,11 +257,8 @@ def process_output_dir(site_name, path_to_output):
             print("error in folder", e)
 
 if __name__ == '__main__':
-    region_zones = get_zones_for_region(region_name=current_region)
-    print(region_zones)
-    for zone in region_zones:
-        current_output = os.path.join(path_to_process, zone)
-        if os.path.exists(current_output):
-            process_output_dir(site_name=zone, path_to_output=current_output)
+    current_output = os.path.join(path_to_process, current_zone)
+    if os.path.exists(current_output):
+        process_output_dir(site_name=current_zone, path_to_output=current_output)
 
 
