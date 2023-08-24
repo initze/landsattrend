@@ -2,10 +2,50 @@ from landsattrend.lake_analysis import LakeMaker
 import os, platform
 import shutil
 import sys
+import argparse
 
-PROCESS_ROOT = os.getcwd()
+STARTYEAR = 0
+ENDYEAR = 0
+PROCESS_ROOT = ""
+CURRENT_SITE_NAME = ""
+CLASS_PERIOD = ""
 
-PROCESS_ROOT = '/scratch/bbou/toddn/landsat-delta/landsattrend'
+# SET THESE FROM ARGPARSE
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--process_root", help="The process root for the script, the data dir location")
+parser.add_argument("--startyear", help="The start year")
+parser.add_argument("--endyear", help="The end year")
+parser.add_argument("--current_site_name", help="The CURRENT_SITE_NAME")
+
+args, unknown = parser.parse_known_args()
+
+print(f"Dict format: {vars(args)}")
+
+if 'current_site_name' in vars(args):
+    if vars(args)['current_site_name'] is not None:
+        print("We have a process site")
+        CURRENT_SITE_NAME = vars(args)["current_site_name"]
+if 'startyear' in vars(args):
+    if vars(args)['startyear'] is not None:
+        print("We have a start year")
+        startyear_value = int(vars(args)['startyear'])
+        STARTYEAR = startyear_value
+if 'endyear' in vars(args):
+    if vars(args)['endyear'] is not None:
+        print("We have an end year")
+        endyear_value = int(vars(args)['endyear'])
+        ENDYEAR = endyear_value
+if 'process_root' in vars(args):
+    if vars(args)['process_root'] is not None:
+        print("We have a process site")
+        PROCESS_ROOT = vars(args)["process_root"]
+
+if STARTYEAR != 0 and ENDYEAR != 0:
+    CLASS_PERIOD = str(STARTYEAR) + '-' + str(ENDYEAR)
+
+
+
 
 def set_conda_gdal_paths():
     if platform.system() == 'Windows':
@@ -15,10 +55,8 @@ def set_conda_gdal_paths():
         os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'bin')
         os.environ['GDAL_PATH'] = os.environ['GDAL_BIN']
 
-CURRENT_SITE_NAME = sys.argv[1]
 process_dir = os.path.join(PROCESS_ROOT, 'process')
 site_name = CURRENT_SITE_NAME
-CLASS_PERIOD = '2000-2020'
 CLASS_MODEL = os.path.join(PROCESS_ROOT, 'models', 'PDG_6idx2feat_elslope_model_py38_sklearn0232_v04.z')
 LAKE_FILTER_MODEL = os.path.join(PROCESS_ROOT, 'models', '20180820_lakefilter_12039samples_py3.z')
 
@@ -26,7 +64,6 @@ DEM_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'dem', 'DEM.vrt')
 FOREST_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'forestfire', 'forestfire.vrt')
 
 def main():
-    print('starting here')
     set_conda_gdal_paths()
     print('the process root is', PROCESS_ROOT)
     tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
@@ -68,4 +105,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if STARTYEAR == 0 or ENDYEAR == 0 or PROCESS_ROOT == "" or CURRENT_SITE_NAME == "":
+        print("Not enough arguments to run script, ending")
+    else:
+        main()
