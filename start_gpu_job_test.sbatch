@@ -17,7 +17,7 @@
 
 conda activate landsattrend2
 
-python /scratch/bbou/toddn/landsat-delta/landsattrend/07-02_LakeAnalysis_Z056_local.py 32656 2001 2010 /scratch/bbou/toddn/landsat-delta/landsattrend
+python /scratch/bbou/toddn/landsat-delta/landsattrend/07-02_LakeAnalysis_Z056_local.py --current_site_name=32656 --startyear=2001 --endyear=2010 --process_root=/scratch/bbou/toddn/landsat-delta/landsattrend
 
 # (optionaly) keep node alive for full amount of $TIME
 # sleep infinity
