@@ -38,7 +38,7 @@ if 'endyear' in vars(args):
         ENDYEAR = endyear_value
 if 'process_root' in vars(args):
     if vars(args)['process_root'] is not None:
-        print("We have a process site")
+        print("We have a process root")
         PROCESS_ROOT = vars(args)["process_root"]
 
 if STARTYEAR != 0 and ENDYEAR != 0:
@@ -55,7 +55,8 @@ def set_conda_gdal_paths():
         os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'bin')
         os.environ['GDAL_PATH'] = os.environ['GDAL_BIN']
 
-process_dir = os.path.join(PROCESS_ROOT, 'process')
+process_dir = os.path.join(PROCESS_ROOT, 'process', CLASS_PERIOD)
+print('the process dir is', process_dir)
 site_name = CURRENT_SITE_NAME
 CLASS_MODEL = os.path.join(PROCESS_ROOT, 'models', 'PDG_6idx2feat_elslope_model_py38_sklearn0232_v04.z')
 LAKE_FILTER_MODEL = os.path.join(PROCESS_ROOT, 'models', '20180820_lakefilter_12039samples_py3.z')
