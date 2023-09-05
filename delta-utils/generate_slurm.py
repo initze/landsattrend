@@ -61,10 +61,10 @@ for site in sites_to_run:
 
 
 
-    # parser.add_argument("--process_root", help="The process root for the script, the data dir location")
-    # parser.add_argument("--startyear", help="The start year")
-    # parser.add_argument("--endyear", help="The end year")
-    # parser.add_argument("--current_site_name", help="The CURRENT_SITE_NAME")
+    parser.add_argument("--process_root", help="The process root for the script, the data dir location")
+    parser.add_argument("--startyear", help="The start year")
+    parser.add_argument("--endyear", help="The end year")
+    parser.add_argument("--current_site_name", help="The CURRENT_SITE_NAME")
 
     with open('start_gpu_job.sbatch', 'r') as f:
         content = f.read()
