@@ -48,7 +48,6 @@ X_END = regions[region]['X_MIN_END']
 print('create a directory for these slurm files')
 
 
-
 region_names = list(regions.keys())
 for x in range(X_START, X_END):
     current_site = get_zone(x)
@@ -62,15 +61,15 @@ for site in sites_to_run:
         content = f.read()
     new_content = None
 
-    old_command = command
-
     if command in content:
-        command = command.replace('SITENAME', site_name)
-        command = command.replace('STARTYEAR', start_year)
-        command = command.replace('ENDYEAR', end_year)
-        new_content = content.replace(old_command, command)
+        old_command = str(command)
+        old_command = old_command.replace('SITENAME', site_name)
+        old_command = old_command.replace('STARTYEAR', start_year)
+        old_command = old_command.replace('ENDYEAR', end_year)
+        new_content = content.replace(command, old_command)
 
     if new_content:
         file_name = 'start_gpu_job_' + site_name + '_' + year_span + '.sbatch'
-        with open(file_name, 'w') as f2:
+        file_path = os.path.join(slurm_jobs_dir, file_name)
+        with open(file_path, 'w') as f2:
             f2.write(new_content)
