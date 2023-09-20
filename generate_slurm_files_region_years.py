@@ -10,7 +10,7 @@ year_span = start_year + '-' + end_year
 
 current_dir = os.getcwd()
 
-slurm_jobs_dir = os.path.join(os.getcwd(), 'jobs')
+slurm_jobs_dir = os.path.join(os.getcwd(), 'slurm-processing/jobs')
 
 print('creating directory')
 os.makedirs(slurm_jobs_dir, exist_ok=True)
