@@ -14,4 +14,5 @@ for current_file in current_files:
 print('doing the commands')
 
 for command in commands:
-    os.system(command)
+    print(command)
+    # os.system(command)
