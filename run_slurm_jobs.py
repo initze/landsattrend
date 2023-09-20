@@ -15,4 +15,4 @@ print('doing the commands')
 
 for command in commands:
     print(command)
-    # os.system(command)
+    os.system(command)
