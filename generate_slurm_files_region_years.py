@@ -15,7 +15,7 @@ slurm_jobs_dir = os.getcwd()
 print('creating directory')
 os.makedirs(slurm_jobs_dir, exist_ok=True)
 
-sample_slurm_file = 'start_gpu_job_test_file.sbatch.py'
+sample_slurm_file = os.path.join(os.getcwd(),'start_gpu_job_test_file.sbatch')
 
 command = 'python /scratch/bbou/toddn/landsat-delta/landsattrend/07-02_LakeAnalysis_Z056_local.py --current_site_name=SITENAME --startyear=STARTYEAR --endyear=ENDYEAR --process_root=/scratch/bbou/toddn/landsat-delta/landsattrend'
 
@@ -57,7 +57,7 @@ for x in range(X_START, X_END):
 for site in sites_to_run:
     site_name = str(site)
 
-    with open('start_gpu_job_test_file.sbatch', 'r') as f:
+    with open(sample_slurm_file, 'r') as f:
         content = f.read()
     new_content = None
 
