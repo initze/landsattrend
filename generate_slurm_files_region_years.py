@@ -59,8 +59,10 @@ for site in sites_to_run:
     with open(sample_slurm_file, 'r') as f:
         content = f.read()
     new_content = None
-
+    print('the content is', content)
+    print('the command is', command)
     if command in content:
+        print('command is in the content')
         old_command = str(command)
         print('the old command', old_command)
         old_command = old_command.replace('SITENAME', site_name)
