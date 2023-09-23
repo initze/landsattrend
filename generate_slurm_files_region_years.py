@@ -54,6 +54,7 @@ for x in range(X_START, X_END):
 
 for site in sites_to_run:
     site_name = str(site)
+    print('current site is', site_name)
 
     with open(sample_slurm_file, 'r') as f:
         content = f.read()
@@ -61,10 +62,12 @@ for site in sites_to_run:
 
     if command in content:
         old_command = str(command)
+        print('the old command', old_command)
         old_command = old_command.replace('SITENAME', site_name)
         old_command = old_command.replace('STARTYEAR', start_year)
         old_command = old_command.replace('ENDYEAR', end_year)
         new_content = content.replace(command, old_command)
+        print("the new content", new_content)
 
     if new_content:
         file_name = 'start_gpu_job_' + site_name + '_' + year_span + '.sbatch'
