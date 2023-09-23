@@ -12,8 +12,6 @@ current_dir = os.getcwd()
 
 slurm_jobs_dir = os.getcwd()
 
-print('creating directory')
-os.makedirs(slurm_jobs_dir, exist_ok=True)
 
 sample_slurm_file = os.path.join(os.getcwd(),'start_gpu_job_test_file.sbatch')
 
@@ -45,8 +43,6 @@ regions = {
 X_START = regions[region]['X_MIN_START']
 X_END = regions[region]['X_MIN_END']
 
-print('create a directory for these slurm files')
-
 
 region_names = list(regions.keys())
 for x in range(X_START, X_END):
@@ -71,5 +67,6 @@ for site in sites_to_run:
     if new_content:
         file_name = 'start_gpu_job_' + site_name + '_' + year_span + '.sbatch'
         file_path = os.path.join(slurm_jobs_dir, file_name)
+        print('making file with name', file_name, file_path)
         with open(file_path, 'w') as f2:
             f2.write(new_content)
