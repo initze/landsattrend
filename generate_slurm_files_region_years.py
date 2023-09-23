@@ -14,6 +14,8 @@ slurm_jobs_dir = os.getcwd()
 
 
 sample_slurm_file = os.path.join(os.getcwd(),'start_gpu_job_test_file.sbatch')
+print('does the file exist?', sample_slurm_file)
+print(os.path.exists(sample_slurm_file))
 
 command = 'python /scratch/bbou/toddn/landsat-delta/landsattrend/07-02_LakeAnalysis_Z056_local.py --current_site_name=SITENAME --startyear=STARTYEAR --endyear=ENDYEAR --process_root=/scratch/bbou/toddn/landsat-delta/landsattrend'
 
