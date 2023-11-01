@@ -2,7 +2,7 @@ import os
 
 all_files = os.listdir(os.getcwd())
 
-existing_sbatch_files = ['start_gpu_job.sbatch', 'start_gpu_job.sbatch', 'start_gpu_job_test.sbatch']
+existing_sbatch_files = ['start_gpu_job.sbatch', 'start_gpu_job.sbatch', 'start_gpu_job_test.sbatch', 'start_gpu_job_test_file.sbatch']
 
 for file in all_files:
     print('checking file', file)
