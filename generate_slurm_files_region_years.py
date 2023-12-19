@@ -42,8 +42,20 @@ regions = {
     'EURASIA3': {'Y_MIN_START': 55, 'Y_MIN_END': 80, 'X_MIN_START': -180, 'X_MIN_END': -169},
 }
 
-X_START = regions[region]['X_MIN_START']
-X_END = regions[region]['X_MIN_END']
+all_X_min_starts = []
+all_X_min_ends = []
+
+if region == 'ALL':
+    for region in regions:
+        current_X_start = regions[region]['X_MIN_START']
+        all_X_min_starts.append(current_X_start)
+        current_X_end = regions[region]['X_MIN_END']
+        all_X_min_ends.append(current_X_end)
+    X_START = min(all_X_min_starts)
+    X_END = max(all_X_min_ends)
+else:
+    X_START = regions[region]['X_MIN_START']
+    X_END = regions[region]['X_MIN_END']
 
 
 region_names = list(regions.keys())
