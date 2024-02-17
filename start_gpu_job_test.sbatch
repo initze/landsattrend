@@ -4,7 +4,7 @@
 # sbatch <this_filename>
 
 #SBATCH --job-name=ingmar_landsat
-#SBATCH --partition=gpuMI100x8
+#SBATCH --partition=gpuA100x8
 #SBATCH --account=bbou-delta-gpu
 #SBATCH --time=8:00:00
 #SBATCH --nodes=1
