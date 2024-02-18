@@ -9,7 +9,7 @@
 #SBATCH --time=8:00:00
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1
-#SBATCH --mem=650g
+#SBATCH --mem=248g
 #SBATCH --cpus-per-task=4
 
 # export local environment variables to the job
