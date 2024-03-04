@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 BASE_DIR = os.getcwd()
-BASE_DIR = '/scratch/bbki/toddn/landsat-delta/landsattrend'
+# BASE_DIR = '/scratch/bbki/toddn/landsat-delta/landsattrend'
 DATA_DIR = os.path.join(BASE_DIR, 'dataX')
 DEM_DIR = os.path.join(BASE_DIR, 'aux_data', 'dem')
 PROCESSING_DIR_01 = os.path.join(BASE_DIR, 'processing')
