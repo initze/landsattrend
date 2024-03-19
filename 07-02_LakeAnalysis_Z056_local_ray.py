@@ -64,12 +64,12 @@ def run_lake_analysis(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD, num_cpus, n
 
 if __name__ == "__main__":
     ray.init()
-    futures = [run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
-                             CURRENT_SITE_NAME='32602', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2)]
     # futures = [run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
-    #                          CURRENT_SITE_NAME='32602', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2),
-    # run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
-    #                          CURRENT_SITE_NAME='32603', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2)]
+    #                          CURRENT_SITE_NAME='32602', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2)]
+    futures = [run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
+                             CURRENT_SITE_NAME='32602', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2),
+    run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
+                             CURRENT_SITE_NAME='32603', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2)]
 
     print(ray.get(futures))
     print('here at end')
