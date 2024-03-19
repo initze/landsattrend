@@ -1,4 +1,4 @@
-name: landsattrend2
+name: landsattrend2-ray
 channels:
   - conda-forge
   - defaults
