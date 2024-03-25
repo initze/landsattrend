@@ -15,3 +15,6 @@ GEE DATA EXPORT - EXPORT TO CLOUD
 
 GEE DATA EXPORT - DOWNLOADING DATA
 
+1. Downloading works with the following command `python download_from_cloud.py --startyear=2010 --endyear=2020 --process_site=ALL --download_dir=/{path_to_the_data}/landsattrend/data` 
+2. This will create a directory structure where data is sorted by start and end year and the number of the site.
+3. As before, you can use ALL or the actual site from the list in EXPORT TO CLOUD, step 2. 
