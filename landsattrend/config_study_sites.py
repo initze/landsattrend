@@ -3,6 +3,7 @@ import os
 import pandas as pd
 
 BASE_DIR = os.getcwd()
+# BASE_DIR = '/scratch/bbki/toddn/landsat-delta/landsattrend'
 DATA_DIR = os.path.join(BASE_DIR, 'dataX')
 DEM_DIR = os.path.join(BASE_DIR, 'aux_data', 'dem')
 PROCESSING_DIR_01 = os.path.join(BASE_DIR, 'processing')
@@ -11,7 +12,7 @@ VECTOR_DIR = os.path.join(BASE_DIR, 'vector')
 RESULT_DIR = os.path.join(BASE_DIR, 'data')
 
 # load study sites from configuration file
-csvdir = os.path.join(os.getcwd(),'config')
+csvdir = os.path.join(BASE_DIR, 'config')
 csvpath = os.path.join(csvdir, 'config_study_sites.csv')
 study_sites_df = pd.read_csv(csvpath)
 #adapt paths
