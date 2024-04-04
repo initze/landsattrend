@@ -6,6 +6,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import rasterio
+import ray
 from osgeo import gdal_array as ga, gdal
 from skimage import morphology, segmentation, feature, measure, filters
 from sklearn import cluster
@@ -190,6 +191,21 @@ def improps_to_df(label_image, intensity_image,
     return df
 
 
+
+@ray.remote
+def classify_image(classifier):
+    print('starting classify_image')
+    # Skip if there are no data available.
+    try:
+        classifier.load_raster_for_classify()
+    except ValueError:
+        print('load_raster failed')
+        return
+    classifier.classify()
+    classifier.write_output()
+    print('finished classify_image')
+
+
 class LakeMaker(object):
     """This is a Class to run the lake extraction and characterization workflow
     """
@@ -258,6 +274,7 @@ class LakeMaker(object):
                        '05_Lake_Dataset_Raster_02_final']
             [os.makedirs(os.path.join(self.directory, s)) for s in subdirs]
 
+
     def classify(self, class_model):
         """
         Function to classify the data with the defined scikit-learn classification model. tile structure needs to be
@@ -277,18 +294,16 @@ class LakeMaker(object):
         image_list = glob.glob(os.path.join(self.tiles_directory, '*.tif'))
         print('the image list in classify', image_list)
         # run Classification
+        classifier_futures = []
         for image in image_list:
             print(image)
             cl = Classify(model, image=image,
                           outputfolder=outdir)
-
-            # Skip if there are no data available
-            try:
-                cl.load_raster_for_classify()
-            except ValueError:
-                continue
-            cl.classify()
-            cl.write_output()
+            print('here')
+            classifier_futures.append(classify_image.options(memory = 56 * 1024 * 1024 * 1024).remote(classifier=cl))
+            print('scheduling image ' + image)
+        print('running ' + str(len(classifier_futures)) + ' remotes.')
+        print(ray.get(classifier_futures))
         # create vrt-file (virtual raster tile) that merges all tiles to one mosaic for each of
         # class, proba and confidence
         for ctype in ['class', 'proba', 'confidence']:
