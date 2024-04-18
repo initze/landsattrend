@@ -3,7 +3,7 @@ import os, platform
 import shutil
 import sys
 import ray
-
+#https://stackoverflow.com/questions/25373467/how-do-i-identify-the-google-cloud-storage-uri-from-my-google-developers-console
 def set_conda_gdal_paths():
     if platform.system() == 'Windows':
         os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'bin')
