@@ -158,7 +158,7 @@ if __name__ == "__main__":
     for ZONE in ZONES:
         future = run_lake_analysis.remote(PROCESS_ROOT=current_process_root,
                                             CURRENT_SITE_NAME=ZONE, CLASS_PERIOD=YEAR_SPAN, num_cpus=1,
-                                            num_gpus=2)
+                                            num_gpus=1)
         ray_futures.append(future)
 
     print("checking futures at regular intervals")
