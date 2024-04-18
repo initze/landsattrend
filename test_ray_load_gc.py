@@ -3,7 +3,7 @@ import os
 import gcsfs
 from google.cloud import storage
 from utils.utils_processing import *
-
+import time
 from landsattrend.lake_analysis import LakeMaker
 import os, platform
 import shutil
@@ -19,6 +19,7 @@ def download_data(FS, ENTRY, num_cpus, num_gpus):
 #     path_to_file)
 
 #
+# TODO rewrite this and all the steps using ray datasets, model after maple_V3
 @ray.remote
 def run_lake_analysis(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD, num_cpus, num_gpus):
     process_dir = os.path.join(PROCESS_ROOT, 'process', CLASS_PERIOD)
@@ -81,6 +82,7 @@ outputBucket = 'pdg-landsattrend' #Change for your Cloud Storage bucket
 
 START_YEAR = 2000
 END_YEAR = 2020
+YEAR_SPAN = str(START_YEAR) + '-' + str(END_YEAR)
 REGION = 'TEST'
 ZONE_1 = '32655'
 ZONE_2 = '32656'
@@ -111,6 +113,8 @@ if __name__ == "__main__":
     zone_1 = str(START_YEAR) + '-' + str(END_YEAR) + '_' + ZONE_1
     zone_2 = str(START_YEAR) + '-' + str(END_YEAR) + '_' + ZONE_2
 
+    ZONES = [ZONE_1, ZONE_2]
+
     for entry in all_contents:
         name = entry['name']
         if entry['type'] == 'file':
@@ -126,26 +130,40 @@ if __name__ == "__main__":
     # TODO need to check if the files exist locally and are the same size
     print('now we need to download the data')
     for entry in entries_to_run:
-        print('need to download', entry)
         file_path = entry['name']
         file_path_parts = file_path.split('/')
         file_name = file_path_parts[-1]
         file_name_parts = file_name.split('_')
         years = file_name_parts[1]
         zone = file_name_parts[2]
-        path_to_write = os.path.join(os.getcwd(), 'data', zone, years)
+        path_to_write = os.path.join(os.getcwd(), 'data', zone, years, 'tiles')
         file_path_to_write = os.path.join(path_to_write, file_name)
         if not os.path.exists(path_to_write):
             os.makedirs(path_to_write, exist_ok=True)
-        with fs.open(file_path, 'rb') as f:
-            data = f.read()
-            if not os.path.exists(file_path_to_write):
-                with open(file_path_to_write, 'wb') as f2:
-                    f2.write(data)
-            else:
-                print('we already downloaded file', file_name)
-        print("wrote file", file_path_to_write)
-
+        if not os.path.exists(file_path_to_write):
+            with fs.open(file_path, 'rb') as f:
+                data = f.read()
+                if not os.path.exists(file_path_to_write):
+                    print("we will download file", file_name)
+                    with open(file_path_to_write, 'wb') as f2:
+                        f2.write(data)
+        else:
+            print('we already downloaded file', file_name)
 
     # TODO for zone in zones run entry
     print("we downloaded zones now")
+    print("processing")
+    ray_futures = []
+    current_process_root = os.path.join(os.getcwd())
+    for ZONE in ZONES:
+        future = run_lake_analysis.remote(PROCESS_ROOT=current_process_root,
+                                            CURRENT_SITE_NAME=ZONE, CLASS_PERIOD=YEAR_SPAN, num_cpus=1,
+                                            num_gpus=2)
+        ray_futures.append(future)
+
+    print("checking futures at regular intervals")
+    for i in range(0, 1000):
+        print("we have futures")
+        print(ray.get(ray_futures))
+        time.sleep(30)
+    print("done sleeping")
