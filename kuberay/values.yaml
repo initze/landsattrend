@@ -1,0 +1,11 @@
+head:
+  resources:
+    limits:
+      cpu: 2
+      memory: "4G"
+worker:
+  replicas: 2
+  resources:
+    limits:
+      cpu: 2
+      memory: "24G"

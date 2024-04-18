@@ -100,7 +100,7 @@ def get_all_files_from_bucket(file_system, bucket_name):
     return total_contents
 
 if __name__ == "__main__":
-    ray.init()
+    ray.init(address="0.0.0.0:8265")
     path_to_token = os.path.join(os.getcwd(), 'data-export-gee', 'project-keys', 'uiuc-ncsa-permafrost-44d44c10c9c7.json')
     print(os.path.exists(path_to_token))
 
