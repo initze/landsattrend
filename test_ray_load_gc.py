@@ -138,15 +138,17 @@ if __name__ == "__main__":
         zone = file_name_parts[2]
         path_to_write = os.path.join(os.getcwd(), 'data', zone, years, 'tiles')
         file_path_to_write = os.path.join(path_to_write, file_name)
+        DOWNLOAD = False
         if not os.path.exists(path_to_write):
             os.makedirs(path_to_write, exist_ok=True)
         if not os.path.exists(file_path_to_write):
-            with fs.open(file_path, 'rb') as f:
-                data = f.read()
-                if not os.path.exists(file_path_to_write):
-                    print("we will download file", file_name)
-                    with open(file_path_to_write, 'wb') as f2:
-                        f2.write(data)
+            if DOWNLOAD:
+                with fs.open(file_path, 'rb') as f:
+                    data = f.read()
+                    if not os.path.exists(file_path_to_write):
+                        print("we will download file", file_name)
+                        with open(file_path_to_write, 'wb') as f2:
+                            f2.write(data)
         else:
             print('we already downloaded file', file_name)
 
