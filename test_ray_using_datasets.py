@@ -10,6 +10,9 @@ import shutil
 import sys
 import ray
 
+def create_input_zone_dataset(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD) -> ray.data.Dataset:
+    return ray.data.read_binary_files(input_image_dir, include_paths=True)
+
 @ray.remote
 def download_data(FS, ENTRY, num_cpus, num_gpus):
     print(FS, ENTRY)
