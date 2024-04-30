@@ -46,8 +46,11 @@ def download_zone(site_name, start_year, end_year, path_to_data):
         if substring_to_find in blob.name:
             blobs_to_download.append(blob)
             download_location = generate_path_for_file(blob.name, path_to_data)
-            print('downloading to ', download_location)
-            blob.download_to_filename(download_location)
+            if os.path.exists(download_location):
+                print(download_location, 'is already downloaded')
+            else:
+                print(download_location, 'downloading now...')
+                blob.download_to_filename(download_location)
 
 
 if __name__ == "__main__":
