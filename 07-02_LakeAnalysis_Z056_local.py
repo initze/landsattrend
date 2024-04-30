@@ -1,5 +1,7 @@
 from landsattrend.lake_analysis import LakeMaker
 import os, platform
+import json
+import jsonpickle
 import shutil
 import sys
 import argparse
@@ -75,19 +77,40 @@ def main():
     print('Available Images:\n')
     for t in tif_files:
         print(t)
-
+    json_count = 0
     l = LakeMaker(site_name, os.path.join(process_dir, site_name), tiles_directory, classperiod=CLASS_PERIOD)
     print("\nStart Classification")
+    filename = 'lakemaker_' + str(json_count)+ '.json'
+    with open(filename, 'w') as f:
+        json_string = jsonpickle.encode(l)
+        f.write(json_string)
+        json_count += 1
     l.classify(CLASS_MODEL)
 
     print("\nPreparing additional Data")
     l.prepare_aux_data(DEM_LOCATION, FOREST_LOCATION)
+    filename = 'lakemaker_' + str(json_count) + '.json'
+    with open(filename, 'w') as f:
+        json_string = jsonpickle.encode(l)
+        f.write(json_string)
+        json_count += 1
 
     print("\nCreating Masks")
+    # TODO this step has to happen in the same run as the next step or else make_stats throws error
     l.make_masks()
+    filename = 'lakemaker_' + str(json_count) + '.json'
+    with open(filename, 'w') as f:
+        json_string = jsonpickle.encode(l)
+        f.write(json_string)
+        json_count += 1
 
     print("\nCalculating Stats")
     l.make_stats()
+    filename = 'lakemaker_' + str(json_count) + '.json'
+    with open(filename, 'w') as f:
+        json_string = jsonpickle.encode(l)
+        f.write(json_string)
+        json_count += 1
 
     print("\nSaving DataFrame to Disk")
     l.save_df()
