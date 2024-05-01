@@ -19,8 +19,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--process_root", help="The process root for the script, the data dir location")
 parser.add_argument("--startyear", help="The start year")
 parser.add_argument("--endyear", help="The end year")
-parser.add_argument("--current_site_names", help="The CURRENT_SITE_NAMES a comma delimited list")
-parser.add_argument("--site_list_file", help="A file with the list of sites to run, useful for larger runs")
+parser.add_argument("--current_site_name", help="The CURRENT_SITE_NAMES a comma delimited list")
+parser.add_argument("--site_file_list", help="A file with the list of sites to run, useful for larger runs")
 
 args, unknown = parser.parse_known_args()
 print(f"Dict format: {vars(args)}")
@@ -121,6 +121,9 @@ if __name__ == "__main__":
             for line in lines:
                 current_site = line.rstrip('\n')
                 sites_to_run.append(current_site)
+    # TODO check that files exist locally, or download them
+    print("we should be chekcing for the files locally or downloading here")
+    # TODO if they are not in bucket, then export those zones and wait
     ray_futures = []
     for site in sites_to_run:
         current_future = run_lake_analysis.remote(PROCESS_ROOT=PROCESS_ROOT,
