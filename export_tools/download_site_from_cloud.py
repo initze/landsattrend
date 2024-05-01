@@ -53,5 +53,5 @@ def download_zone(site_name, start_year, end_year, path_to_data):
                 blob.download_to_filename(download_location)
 
 
-if __name__ == "__main__":
-    download_zone('32608', 2000, 2020, path_to_data='/Users/helium/ncsa/pdg/landsattrend2/landsattrend/data')
+# if __name__ == "__main__":
+#     download_zone('32608', 2000, 2020, path_to_data='/Users/helium/ncsa/pdg/landsattrend2/landsattrend/data')

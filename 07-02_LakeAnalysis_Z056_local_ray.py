@@ -6,6 +6,8 @@ import ray
 import argparse
 import time
 
+from .export_tools.download_site_from_cloud import download_zone
+
 STARTYEAR = 0
 ENDYEAR = 0
 PROCESS_ROOT = ""
@@ -132,9 +134,8 @@ if __name__ == "__main__":
             if len(contents) > 1:
                 has_contents = True
         if not has_contents:
-            print('find google cloud matches')
-            print('if found, download')
-            print('if not found, initiate export')
+            path_to_data = os.path.join(PROCESS_ROOT, 'data')
+            download_zone(site_name=site,start_year=STARTYEAR, end_year=ENDYEAR,path_to_data=path_to_data)
 
     # TODO if they are not in bucket, then export those zones and wait
     ray_futures = []
