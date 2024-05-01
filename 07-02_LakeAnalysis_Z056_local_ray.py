@@ -131,6 +131,7 @@ if __name__ == "__main__":
         ray_futures.append(current_future)
 
     done = False
+    # TODO nothing below seems to show in the console??
     while not done:
         for i in range(0, 1000):
             print(i, 'running')
