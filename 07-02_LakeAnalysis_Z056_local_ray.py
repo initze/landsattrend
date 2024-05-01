@@ -3,7 +3,57 @@ import os, platform
 import shutil
 import sys
 import ray
-#https://stackoverflow.com/questions/25373467/how-do-i-identify-the-google-cloud-storage-uri-from-my-google-developers-console
+import argparse
+import time
+
+STARTYEAR = 0
+ENDYEAR = 0
+PROCESS_ROOT = ""
+CURRENT_SITE_NAME = ""
+CLASS_PERIOD = ""
+SITE_FILE_LIST= ""
+
+# SET THESE FROM ARGPARSE
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--process_root", help="The process root for the script, the data dir location")
+parser.add_argument("--startyear", help="The start year")
+parser.add_argument("--endyear", help="The end year")
+parser.add_argument("--current_site_names", help="The CURRENT_SITE_NAMES a comma delimited list")
+parser.add_argument("--site_list_file", help="A file with the list of sites to run, useful for larger runs")
+
+args, unknown = parser.parse_known_args()
+print(f"Dict format: {vars(args)}")
+
+if 'current_site_name' in vars(args):
+    if vars(args)['current_site_name'] is not None:
+        print("We have a process site")
+        CURRENT_SITE_NAME = vars(args)["current_site_name"]
+if 'startyear' in vars(args):
+    if vars(args)['startyear'] is not None:
+        print("We have a start year")
+        startyear_value = int(vars(args)['startyear'])
+        STARTYEAR = startyear_value
+if 'endyear' in vars(args):
+    if vars(args)['endyear'] is not None:
+        print("We have an end year")
+        endyear_value = int(vars(args)['endyear'])
+        ENDYEAR = endyear_value
+if 'process_root' in vars(args):
+    if vars(args)['process_root'] is not None:
+        print("We have a process root")
+        PROCESS_ROOT = vars(args)["process_root"]
+if 'site_file_list' in vars(args):
+    if vars(args)['site_file_list'] is not None:
+        SITE_FILE_LIST = vars(args)["site_file_list"]
+
+if STARTYEAR != 0 and ENDYEAR != 0:
+    CLASS_PERIOD = str(STARTYEAR) + '-' + str(ENDYEAR)
+
+
+
+
+
 def set_conda_gdal_paths():
     if platform.system() == 'Windows':
         os.environ['GDAL_BIN'] = os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'bin')
@@ -64,15 +114,21 @@ def run_lake_analysis(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD, num_cpus, n
 
 if __name__ == "__main__":
     ray.init()
-    futures = [run_lake_analysis.remote(PROCESS_ROOT='',
-                             CURRENT_SITE_NAME='32604', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2)]
-    # futures = [run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
-    #                          CURRENT_SITE_NAME='32602', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2)]
-    # futures = [run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
-    #                          CURRENT_SITE_NAME='32602', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2),
-    # run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
-    #                          CURRENT_SITE_NAME='32603', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2)]
+    sites_to_run = []
+    if SITE_FILE_LIST is not None:
+        with open(SITE_FILE_LIST, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                current_site = line.rstrip('\n')
+                sites_to_run.append(current_site)
+    ray_futures = []
+    for site in sites_to_run:
+        current_future = run_lake_analysis.remote(PROCESS_ROOT=PROCESS_ROOT,
+                             CURRENT_SITE_NAME=site, CLASS_PERIOD=CLASS_PERIOD, num_cpus=1, num_gpus=2)
+        ray_futures.append(current_future)
 
-    print(ray.get(futures))
+    for i in range(0, 1000):
+        print(ray.get(ray_futures))
+        time.sleep(60*1)
     print('here at end')
 
