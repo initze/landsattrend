@@ -129,6 +129,15 @@ if __name__ == "__main__":
         current_future = run_lake_analysis.remote(PROCESS_ROOT=PROCESS_ROOT,
                              CURRENT_SITE_NAME=site, CLASS_PERIOD=CLASS_PERIOD, num_cpus=1, num_gpus=2)
         ray_futures.append(current_future)
+    print(ray.get(ray_futures))
+    print('got ray futures')
+    for i in range(0, 1000):
+        print(i, 'running')
+        ray.get(ray_futures())
+        futures = ray.get(ray_futures)
+        print('futures is', ray.get(ray_futures))
+        time.sleep(60)
+        print('slept for 60 seconds before we check again.')
 
     done = False
     # TODO nothing below seems to show in the console??
