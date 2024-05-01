@@ -123,8 +123,19 @@ if __name__ == "__main__":
                 current_site = line.rstrip('\n')
                 sites_to_run.append(current_site)
     # TODO check that files exist locally, or download them
+    sites_to_download = []
+    for site in sites_to_run:
+        path_to_site = os.path.join(PROCESS_ROOT, 'data', site, CLASS_PERIOD, 'tiles')
+        has_contents = False
+        if os.path.exists(path_to_site):
+            contents = os.listdir(path_to_site)
+            if len(contents) > 1:
+                has_contents = True
+        if not has_contents:
+            print('find google cloud matches')
+            print('if found, download')
+            print('if not found, initiate export')
 
-    print("we should be chekcing for the files locally or downloading here")
     # TODO if they are not in bucket, then export those zones and wait
     ray_futures = []
     for site in sites_to_run:
