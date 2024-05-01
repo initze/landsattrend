@@ -130,8 +130,22 @@ if __name__ == "__main__":
                              CURRENT_SITE_NAME=site, CLASS_PERIOD=CLASS_PERIOD, num_cpus=1, num_gpus=2)
         ray_futures.append(current_future)
 
-    for i in range(0, 1000):
-        print(ray.get(ray_futures))
-        time.sleep(60*1)
+    done = False
+    while not done:
+        for i in range(0, 1000):
+            print(i, 'running')
+            futures = ray.get(ray_futures)
+            print('futures is', futures)
+            all_none = True
+            for f in futures:
+                if f is None:
+                    print('none')
+                else:
+                    all_none = False
+            print(all_none,'all none')
+            if all_none:
+                done = True
+            time.sleep(30)
+            print('sleeping 30 seconds')
     print('here at end')
 
