@@ -6,7 +6,7 @@ import ray
 import argparse
 import time
 
-from .export_tools.download_site_from_cloud import download_zone
+from export_tools.download_site_from_cloud import download_zone
 
 STARTYEAR = 0
 ENDYEAR = 0

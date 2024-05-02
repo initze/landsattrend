@@ -4,7 +4,7 @@ this is way to run multiple sites for a time period locally using ray
 
 install dependencies in environment_py38_v2_ray.yml
 
-you can start ray locally using 'ray start'
+you can start ray locally using 'ray start --head'
 
 or if you are connecting to another cluster, follow instructions in kuberay folder 
 (note this option does not work yet on the remote cluster)
