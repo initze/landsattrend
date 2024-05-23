@@ -9,9 +9,11 @@ import argparse
 from google.cloud import storage
 from modules import high_level_functions
 
+current_dir = os.getcwd()
+print('current dir', current_dir)
 
 service_account = "pdg-landsattrend@uiuc-ncsa-permafrost.iam.gserviceaccount.com"
-path_to_file = os.path.join(os.getcwd(), 'project-keys', 'uiuc-ncsa-permafrost-44d44c10c9c7.json')
+path_to_file = os.path.join(os.getcwd(), 'export_tools', 'project-keys', 'uiuc-ncsa-permafrost-44d44c10c9c7.json')
 credentials = ee.ServiceAccountCredentials(service_account, path_to_file)
 storage_client = storage.Client.from_service_account_json(
     path_to_file)
@@ -265,3 +267,21 @@ if __name__ == "__main__":
                        cloudFolder=PROCESS_SITE)
         except Exception as e:
             print(e)
+    print("we will check up on the exports now")
+    tasks = ee.batch.Task.list()
+    still_running = True
+    while still_running:
+        time.sleep(60)
+        all_completed = False
+        for task in tasks:
+            task_id = task.status()['id']
+            task_state = task.status()['state']
+            task_states.append(task_state)
+            print(task_id, task_state)
+        task_states = set(task_states)
+        task_states = list(task_states)
+        if len(task_states) == 1:
+            if task_states[0] == 'COMPLETED':
+                print('all exports are finished')
+                still_running = False
+    print('finished exporting')
