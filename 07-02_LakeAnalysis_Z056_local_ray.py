@@ -1,4 +1,5 @@
 import cloud_export_tool
+import download_from_cloud
 from landsattrend.lake_analysis import LakeMaker
 import os, platform
 import shutil
@@ -8,8 +9,8 @@ import argparse
 import time
 from utils.utils_processing import *
 
-from export_tools.download_site_from_cloud import download_zone
-
+from export_tools.download_from_cloud import download_from_cloud
+from generate_zones import *
 from export_tools.cloud_export_tool import run_export
 
 STARTYEAR = 0
@@ -122,22 +123,21 @@ def run_lake_analysis(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD, num_cpus, n
 if __name__ == "__main__":
 
     print('here')
-    EXPORT = True
-    # TODO add export
-    cloud_export_tool.export_to_cloud(current_process_site='TEST', current_start_year=2022, current_end_year=2023)
+    EXPORT = False
+    if EXPORT:
+        cloud_export_tool.export_to_cloud(current_process_site='TEST', current_start_year=2022, current_end_year=2023)
 
     # TODO add download
-    DOWNLOAD = True
+    DOWNLOAD = False
+    if DOWNLOAD:
+        print("We need to download")
+        download_from_cloud(current_site_name='TEST', current_start_year=2000, current_end_year=2020)
+
+    # TODO get zones to run
+    sites_to_run = get_zones_from_region(region_name='ALASKA')
 
     # TODO if run
     ray.init()
-    sites_to_run = []
-    if SITE_FILE_LIST is not None:
-        with open(SITE_FILE_LIST, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                current_site = line.rstrip('\n')
-                sites_to_run.append(current_site)
     # TODO check that files exist locally, or download them
     sites_to_download = []
     for site in sites_to_run:
@@ -148,8 +148,9 @@ if __name__ == "__main__":
             if len(contents) > 1:
                 has_contents = True
         if not has_contents:
+            # TODO fix this
             path_to_data = os.path.join(PROCESS_ROOT, 'data')
-            download_zone(site_name=site,start_year=STARTYEAR, end_year=ENDYEAR,path_to_data=path_to_data)
+            # download_from_cloud(site_name='TEST',start_year=2000, end_year=ENDYEAR,path_to_data=path_to_data)
 
     # TODO if they are not in bucket, then export those zones and wait
     ray_futures = []

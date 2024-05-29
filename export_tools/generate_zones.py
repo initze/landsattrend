@@ -1,5 +1,14 @@
 import numpy as np
 
+regions = {
+    'TEST': {'Y_MIN_START': 62, 'Y_MIN_END': 64, 'X_MIN_START': 153, 'X_MIN_END': 156},
+    'ALASKA': {'Y_MIN_START': 55, 'Y_MIN_END': 72, 'X_MIN_START': -168, 'X_MIN_END': -138},
+    'CANADA': {'Y_MIN_START': 50, 'Y_MIN_END': 80, 'X_MIN_START': -141, 'X_MIN_END': -54},
+    'EURASIA1': {'Y_MIN_START': 55, 'Y_MIN_END': 71, 'X_MIN_START': 18, 'X_MIN_END': 63},
+    'EURASIA2': {'Y_MIN_START': 55, 'Y_MIN_END': 80, 'X_MIN_START': 66, 'X_MIN_END': 177},
+    'EURASIA3': {'Y_MIN_START': 55, 'Y_MIN_END': 80, 'X_MIN_START': -180, 'X_MIN_END': -169},
+}
+
 def get_utmzone_from_lon(lon):
     return int(31 + np.floor(lon/ 6))
 
@@ -31,6 +40,26 @@ def get_zones(min_lat, max_lat, min_lon, max_lon):
         else:
             zones[current_zone_name]['max_lon'] = lon
     return zones
+
+def get_zone_names(min_lat, max_lat, min_lon, max_lon):
+    zone_names = []
+    for lon in range(min_lon, max_lon):
+        current_zone_name = get_zone(lon)
+        if current_zone_name not in zone_names:
+            zone_names.append(current_zone_name)
+    zone_names = set(zone_names)
+    zone_names = list(zone_names)
+    return zone_names
+
+def get_zones_from_region(region_name):
+    min_max_values = regions[region_name]
+    start_zone = get_zone(min_max_values['X_MIN_START'])
+    end_zone = get_zone(min_max_values['X_MIN_END'])
+    zone_list = np.arange(int(start_zone), int(end_zone) + 1)
+    zone_names = []
+    for zone in zone_list:
+        zone_names.append(str(zone))
+    return zone_names
 
 def get_filename_to_upload(X_MIN, Y_MIN, ZONE, STARTYEAR, ENDYEAR):
     print('getting filename for', X_MIN, Y_MIN, ZONE)
