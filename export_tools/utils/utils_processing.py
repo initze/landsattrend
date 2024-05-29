@@ -7,7 +7,6 @@ import numpy as np
 import os
 from google.cloud import storage
 current_dir = os.getcwd()
-print('currentdir', current_dir)
 service_account = "pdg-landsattrend@uiuc-ncsa-permafrost.iam.gserviceaccount.com"
 path_to_file = os.path.join(os.getcwd(),'export_tools', 'project-keys', 'uiuc-ncsa-permafrost-44d44c10c9c7.json')
 credentials = ee.ServiceAccountCredentials(service_account, path_to_file)

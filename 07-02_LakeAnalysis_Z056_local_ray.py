@@ -1,3 +1,4 @@
+import cloud_export_tool
 from landsattrend.lake_analysis import LakeMaker
 import os, platform
 import shutil
@@ -8,6 +9,8 @@ import time
 from utils.utils_processing import *
 
 from export_tools.download_site_from_cloud import download_zone
+
+from export_tools.cloud_export_tool import run_export
 
 STARTYEAR = 0
 ENDYEAR = 0
@@ -24,8 +27,8 @@ parser.add_argument("--startyear", help="The start year")
 parser.add_argument("--endyear", help="The end year")
 parser.add_argument("--current_site_name", help="The CURRENT_SITE_NAMES a comma delimited list")
 parser.add_argument("--site_file_list", help="A file with the list of sites to run, useful for larger runs")
-
-args, unknown = parser.parse_known_args()
+args=parser.parse_args()
+# args, unknown = parser.parse_known_args()
 print(f"Dict format: {vars(args)}")
 
 if 'current_site_name' in vars(args):
@@ -117,6 +120,16 @@ def run_lake_analysis(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD, num_cpus, n
     return True
 
 if __name__ == "__main__":
+
+    print('here')
+    EXPORT = True
+    # TODO add export
+    cloud_export_tool.export_to_cloud(current_process_site='TEST', current_start_year=2022, current_end_year=2023)
+
+    # TODO add download
+    DOWNLOAD = True
+
+    # TODO if run
     ray.init()
     sites_to_run = []
     if SITE_FILE_LIST is not None:
@@ -148,3 +161,4 @@ if __name__ == "__main__":
 
     # TODO a loop to check on these tqsks needs to be here
     print('running in ray now')
+    # TODO upload back to cloud when finished
