@@ -72,6 +72,7 @@ def set_conda_gdal_paths():
 
 @ray.remote
 def run_lake_analysis(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD, num_cpus, num_gpus):
+    print("PROCESS_ROOT", PROCESS_ROOT)
     process_dir = os.path.join(PROCESS_ROOT, 'process', CLASS_PERIOD)
     print('the process dir is', process_dir)
     site_name = CURRENT_SITE_NAME
@@ -83,6 +84,8 @@ def run_lake_analysis(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD, num_cpus, n
     set_conda_gdal_paths()
     print('the process root is', PROCESS_ROOT)
     tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
+    print('tiles directory', tiles_directory)
+    print(os.path.exists(tiles_directory))
     tif_files = os.listdir(tiles_directory)
 
     if '.DS_Store' in tif_files:
@@ -138,19 +141,6 @@ if __name__ == "__main__":
 
     # TODO if run
     ray.init()
-    # TODO check that files exist locally, or download them
-    sites_to_download = []
-    for site in sites_to_run:
-        path_to_site = os.path.join(PROCESS_ROOT, 'data', site, CLASS_PERIOD, 'tiles')
-        has_contents = False
-        if os.path.exists(path_to_site):
-            contents = os.listdir(path_to_site)
-            if len(contents) > 1:
-                has_contents = True
-        if not has_contents:
-            # TODO fix this
-            path_to_data = os.path.join(PROCESS_ROOT, 'data')
-            # download_from_cloud(site_name='TEST',start_year=2000, end_year=ENDYEAR,path_to_data=path_to_data)
 
     # TODO if they are not in bucket, then export those zones and wait
     ray_futures = []
@@ -164,5 +154,8 @@ if __name__ == "__main__":
 
     # TODO a loop to check on these tqsks needs to be here
     print('running in ray now')
+    for i in range(0, 400):
+        print(ray.get(ray_futures))
+        time.sleep(60)
     # https://stackoverflow.com/questions/71923762/is-there-a-way-to-have-ray-wait-return-as-many-finished-items-as-possible
     # TODO upload back to cloud when finished
