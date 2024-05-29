@@ -154,6 +154,8 @@ if __name__ == "__main__":
 
     # TODO if they are not in bucket, then export those zones and wait
     ray_futures = []
+    sites_to_run = ['32603', '32604']
+    CLASS_PERIOD = '2000-2020'
     for site in sites_to_run:
         current_future = run_lake_analysis.remote(PROCESS_ROOT=PROCESS_ROOT,
                              CURRENT_SITE_NAME=site, CLASS_PERIOD=CLASS_PERIOD, num_cpus=1, num_gpus=2)
@@ -162,4 +164,5 @@ if __name__ == "__main__":
 
     # TODO a loop to check on these tqsks needs to be here
     print('running in ray now')
+    # https://stackoverflow.com/questions/71923762/is-there-a-way-to-have-ray-wait-return-as-many-finished-items-as-possible
     # TODO upload back to cloud when finished
