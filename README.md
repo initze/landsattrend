@@ -39,6 +39,16 @@ the full pipeline is run by python file:
 Use these sample run time arguments as guide:
 
 
+the possible site names are 
+TEST
+ALASKA
+CANADA
+EURASIA1
+EURASIA2
+EURASIA3
+
+the site_file_list is currently not used. 
+
 --current_site_name=TEST
 --startyear=2022
 --endyear=2023
