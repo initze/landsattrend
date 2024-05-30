@@ -166,4 +166,4 @@ if __name__ == "__main__":
             try:
                 export_tools.cloud_export_tool.upload_process_results(site_name=site, year_span=CLASS_PERIOD, path_to_process=path_to_process)
             except Exception as e:
-                print("error uploading")
+                print("error uploading", site, CLASS_PERIOD)
