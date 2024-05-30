@@ -83,7 +83,7 @@ def upload_process_results(site_name, year_span, path_to_process):
         files = os.listdir(path_to_folder)
         for file in files:
             path_to_file = os.path.join(path_to_folder, file)
-            upload_name = '/PROCESS/' + year_span + '/' + site_name + '/' + folder + '/' + file
+            upload_name = 'PROCESS/' + year_span + '/' + site_name + '/' + folder + '/' + file
             current_blob = bucket.blob(upload_name)
             current_blob.upload_from_filename(path_to_file)
             print('uploaded', path_to_file)
