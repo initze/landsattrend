@@ -73,6 +73,23 @@ config_trend = {}
 # }
 
 
+def upload_process_results(site_name, year_span, path_to_process):
+    bucket = storage_client.get_bucket(outputBucket)
+
+    path_to_current_results = os.path.join(path_to_process, year_span, site_name)
+    result_folders = os.listdir(path_to_current_results)
+    for folder in result_folders:
+        path_to_folder = os.path.join(path_to_current_results, folder)
+        files = os.listdir(path_to_folder)
+        for file in files:
+            path_to_file = os.path.join(path_to_folder, file)
+            upload_name = '/PROCESS/' + year_span + '/' + site_name + '/' + folder + '/' + file
+            current_blob = bucket.blob(upload_name)
+            current_blob.upload_from_filename(path_to_file)
+            print('uploaded', path_to_file)
+    print('uploaded results for ', site_name, year_span)
+
+
 def get_zone(lon):
     utm = get_utmzone_from_lon(lon)
     zone = epsg_from_utmzone(utm)

@@ -1,5 +1,6 @@
 import cloud_export_tool
 import download_from_cloud
+import export_tools.cloud_export_tool
 from landsattrend.lake_analysis import LakeMaker
 import os, platform
 import shutil
@@ -138,22 +139,31 @@ if __name__ == "__main__":
 
     # TODO get zones to run
     sites_to_run = get_zones_from_region(region_name='ALASKA')
-
-    # TODO if run
-    ray.init()
-
-    # TODO if they are not in bucket, then export those zones and wait
-    ray_futures = []
     sites_to_run = ['32603', '32604']
     CLASS_PERIOD = '2000-2020'
-    for site in sites_to_run:
-        current_future = run_lake_analysis.remote(PROCESS_ROOT=PROCESS_ROOT,
-                             CURRENT_SITE_NAME=site, CLASS_PERIOD=CLASS_PERIOD, num_cpus=1, num_gpus=2)
-        ray_futures.append(current_future)
-    print("before we check")
-    finished, running = ray.wait(ray_futures, num_returns=len(ray_futures), timeout=60*60)
-    print("after finish")
-    # TODO a loop to check on these tqsks needs to be here
+    # TODO if run
+    RUN = False
+    if RUN:
+        ray.init()
+
+        # TODO if they are not in bucket, then export those zones and wait
+        ray_futures = []
+        for site in sites_to_run:
+            current_future = run_lake_analysis.remote(PROCESS_ROOT=PROCESS_ROOT,
+                                 CURRENT_SITE_NAME=site, CLASS_PERIOD=CLASS_PERIOD, num_cpus=1, num_gpus=2)
+            ray_futures.append(current_future)
+        print("before we check")
+        finished, running = ray.wait(ray_futures, num_returns=len(ray_futures))
+        print("after finish")
+        print(finished, running)
 
     # https://stackoverflow.com/questions/71923762/is-there-a-way-to-have-ray-wait-return-as-many-finished-items-as-possible
     # TODO upload back to cloud when finished
+    UPLOAD = True
+    if UPLOAD:
+        for site in sites_to_run:
+            path_to_process = os.path.join(PROCESS_ROOT, 'process')
+            try:
+                export_tools.cloud_export_tool.upload_process_results(site_name=site, year_span=CLASS_PERIOD, path_to_process=path_to_process)
+            except Exception as e:
+                print("error uploading")
