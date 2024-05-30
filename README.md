@@ -30,3 +30,22 @@ trendimage_{year1-year2}_{sitename}_{lat}_{lon}.tif
 
 This extractor runs on the dataset level - all files will be processed
 
+# FULL PIPELINE
+
+the full pipeline is run by python file:
+
+07-02_LakeAnalysis_Z056_local_ray.py
+
+Use these sample run time arguments as guide:
+
+
+--current_site_name=TEST
+--startyear=2022
+--endyear=2023
+--process_root=/Users/helium/ncsa/pdg/landsattrend2/landsattrend
+--site_file_list=sites.txt
+--export=False
+--download=False
+--run=False
+--upload=False
+

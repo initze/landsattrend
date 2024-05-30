@@ -21,6 +21,11 @@ CURRENT_SITE_NAME = ""
 CLASS_PERIOD = ""
 SITE_FILE_LIST= ""
 
+EXPORT = False
+DOWNLOAD = False
+RUN = False
+UPLOAD = False
+
 # SET THESE FROM ARGPARSE
 parser = argparse.ArgumentParser()
 
@@ -28,6 +33,10 @@ parser.add_argument("--process_root", help="The process root for the script, the
 parser.add_argument("--startyear", help="The start year")
 parser.add_argument("--endyear", help="The end year")
 parser.add_argument("--current_site_name", help="The CURRENT_SITE_NAMES a comma delimited list")
+parser.add_argument("--export", help="Do we need to export to google cloud?")
+parser.add_argument("--download", help="Do we need to download from google cloud?")
+parser.add_argument("--run", help="Do we need run classification?")
+parser.add_argument("--upload", help="Do we need to upload results google cloud?")
 parser.add_argument("--site_file_list", help="A file with the list of sites to run, useful for larger runs")
 args=parser.parse_args()
 # args, unknown = parser.parse_known_args()
@@ -54,6 +63,20 @@ if 'process_root' in vars(args):
 if 'site_file_list' in vars(args):
     if vars(args)['site_file_list'] is not None:
         SITE_FILE_LIST = vars(args)["site_file_list"]
+# TODO fix these
+if 'export' in vars(args):
+    if vars(args)['export'] is not None:
+        EXPORT = bool(vars(args)["export"])
+if 'download' in vars(args):
+    if vars(args)['download'] is not None:
+        DOWNLOAD = bool(vars(args)["download"])
+if 'run' in vars(args):
+    if vars(args)['run'] is not None:
+        RUN = bool(vars(args)["run"])
+if 'upload' in vars(args):
+    if vars(args)['upload'] is not None:
+        UPLOAD = bool(vars(args)["upload"])
+
 
 if STARTYEAR != 0 and ENDYEAR != 0:
     CLASS_PERIOD = str(STARTYEAR) + '-' + str(ENDYEAR)
