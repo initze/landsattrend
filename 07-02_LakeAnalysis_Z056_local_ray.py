@@ -150,12 +150,10 @@ if __name__ == "__main__":
         current_future = run_lake_analysis.remote(PROCESS_ROOT=PROCESS_ROOT,
                              CURRENT_SITE_NAME=site, CLASS_PERIOD=CLASS_PERIOD, num_cpus=1, num_gpus=2)
         ray_futures.append(current_future)
-    print(ray.get(ray_futures))
-
+    print("before we check")
+    finished, running = ray.wait(ray_futures, num_returns=len(ray_futures), timeout=60*60)
+    print("after finish")
     # TODO a loop to check on these tqsks needs to be here
-    print('running in ray now')
-    for i in range(0, 400):
-        print(ray.get(ray_futures))
-        time.sleep(60)
+
     # https://stackoverflow.com/questions/71923762/is-there-a-way-to-have-ray-wait-return-as-many-finished-items-as-possible
     # TODO upload back to cloud when finished
