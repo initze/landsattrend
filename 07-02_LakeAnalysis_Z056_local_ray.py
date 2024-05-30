@@ -17,7 +17,7 @@ from export_tools.cloud_export_tool import run_export
 STARTYEAR = 0
 ENDYEAR = 0
 PROCESS_ROOT = ""
-CURRENT_SITE_NAME = ""
+CURRENT_SITE_NAME = "TEST"
 CLASS_PERIOD = ""
 SITE_FILE_LIST= ""
 
@@ -152,18 +152,16 @@ if __name__ == "__main__":
     print('here')
     EXPORT = False
     if EXPORT:
-        cloud_export_tool.export_to_cloud(current_process_site='TEST', current_start_year=2022, current_end_year=2023)
+        cloud_export_tool.export_to_cloud(current_process_site=CURRENT_SITE_NAME, current_start_year=STARTYEAR, current_end_year=ENDYEAR)
 
     # TODO add download
     DOWNLOAD = False
     if DOWNLOAD:
         print("We need to download")
-        download_from_cloud(current_site_name='TEST', current_start_year=2000, current_end_year=2020)
+        download_from_cloud(current_site_name=CURRENT_SITE_NAME, current_start_year=STARTYEAR, current_end_year=ENDYEAR)
 
     # TODO get zones to run
-    sites_to_run = get_zones_from_region(region_name='ALASKA')
-    sites_to_run = ['32603', '32604']
-    CLASS_PERIOD = '2000-2020'
+    sites_to_run = get_zones_from_region(region_name=CURRENT_SITE_NAME)
     # TODO if run
     RUN = False
     if RUN:
