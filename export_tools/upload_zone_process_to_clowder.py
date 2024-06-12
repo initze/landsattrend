@@ -22,7 +22,7 @@ parser=argparse.ArgumentParser()
 
 parser.add_argument("--startyear", help="The start year")
 parser.add_argument("--endyear", help="The end year")
-parser.add_argument("--process_site", help="The PROCESS_SITE")
+parser.add_argument("--zone", help="The zone")
 parser.add_argument("--download_dir", help="The download dir")
 parser.add_argument("--clowder_url", help="clowder url")
 parser.add_argument("--api_key", help="the api key")
