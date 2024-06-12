@@ -109,6 +109,7 @@ def get_datasets_in_collection(collection_id):
     return result
 
 def upload_a_file_to_dataset_with_folder(filepath, dataset_id, folder_name, url):
+    uploadedfileid = None
     folder = search_dataset_folders(dataset_id=dataset_id, folder_name=folder_name, url=url)
     print("result of search dataset folders is", folder)
     if folder is None:
