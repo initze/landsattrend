@@ -74,6 +74,9 @@ for zone in zones:
         print(f"We are missing the final folder for zone {zone}")
         zones_to_rerun.append(zone)
 
+zones_to_rerun = set(zones_to_rerun)
+zones_to_rerun = list(zones_to_rerun)
+
 with open('RERUN_zones.txt', 'w') as f:
     for rerun_zone in zones_to_rerun:
         f.write(rerun_zone + '\n')
