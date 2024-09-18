@@ -10,10 +10,12 @@ import os
 
 # Lake area time series data GeoPackage
 path_to_gpkg= os.path.join(os.getcwd(), 'merge_tools', "lake_change_cleaned_Z004.gpkg")
-gdf = gpd.read_file(path_to_gpkg)
+path_to_test_gpkg = os.path.join(os.getcwd(), 'merge_tools', "INitze_Lakes_merged_v3_PDG_Testset.gpkg")
+gdf = gpd.read_file(path_to_test_gpkg)
 # Lake area time series data NetCDF
 path_to_area= os.path.join(os.getcwd(), 'merge_tools', "lake_change_cleaned_Z004.nc")
-area = xar.open_dataset(path_to_area)
+path_to_test_area= os.path.join(os.getcwd(), 'merge_tools', "Lakes_IngmarPDG_annual_area.nc")
+area = xar.open_dataset(path_to_test_area)
 
 # convert the NetCDF file into a dataframe, with columns for:
 # ID_merged, year, permanent_water, seasonal_water
@@ -26,4 +28,5 @@ merged_data = gdf.merge(right = area_df,
                         on = 'ID_merged')
 
 # Save as a gpkg for input into the viz-workflow
-merged_data.to_file("merged_lakes_area.gpkg", driver = "GPKG")
+path_to_new_gpkg = os.path.join(os.getcwd(), 'merge_tools',"merged_lakes_area.gpkg" )
+merged_data.to_file(path_to_new_gpkg, driver = "GPKG")
