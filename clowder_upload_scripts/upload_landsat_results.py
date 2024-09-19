@@ -9,12 +9,13 @@ import json
 landsat_space_id = '63051408e4b0fe3d54a9864e'
 alaska_collection_id = '63603f14e4b03d731ea3df5'
 
-path_to_process = '/scratch/bbki/toddn/landsat-delta/landsattrend/process'
+path_to_process = '/scratch/bbou/toddn/landsat-delta/landsattrend/process'
 
-zones_to_upload = ['32603','32604', '32605', '32607']
 
 clowder_url = 'https://pdg.clowderframework.org'
+
 key = sys.argv[1]
+zone_file_path = sys.argv[2]
 
 base_headers = {'X-API-key': key}
 headers = {**base_headers, 'Content-type': 'application/json',
@@ -142,6 +143,16 @@ def upload_a_file_to_dataset(filepath, dataset_id, url):
     return uploadedfileid
 
 if __name__ == "__main__":
+
+    zones_to_upload = []
+
+    with open(zone_file_path, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            zones_to_upload.append(line.rstrip('\n'))
+
+    print(f"Zones to upload are {zones_to_upload}")
+
     for i in range(0, len(zones_to_upload)):
         print('doing zone', zones_to_upload[i])
         zone_name = zones_to_upload[i]
