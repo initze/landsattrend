@@ -192,7 +192,11 @@ if __name__ == "__main__":
             for file in files:
                 path_to_file = os.path.join(path_to_folder, file)
                 print('uploading', path_to_file)
-                new_file_id = upload_a_file_to_dataset_with_folder_id(path_to_file, zone_dataset, folder_id, clowder_url)
-                print('the new file id is', new_file_id)
+                try:
+                    new_file_id = upload_a_file_to_dataset_with_folder_id(path_to_file, zone_dataset, folder_id, clowder_url)
+                    print('the new file id is', new_file_id)
+                except Exception as e:
+                    print(f"Error uploading file")
+                    print(e)
             print('done')
 
