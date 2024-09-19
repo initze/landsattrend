@@ -16,6 +16,7 @@ clowder_url = 'https://pdg.clowderframework.org'
 
 key = sys.argv[1]
 zone_file_path = sys.argv[2]
+year_span = sys.argv[3]
 
 base_headers = {'X-API-key': key}
 headers = {**base_headers, 'Content-type': 'application/json',
@@ -153,13 +154,15 @@ if __name__ == "__main__":
 
     print(f"Zones to upload are {zones_to_upload}")
 
+    path_to_current_process = os.path.join(path_to_process, year_span)
+
     for i in range(0, len(zones_to_upload)):
         print('doing zone', zones_to_upload[i])
         zone_name = zones_to_upload[i]
         # create dataset for that zone in space
         zone_dataset = create_dataset(url=clowder_url, space=landsat_space_id, zone_name=zone_name)
-        path_to_zone = os.path.join(path_to_process, zone_name)
-        zone_folders = os.listdir(path_to_zone)
+        path_to_zone_results = os.path.join(path_to_current_process, zone_name)
+        zone_folders = os.listdir(path_to_zone_results)
         print('uploading these files for this zone')
         process_folder = search_dataset_folders(dataset_id=zone_dataset, folder_name='process', url=clowder_url)
         print('the process folder id is', process_folder, 'it already existed')
@@ -176,7 +179,7 @@ if __name__ == "__main__":
         else:
             process_folder_id = process_folder['id']
         for folder in zone_folders:
-            path_to_folder = os.path.join(path_to_zone, folder)
+            path_to_folder = os.path.join(path_to_zone_results, folder)
             folder_post_url = f"{clowder_url}/api/datasets/{zone_dataset}/newFolder?key={key}"
             print('folder post URL', folder_post_url)
             payload = json.dumps({'name': folder,
