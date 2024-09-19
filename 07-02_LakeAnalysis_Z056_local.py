@@ -108,6 +108,7 @@ def main():
 
 
 if __name__ == "__main__":
+    print(f"Running lake analysis")
     try:
         if STARTYEAR == 0 or ENDYEAR == 0 or PROCESS_ROOT == "" or CURRENT_SITE_NAME == "":
             print("Not enough arguments to run script, ending")
