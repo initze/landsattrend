@@ -68,6 +68,26 @@ def create_dataset(url, space, zone_name):
         dataset_id = search_results['id']
         return dataset_id
 
+def is_file_in_dataset(path_to_file, dataset_id, url, key):
+    file_already_in_dataset = False
+    list_files_url = f"{url}/api/datasets/{dataset_id}/listAllFiles?key={key}"
+    response = requests.get(list_files_url, headers=headers)
+    dataset_files = response.json()
+    current_upload_filename = os.path.basename(path_to_file)
+    for file in dataset_files:
+        if file['filename'] == current_upload_filename:
+            print(f"We already uploaded the file {current_upload_filename}")
+            current_size = file['size']
+            current_size_clowder = int(current_size)
+            size_of_upload = os.stat(path_to_file).st_size
+            print(f"Size of file on clowder is {current_size_clowder}")
+            print(f"Size of file locally is {size_of_upload}")
+            if size_of_upload == current_size_clowder:
+                file_already_in_dataset = True
+    return file_already_in_dataset
+
+
+
 def upload_a_file_to_dataset_with_folder(filepath, dataset_id, folder_name, url):
     folder = search_dataset_folders(dataset_id=dataset_id, folder_name=folder_name, url=url)
     print("result of search dataset folders is", folder)
@@ -191,12 +211,16 @@ if __name__ == "__main__":
             files = os.listdir(path_to_folder)
             for file in files:
                 path_to_file = os.path.join(path_to_folder, file)
-                print('uploading', path_to_file)
-                try:
-                    new_file_id = upload_a_file_to_dataset_with_folder_id(path_to_file, zone_dataset, folder_id, clowder_url)
-                    print('the new file id is', new_file_id)
-                except Exception as e:
-                    print(f"Error uploading file")
-                    print(e)
+                file_already_uploaded = is_file_in_dataset(path_to_file=path_to_file,
+                                                           dataset_id=zone_dataset, key=key, url=clowder_url)
+                print(f"Is the file {file} already uploaded? {file_already_uploaded}")
+                if not file_already_uploaded:
+                    print('uploading', path_to_file)
+                    try:
+                        new_file_id = upload_a_file_to_dataset_with_folder_id(path_to_file, zone_dataset, folder_id, clowder_url)
+                        print('the new file id is', new_file_id)
+                    except Exception as e:
+                        print(f"Error uploading file")
+                        print(e)
             print('done')
 
