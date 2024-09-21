@@ -2,7 +2,6 @@ import ee#, eemont
 import sys
 import os
 from pathlib import Path
-import generate_zones
 import argparse
 
 service_account = 'pdg-landsattrend@uiuc-ncsa-permafrost.iam.gserviceaccount.com'
