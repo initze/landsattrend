@@ -31,6 +31,9 @@ def get_download_location(filename, dir=DEFAULT_DOWNLOAD_DIR):
     timespan = components[1]
     zone = components[2]
     download_directory = dir + "/" + zone + '/' + timespan + '/tiles'
+    if not os.path.exists(download_directory):
+        print(f"Creating download dir {download_directory}")
+        os.mkdir(download_directory)
     download_location = os.path.join(download_directory, filename)
     return download_location
 
