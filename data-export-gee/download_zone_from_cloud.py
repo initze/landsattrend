@@ -79,6 +79,7 @@ if __name__ == "__main__":
             DOWNLOAD_DIR = vars(args)['download_dir']
 
     SERACH_STRING = STARTYEAR + '-' + ENDYEAR + '_' + ZONE
+    print(f"The serach string is {SERACH_STRING}")
     # Make an authenticated API request
     bucket = storage_client.get_bucket('pdg-landsattrend')
 
