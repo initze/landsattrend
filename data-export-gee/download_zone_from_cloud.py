@@ -101,4 +101,8 @@ if __name__ == "__main__":
             blob = bucket.get_blob(blob.name)
             print('downloading to', download_location)
             blob.download_to_filename(download_location)
+            print(f"Does the download location exist?")
+            print(os.path.exists(download_location))
+            print(f"How large is the file?")
+            print(os.stat(download_location).st_size)
     print("Finished downloading from cloud")
