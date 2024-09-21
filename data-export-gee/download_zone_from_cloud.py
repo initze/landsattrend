@@ -66,12 +66,12 @@ if __name__ == "__main__":
     if 'startyear' in vars(args):
         if vars(args)['startyear'] is not None:
             print("We have a start year")
-            startyear_value = int(vars(args)['startyear'])
+            startyear_value = str(vars(args)['startyear'])
             STARTYEAR = startyear_value
     if 'endyear' in vars(args):
         if vars(args)['endyear'] is not None:
             print("We have an end year")
-            endyear_value = int(vars(args)['endyear'])
+            endyear_value = str(vars(args)['endyear'])
             ENDYEAR = endyear_value
     if 'download_dir' in vars(args):
         if vars(args)['download_dir'] is not None:
