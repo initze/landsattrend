@@ -20,7 +20,7 @@ alaska_collection_id = '63603f14e4b03d731ea3df55'
 # ee.Initialize()
 from google.cloud import storage
 
-DEFAULT_DOWNLOAD_DIR = '/scratch/bbou/landsat-delta/landsattrend/data'
+DEFAULT_DOWNLOAD_DIR = '/scratch/bbou/toddn/landsat-delta/landsattrend/data'
 
 
 def get_download_dir(zone):
