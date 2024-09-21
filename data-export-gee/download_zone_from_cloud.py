@@ -98,7 +98,6 @@ if __name__ == "__main__":
         current_filename = current_full_filename_parts[-1]
         if SERACH_STRING in current_filename:
             print("we will download", current_filename)
-            time.sleep(30)
             download_location = get_download_location(current_filename, dir=DEFAULT_DOWNLOAD_DIR)
             blob = bucket.get_blob(blob.name)
             print('downloading to', download_location)
