@@ -39,6 +39,7 @@ def search_dataset_by_name(dataset_name, url, space_id):
                           headers=headers)
     search_results = search.json()['results']
     print(f"The search results for dataset {dataset_name}")
+    print(len(search_results))
     if len(search_results) > 0:
         for result in search_results:
             result_spaces = result['spaces']
