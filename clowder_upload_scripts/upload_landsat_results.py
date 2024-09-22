@@ -135,12 +135,14 @@ def upload_a_file_to_dataset_with_folder_id(filepath, dataset_id, parentId, url)
                                         verify=False)
                 print('upload result is', result)
                 uploadedfileid = result.json()['id']
+                return uploadedfileid
             except Exception as e:
+                return None
                 print('failed to upload file, error')
                 print(e)
     else:
         print("unable to upload file %s (not found)", filepath)
-    return uploadedfileid
+    return None
 
 def upload_a_file_to_dataset(filepath, dataset_id, url):
     uploadedfileid = None
