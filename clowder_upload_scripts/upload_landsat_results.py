@@ -187,27 +187,27 @@ if __name__ == "__main__":
         path_to_zone_results = os.path.join(path_to_current_process, zone_name)
         zone_folders = os.listdir(path_to_zone_results)
         print('uploading these files for this zone')
-        process_folder = search_dataset_folders(dataset_id=zone_dataset, folder_name='process', url=clowder_url)
-        print('the process folder id is', process_folder, 'it already existed')
-        if process_folder is None:
-            folder_post_url = f"{clowder_url}/api/datasets/{zone_dataset}/newFolder?key={key}"
-            print('folder post URL', folder_post_url)
-            payload = json.dumps({'name': 'process',
-                                  'parentId': zone_dataset,
-                                  'parentType': "dataset"})
-            r = requests.post(folder_post_url, data=payload, headers=headers)
-            r.raise_for_status()
-            process_folder_id = r.json()["id"]
-            print('process folder id is', process_folder_id,'we created it')
-        else:
-            process_folder_id = process_folder['id']
+        # process_folder = search_dataset_folders(dataset_id=zone_dataset, folder_name='process', url=clowder_url)
+        # print('the process folder id is', process_folder, 'it already existed')
+        # if process_folder is None:
+        #     folder_post_url = f"{clowder_url}/api/datasets/{zone_dataset}/newFolder?key={key}"
+        #     print('folder post URL', folder_post_url)
+        #     payload = json.dumps({'name': 'process',
+        #                           'parentId': zone_dataset,
+        #                           'parentType': "dataset"})
+        #     r = requests.post(folder_post_url, data=payload, headers=headers)
+        #     r.raise_for_status()
+        #     process_folder_id = r.json()["id"]
+        #     print('process folder id is', process_folder_id,'we created it')
+        # else:
+        #     process_folder_id = process_folder['id']
         for folder in zone_folders:
             path_to_folder = os.path.join(path_to_zone_results, folder)
             folder_post_url = f"{clowder_url}/api/datasets/{zone_dataset}/newFolder?key={key}"
             print('folder post URL', folder_post_url)
             payload = json.dumps({'name': folder,
-                                    'parentId': process_folder_id,
-                                    'parentType': "folder"})
+                                    'parentId': zone_dataset,
+                                    'parentType': "dataset"})
             r = requests.post(folder_post_url, data=payload, headers=headers)
             r.raise_for_status()
             folder_id = r.json()["id"]
