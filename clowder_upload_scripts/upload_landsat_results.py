@@ -6,7 +6,7 @@ import pyclowder.datasets
 import sys
 import json
 
-landsat_space_id = '63051408e4b0fe3d54a9864e'
+landsat_space_id = '646d02d2e4b05d174c9fab1c'
 alaska_collection_id = '63603f14e4b03d731ea3df5'
 
 path_to_process = '/scratch/bbou/toddn/landsat-delta/landsattrend/process'
