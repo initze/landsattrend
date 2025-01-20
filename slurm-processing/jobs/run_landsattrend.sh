@@ -10,5 +10,5 @@ do
   echo ${zone}
   echo ${STARTYEAR}
   echo ${ENDYEAR}
-  python /work/hdd/bbou/toddn/landsat-delta/landsattrend/07-02_LakeAnalysis_Z056_local.py --current_site_name=${zone} --startyear=${STARTYEAR} --endyear=${ENDYEAR} --process_root=/scratch/bbou/toddn/landsat-delta/landsattrend
+  python /work/hdd/bbou/toddn/landsat-delta/landsattrend/07-02_LakeAnalysis_Z056_local.py --current_site_name=${zone} --startyear=${STARTYEAR} --endyear=${ENDYEAR} --process_root=/work/hdd/bbou/toddn/landsat-delta/landsattrend
 done
