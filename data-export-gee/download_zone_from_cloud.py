@@ -20,11 +20,11 @@ alaska_collection_id = '63603f14e4b03d731ea3df55'
 # ee.Initialize()
 from google.cloud import storage
 
-DEFAULT_DOWNLOAD_DIR = '/scratch/bbou/toddn/landsat-delta/landsattrend/data'
+DEFAULT_DOWNLOAD_DIR = '/work/hdd/bbou/toddn/landsat-delta/landsattrend/data'
 
 
 def get_download_dir(zone):
-    download_directory = '/scratch/bbou/toddn/landsat-delta/landsattrend/data/' + zone + '/2000-2020/tiles'
+    download_directory = '/work/hdd/bbou/toddn/landsat-delta/landsattrend/data/' + zone + '/2000-2020/tiles'
     return download_directory
 
 def get_download_location(filename, dir=DEFAULT_DOWNLOAD_DIR):
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     #
     parser.add_argument("--startyear", help="The start year", default="2000")
     parser.add_argument("--endyear", help="The end year", default="2020")
-    parser.add_argument("--zone", help="The UTM zone", default="32607")
+    parser.add_argument("--zone", help="The UTM zone", default="32658")
     parser.add_argument("--download_dir", help="The download dir", default=DEFAULT_DOWNLOAD_DIR)
     parser.parse_args()
 
