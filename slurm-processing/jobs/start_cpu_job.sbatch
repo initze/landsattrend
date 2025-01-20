@@ -1,0 +1,27 @@
+#!/bin/bash -l
+
+# USAGE INSTRUCTIONS:
+# sbatch <this_filename>
+
+#SBATCH --job-name=ingmar_landsat
+#SBATCH --partition=cpu
+#SBATCH --account=bbou-delta-cpu
+#SBATCH --time=8:00:00
+#SBATCH --nodes=1
+#SBATCH --mem=20g
+#SBATCH --cpus-per-task=4
+
+# export local environment variables to the job
+#SBATCH --export=ALL
+
+conda activate landsattrend2
+
+echo "starting"
+
+echo ${pwd}
+
+
+./run_landsattrend.sh RERUN 2000 2020
+
+# (optionaly) keep node alive for full amount of $TIME
+# sleep infinity
