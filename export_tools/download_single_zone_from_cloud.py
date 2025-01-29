@@ -7,7 +7,6 @@ import numpy as np
 import sys
 import argparse
 from google.cloud import storage
-from modules import high_level_functions
 
 current_dir = os.getcwd()
 print('current dir', current_dir)
