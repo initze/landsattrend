@@ -14,6 +14,8 @@ print('current dir', current_dir)
 
 service_account = "pdg-landsattrend@uiuc-ncsa-permafrost.iam.gserviceaccount.com"
 path_to_file = os.path.join(os.getcwd(), 'project-keys', 'uiuc-ncsa-permafrost-44d44c10c9c7.json')
+print("THE PATH TO CRED FILE IS ")
+print(path_to_file)
 credentials = ee.ServiceAccountCredentials(service_account, path_to_file)
 storage_client = storage.Client.from_service_account_json(
     path_to_file)
