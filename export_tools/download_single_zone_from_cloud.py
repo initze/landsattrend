@@ -55,13 +55,16 @@ def download_from_cloud(current_zone, current_start_year, current_end_year):
         if substring in current_name:
             print(current_name)
             print("We should download this file.")
+            filename_parts = current_name.split('/')
+            base_name = filename_parts[-1]
+            print("Download this file", base_name)
             current_download_path_dir = os.path.join(DOWNLOAD_PATH, current_zone, year_span, 'tiles')
             if os.path.exists(current_download_path_dir) and os.path.isdir(current_download_path_dir):
                 print("Directory already exists", current_download_path_dir)
             else:
                 print('create dir', current_download_path_dir)
                 Path(current_download_path_dir).mkdir(parents=True, exist_ok=True)
-            path_for_file = os.path.join(current_download_path_dir, current_name)
+            path_for_file = os.path.join(current_download_path_dir, base_name)
             print("Downloading to", path_for_file)
             blob.download_to_filename(path_for_file)
 
