@@ -11,7 +11,7 @@ ENDYEAR = 0
 PROCESS_ROOT = ""
 CURRENT_SITE_NAME = ""
 CLASS_PERIOD = ""
-
+SITE_FILE_LIST = ""
 # SET THESE FROM ARGPARSE
 parser = argparse.ArgumentParser()
 
@@ -19,6 +19,7 @@ parser.add_argument("--process_root", help="The process root for the script, the
 parser.add_argument("--startyear", help="The start year")
 parser.add_argument("--endyear", help="The end year")
 parser.add_argument("--current_site_name", help="The CURRENT_SITE_NAME")
+parser.add_argument("--site_list_file", help="A file with the list of sites to run, useful for larger runs")
 
 args, unknown = parser.parse_known_args()
 
@@ -42,6 +43,9 @@ if 'process_root' in vars(args):
     if vars(args)['process_root'] is not None:
         print("We have a process root")
         PROCESS_ROOT = vars(args)["process_root"]
+if 'site_file_list' in vars(args):
+    if vars(args)['site_file_list'] is not None:
+        SITE_FILE_LIST = vars(args)["site_file_list"]
 
 if STARTYEAR != 0 and ENDYEAR != 0:
     CLASS_PERIOD = str(STARTYEAR) + '-' + str(ENDYEAR)
@@ -68,52 +72,59 @@ FOREST_LOCATION = os.path.join(PROCESS_ROOT, r'aux_data', 'forestfire', 'forestf
 
 def main():
     set_conda_gdal_paths()
+    # checking if we are using a file with sites to run
+    sites_to_run = []
+    if SITE_FILE_LIST is not None:
+        with open(SITE_FILE_LIST, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                current_site = line.rstrip('\n')
+                sites_to_run.append(current_site)
     print('the process root is', PROCESS_ROOT)
-    tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
-    tif_files = os.listdir(tiles_directory)
+    if len(sites_to_run) > 0:
+        for i in range(0, len(sites_to_run)):
+            tiles_directory = os.path.join(PROCESS_ROOT, 'data', sites_to_run[i], CLASS_PERIOD, 'tiles')
+            tif_files = os.listdir(tiles_directory)
 
-    if '.DS_Store' in tif_files:
-        tif_files.remove('.DS_Store')
-    print('Available Images:\n')
-    for t in tif_files:
-        print(t)
-    l = LakeMaker(site_name, os.path.join(process_dir, site_name), tiles_directory, classperiod=CLASS_PERIOD)
-    print("\nStart Classification")
-    l.classify(CLASS_MODEL)
+            if '.DS_Store' in tif_files:
+                tif_files.remove('.DS_Store')
+            print('Available Images:\n')
+            for t in tif_files:
+                print(t)
 
-    print("\nPreparing additional Data")
-    l.prepare_aux_data(DEM_LOCATION, FOREST_LOCATION)
+            l = LakeMaker(site_name, os.path.join(process_dir, site_name), tiles_directory, classperiod=CLASS_PERIOD)
+            print("\nStart Classification")
 
-    print("\nCreating Masks")
-    # TODO this step has to happen in the same run as the next step or else make_stats throws error
-    l.make_masks()
+            l.classify(CLASS_MODEL)
 
-    print("\nCalculating Stats")
-    l.make_stats()
+            print("\nPreparing additional Data")
+            l.prepare_aux_data(DEM_LOCATION, FOREST_LOCATION)
 
-    print("\nSaving DataFrame to Disk")
-    l.save_df()
+            print("\nCreating Masks")
+            # TODO this step has to happen in the same run as the next step or else make_stats throws error
+            l.make_masks()
 
-    # errors come somewhere here
-    print("\nFiltering non-lake objects")
-    l.filter_data(LAKE_FILTER_MODEL)
-    print("\nSaving DataFrame to Disk")
-    l.save_filtered_data()
-    print("\nTransforming data to metric values")
-    l.finalize_calculations()
-    print("\nSaving DataFrame to Disk")
-    l.save_results()
-    print("\nSaving ResultGrid at 3km resolution")
-    l.export_gridded_results([100, 250])
+            print("\nCalculating Stats")
+            l.make_stats()
+
+            print("\nSaving DataFrame to Disk")
+            l.save_df()
+
+            # errors come somewhere here
+            print("\nFiltering non-lake objects")
+            l.filter_data(LAKE_FILTER_MODEL)
+            print("\nSaving DataFrame to Disk")
+            l.save_filtered_data()
+            print("\nTransforming data to metric values")
+            l.finalize_calculations()
+            print("\nSaving DataFrame to Disk")
+            l.save_results()
+            print("\nSaving ResultGrid at 3km resolution")
+            l.export_gridded_results([100, 250])
 
 
 if __name__ == "__main__":
-    print(f"Running lake analysis")
-    try:
-        if STARTYEAR == 0 or ENDYEAR == 0 or PROCESS_ROOT == "" or CURRENT_SITE_NAME == "":
-            print("Not enough arguments to run script, ending")
-        else:
-            main()
-    except Exception as e:
-        print("Error running")
-        print(e)
+    if STARTYEAR == 0 or ENDYEAR == 0 or PROCESS_ROOT == "" or SITE_FILE_LIST == "":
+        print("Not enough arguments to run script, ending")
+    else:
+        main()

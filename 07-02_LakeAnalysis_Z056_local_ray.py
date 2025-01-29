@@ -1,8 +1,89 @@
+import cloud_export_tool
+import download_from_cloud
+import export_tools.cloud_export_tool
 from landsattrend.lake_analysis import LakeMaker
 import os, platform
 import shutil
 import sys
 import ray
+import argparse
+import time
+from utils.utils_processing import *
+
+from export_tools.download_from_cloud import download_from_cloud
+from generate_zones import *
+from export_tools.cloud_export_tool import run_export
+
+STARTYEAR = 0
+ENDYEAR = 0
+PROCESS_ROOT = ""
+CURRENT_SITE_NAME = "TEST"
+CLASS_PERIOD = ""
+SITE_FILE_LIST= ""
+
+EXPORT = False
+DOWNLOAD = False
+RUN = False
+UPLOAD = False
+
+# SET THESE FROM ARGPARSE
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--process_root", help="The process root for the script, the data dir location")
+parser.add_argument("--startyear", help="The start year")
+parser.add_argument("--endyear", help="The end year")
+parser.add_argument("--current_site_name", help="The CURRENT_SITE_NAMES a comma delimited list")
+parser.add_argument("--export", help="Do we need to export to google cloud?")
+parser.add_argument("--download", help="Do we need to download from google cloud?")
+parser.add_argument("--run", help="Do we need run classification?")
+parser.add_argument("--upload", help="Do we need to upload results google cloud?")
+parser.add_argument("--site_file_list", help="A file with the list of sites to run, useful for larger runs")
+args=parser.parse_args()
+# args, unknown = parser.parse_known_args()
+print(f"Dict format: {vars(args)}")
+
+if 'current_site_name' in vars(args):
+    if vars(args)['current_site_name'] is not None:
+        print("We have a process site")
+        CURRENT_SITE_NAME = vars(args)["current_site_name"]
+if 'startyear' in vars(args):
+    if vars(args)['startyear'] is not None:
+        print("We have a start year")
+        startyear_value = int(vars(args)['startyear'])
+        STARTYEAR = startyear_value
+if 'endyear' in vars(args):
+    if vars(args)['endyear'] is not None:
+        print("We have an end year")
+        endyear_value = int(vars(args)['endyear'])
+        ENDYEAR = endyear_value
+if 'process_root' in vars(args):
+    if vars(args)['process_root'] is not None:
+        print("We have a process root")
+        PROCESS_ROOT = vars(args)["process_root"]
+if 'site_file_list' in vars(args):
+    if vars(args)['site_file_list'] is not None:
+        SITE_FILE_LIST = vars(args)["site_file_list"]
+# TODO fix these
+if 'export' in vars(args):
+    if vars(args)['export'] is not None:
+        EXPORT = bool(vars(args)["export"])
+if 'download' in vars(args):
+    if vars(args)['download'] is not None:
+        DOWNLOAD = bool(vars(args)["download"])
+if 'run' in vars(args):
+    if vars(args)['run'] is not None:
+        RUN = bool(vars(args)["run"])
+if 'upload' in vars(args):
+    if vars(args)['upload'] is not None:
+        UPLOAD = bool(vars(args)["upload"])
+
+
+if STARTYEAR != 0 and ENDYEAR != 0:
+    CLASS_PERIOD = str(STARTYEAR) + '-' + str(ENDYEAR)
+
+
+
+
 
 def set_conda_gdal_paths():
     if platform.system() == 'Windows':
@@ -15,6 +96,7 @@ def set_conda_gdal_paths():
 
 @ray.remote
 def run_lake_analysis(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD, num_cpus, num_gpus):
+    print("PROCESS_ROOT", PROCESS_ROOT)
     process_dir = os.path.join(PROCESS_ROOT, 'process', CLASS_PERIOD)
     print('the process dir is', process_dir)
     site_name = CURRENT_SITE_NAME
@@ -26,6 +108,8 @@ def run_lake_analysis(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD, num_cpus, n
     set_conda_gdal_paths()
     print('the process root is', PROCESS_ROOT)
     tiles_directory = os.path.join(PROCESS_ROOT, 'data', site_name, CLASS_PERIOD, 'tiles')
+    print('tiles directory', tiles_directory)
+    print(os.path.exists(tiles_directory))
     tif_files = os.listdir(tiles_directory)
 
     if '.DS_Store' in tif_files:
@@ -61,16 +145,46 @@ def run_lake_analysis(PROCESS_ROOT, CURRENT_SITE_NAME, CLASS_PERIOD, num_cpus, n
     l.save_results()
     print("\nSaving ResultGrid at 3km resolution")
     l.export_gridded_results([100, 250])
+    return True
 
 if __name__ == "__main__":
-    ray.init()
-    # futures = [run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
-    #                          CURRENT_SITE_NAME='32602', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2)]
-    futures = [run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
-                             CURRENT_SITE_NAME='32602', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2),
-    run_lake_analysis.remote(PROCESS_ROOT='/Users/helium/ncsa/pdg/landsattrend2/landsattrend',
-                             CURRENT_SITE_NAME='32603', CLASS_PERIOD='2000-2020', num_cpus=1, num_gpus=2)]
 
-    print(ray.get(futures))
-    print('here at end')
+    print('here')
+    EXPORT = False
+    if EXPORT:
+        cloud_export_tool.export_to_cloud(current_process_site=CURRENT_SITE_NAME, current_start_year=STARTYEAR, current_end_year=ENDYEAR)
 
+    # TODO add download
+    DOWNLOAD = False
+    if DOWNLOAD:
+        print("We need to download")
+        download_from_cloud(current_site_name=CURRENT_SITE_NAME, current_start_year=STARTYEAR, current_end_year=ENDYEAR)
+
+    # TODO get zones to run
+    sites_to_run = get_zones_from_region(region_name=CURRENT_SITE_NAME)
+    # TODO if run
+    RUN = False
+    if RUN:
+        ray.init()
+
+        # TODO if they are not in bucket, then export those zones and wait
+        ray_futures = []
+        for site in sites_to_run:
+            current_future = run_lake_analysis.remote(PROCESS_ROOT=PROCESS_ROOT,
+                                 CURRENT_SITE_NAME=site, CLASS_PERIOD=CLASS_PERIOD, num_cpus=1, num_gpus=2)
+            ray_futures.append(current_future)
+        print("before we check")
+        finished, running = ray.wait(ray_futures, num_returns=len(ray_futures))
+        print("after finish")
+        print(finished, running)
+
+    # https://stackoverflow.com/questions/71923762/is-there-a-way-to-have-ray-wait-return-as-many-finished-items-as-possible
+    # TODO upload back to cloud when finished
+    UPLOAD = True
+    if UPLOAD:
+        for site in sites_to_run:
+            path_to_process = os.path.join(PROCESS_ROOT, 'process')
+            try:
+                export_tools.cloud_export_tool.upload_process_results(site_name=site, year_span=CLASS_PERIOD, path_to_process=path_to_process)
+            except Exception as e:
+                print("error uploading", site, CLASS_PERIOD)

@@ -314,7 +314,7 @@ class LakeMaker(object):
         paths = [self.firemask_path_, self.dem_path_, self.slope_path_]
         return np.all([os.path.exists(p) for p in paths])
 
-    def prepare_aux_data(self, demfile, firefile):
+    def  prepare_aux_data(self, demfile, firefile):
         """
         Function to create auxiliary data - DEM data and firemask
         :param demfile: path to master DEM image (Panarctic DEM)

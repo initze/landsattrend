@@ -1,7 +1,6 @@
 name: landsattrend2
 channels:
   - conda-forge
-
 dependencies:
   - bottleneck
   - python=3.8
